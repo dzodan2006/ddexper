@@ -5,6 +5,7 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { useTheme } from '../context/ThemeContext';
 import { useLanguage } from '../context/LanguageContext';
+import { optimizeImageUrl } from '../lib/utils';
 
 interface ProductCardProps {
   product: Product;
@@ -46,11 +47,14 @@ export default function ProductCard({ product, onAddToCart }: ProductCardProps) 
           onDragStart={(e) => e.preventDefault()}
         >
           <img
-            src={p.image_url}
+            src={optimizeImageUrl(p.image_url, 400)}
             alt={p.name}
             className="h-full w-full object-cover object-center transition-transform duration-500 group-hover:scale-110"
             referrerPolicy="no-referrer"
             draggable="false"
+            loading="lazy"
+            width={400}
+            height={500}
           />
         </Link>
         <div className="absolute inset-0 bg-black/5 pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-500" />

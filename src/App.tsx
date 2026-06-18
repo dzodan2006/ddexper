@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, lazy, Suspense } from 'react';
 import { BrowserRouter, Routes, Route, Link, useLocation } from 'react-router-dom';
 import { Instagram, Facebook } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
@@ -15,32 +15,33 @@ import Navbar from './components/Navbar';
 import CartDrawer from './components/CartDrawer';
 import CookieConsent from './components/CookieConsent';
 import ScrollToTop from './components/ScrollToTop';
-import Home from './pages/Home';
-import Shop from './pages/Shop';
-import ProductDetails from './pages/ProductDetails';
-import Checkout from './pages/Checkout';
-import Complaints from './pages/Complaints';
-import PrivacyPolicy from './pages/PrivacyPolicy';
-import TermsOfService from './pages/TermsOfService';
-import Contact from './pages/Contact';
-import Sale from './pages/Sale';
-import Categories from './pages/Categories';
-import NewCollection from './pages/NewCollection';
-import Collaborations from './pages/Collaborations';
-import Editorijali from './pages/Editorijali';
-import LepaISrecna from './pages/collaborations/LepaISrecna';
-import DDModnaPrica from './pages/collaborations/DDModnaPrica';
-import AndjelkaStevic from './pages/collaborations/AndjelkaStevic';
-import DraganaKosjerina from './pages/collaborations/DraganaKosjerina';
-import LjubicaKaradjordjevic from './pages/collaborations/LjubicaKaradjordjevic';
-import AleksandraPerisic from './pages/collaborations/AleksandraPerisic';
-import DraganaRadakovic from './pages/collaborations/DraganaRadakovic';
-import DraganaMicalovic from './pages/collaborations/DraganaMicalovic';
-import TamaraMisirlic from './pages/collaborations/TamaraMisirlic';
-import DajanaSvraka from './pages/collaborations/DajanaSvraka';
-import DanijelaPantic from './pages/collaborations/DanijelaPantic';
-import BelgradeFashionWeek from './pages/collaborations/BelgradeFashionWeek';
-import Admin from './pages/Admin';
+
+const Home = lazy(() => import('./pages/Home'));
+const Shop = lazy(() => import('./pages/Shop'));
+const ProductDetails = lazy(() => import('./pages/ProductDetails'));
+const Checkout = lazy(() => import('./pages/Checkout'));
+const Complaints = lazy(() => import('./pages/Complaints'));
+const PrivacyPolicy = lazy(() => import('./pages/PrivacyPolicy'));
+const TermsOfService = lazy(() => import('./pages/TermsOfService'));
+const Contact = lazy(() => import('./pages/Contact'));
+const Sale = lazy(() => import('./pages/Sale'));
+const Categories = lazy(() => import('./pages/Categories'));
+const NewCollection = lazy(() => import('./pages/NewCollection'));
+const Collaborations = lazy(() => import('./pages/Collaborations'));
+const Editorijali = lazy(() => import('./pages/Editorijali'));
+const LepaISrecna = lazy(() => import('./pages/collaborations/LepaISrecna'));
+const DDModnaPrica = lazy(() => import('./pages/collaborations/DDModnaPrica'));
+const AndjelkaStevic = lazy(() => import('./pages/collaborations/AndjelkaStevic'));
+const DraganaKosjerina = lazy(() => import('./pages/collaborations/DraganaKosjerina'));
+const LjubicaKaradjordjevic = lazy(() => import('./pages/collaborations/LjubicaKaradjordjevic'));
+const AleksandraPerisic = lazy(() => import('./pages/collaborations/AleksandraPerisic'));
+const DraganaRadakovic = lazy(() => import('./pages/collaborations/DraganaRadakovic'));
+const DraganaMicalovic = lazy(() => import('./pages/collaborations/DraganaMicalovic'));
+const TamaraMisirlic = lazy(() => import('./pages/collaborations/TamaraMisirlic'));
+const DajanaSvraka = lazy(() => import('./pages/collaborations/DajanaSvraka'));
+const DanijelaPantic = lazy(() => import('./pages/collaborations/DanijelaPantic'));
+const BelgradeFashionWeek = lazy(() => import('./pages/collaborations/BelgradeFashionWeek'));
+const Admin = lazy(() => import('./pages/Admin'));
 
 
 function FadingBackground() {
@@ -596,34 +597,40 @@ function AppContent() {
           : 'text-gray-900 selection:bg-black selection:text-white'
       }`}>
         <main className="flex-1 pt-16">
-          <Routes>
-            <Route path="/" element={<Home products={products} categories={categories} loading={loading} onAddToCart={addToCart} />} />
-            <Route path="/shop" element={<Shop products={products} categories={categories} loading={loading} onAddToCart={addToCart} />} />
-            <Route path="/product/:id" element={<ProductDetails products={products} onAddToCart={addToCart} />} />
-            <Route path="/checkout" element={<Checkout cart={cart} clearCart={clearCart} />} />
-            <Route path="/reklamacije" element={<Complaints />} />
-            <Route path="/politika-privatnosti" element={<PrivacyPolicy />} />
-            <Route path="/uslovi-koriscenja" element={<TermsOfService />} />
-            <Route path="/kontakt" element={<Contact />} />
-            <Route path="/snizenja" element={<Sale products={products} loading={loading} onAddToCart={addToCart} />} />
-            <Route path="/kategorije" element={<Categories categories={categories} products={products} loading={loading} />} />
-            <Route path="/nova-kolekcija" element={<NewCollection products={products} loading={loading} onAddToCart={addToCart} />} />
-            <Route path="/editorijali" element={<Editorijali />} />
-            <Route path="/saradnje" element={<Collaborations />} />
-            <Route path="/saradnje/lepaisrecna" element={<LepaISrecna />} />
-            <Route path="/saradnje/dd-modna-prica" element={<DDModnaPrica />} />
-            <Route path="/saradnje/andjelka-stevic" element={<AndjelkaStevic />} />
-            <Route path="/saradnje/dragana-kosjerina" element={<DraganaKosjerina />} />
-            <Route path="/saradnje/ljubica-karadjordjevic" element={<LjubicaKaradjordjevic />} />
-            <Route path="/saradnje/aleksandra-perisic" element={<AleksandraPerisic />} />
-            <Route path="/saradnje/dragana-radakovic" element={<DraganaRadakovic />} />
-            <Route path="/saradnje/dragana-micalovic" element={<DraganaMicalovic />} />
-            <Route path="/saradnje/tamara-misirlic" element={<TamaraMisirlic />} />
-            <Route path="/saradnje/dajana-svraka" element={<DajanaSvraka />} />
-            <Route path="/saradnje/danijela-pantic" element={<DanijelaPantic />} />
-            <Route path="/saradnje/belgrade-fashion-week" element={<BelgradeFashionWeek />} />
-            <Route path="/admin" element={<Admin />} />
-          </Routes>
+          <Suspense fallback={
+            <div className="flex h-[60vh] items-center justify-center">
+              <div className="w-8 h-8 border-b-2 border-zinc-500 animate-spin rounded-full" />
+            </div>
+          }>
+            <Routes>
+              <Route path="/" element={<Home products={products} categories={categories} loading={loading} onAddToCart={addToCart} />} />
+              <Route path="/shop" element={<Shop products={products} categories={categories} loading={loading} onAddToCart={addToCart} />} />
+              <Route path="/product/:id" element={<ProductDetails products={products} onAddToCart={addToCart} />} />
+              <Route path="/checkout" element={<Checkout cart={cart} clearCart={clearCart} />} />
+              <Route path="/reklamacije" element={<Complaints />} />
+              <Route path="/politika-privatnosti" element={<PrivacyPolicy />} />
+              <Route path="/uslovi-koriscenja" element={<TermsOfService />} />
+              <Route path="/kontakt" element={<Contact />} />
+              <Route path="/snizenja" element={<Sale products={products} loading={loading} onAddToCart={addToCart} />} />
+              <Route path="/kategorije" element={<Categories categories={categories} products={products} loading={loading} />} />
+              <Route path="/nova-kolekcija" element={<NewCollection products={products} loading={loading} onAddToCart={addToCart} />} />
+              <Route path="/editorijali" element={<Editorijali />} />
+              <Route path="/saradnje" element={<Collaborations />} />
+              <Route path="/saradnje/lepaisrecna" element={<LepaISrecna />} />
+              <Route path="/saradnje/dd-modna-prica" element={<DDModnaPrica />} />
+              <Route path="/saradnje/andjelka-stevic" element={<AndjelkaStevic />} />
+              <Route path="/saradnje/dragana-kosjerina" element={<DraganaKosjerina />} />
+              <Route path="/saradnje/ljubica-karadjordjevic" element={<LjubicaKaradjordjevic />} />
+              <Route path="/saradnje/aleksandra-perisic" element={<AleksandraPerisic />} />
+              <Route path="/saradnje/dragana-radakovic" element={<DraganaRadakovic />} />
+              <Route path="/saradnje/dragana-micalovic" element={<DraganaMicalovic />} />
+              <Route path="/saradnje/tamara-misirlic" element={<TamaraMisirlic />} />
+              <Route path="/saradnje/dajana-svraka" element={<DajanaSvraka />} />
+              <Route path="/saradnje/danijela-pantic" element={<DanijelaPantic />} />
+              <Route path="/saradnje/belgrade-fashion-week" element={<BelgradeFashionWeek />} />
+              <Route path="/admin" element={<Admin />} />
+            </Routes>
+          </Suspense>
         </main>
         <footer className={`pt-24 pb-12 border-t mt-auto transition-colors duration-500 ${
           theme === 'dark' ? 'bg-[#111] border-zinc-900' : 'bg-gray-50 border-gray-200'

@@ -8,6 +8,7 @@ import { useTheme } from '../context/ThemeContext';
 import { useLanguage } from '../context/LanguageContext';
 import { animate } from 'motion/react';
 import ImageZoomModal from '../components/ImageZoomModal';
+import { optimizeImageUrl } from '../lib/utils';
 
 interface HomeProps {
   products: Product[];
@@ -103,10 +104,12 @@ export default function Home({ products, categories, loading, onAddToCart }: Hom
         {/* Background image fading from right to left */}
         <div className="absolute inset-y-0 right-0 w-full lg:w-[60%] z-0 select-none pointer-events-none">
           <img 
-            src="https://64.media.tumblr.com/cb6f36c302200c648bf44670ada2305e/2b7c3e65e62eb0d6-47/s2048x3072/f4675eb55ccda97da38e96bf2cedb7b947b917f0.jpg"
+            src={optimizeImageUrl("https://64.media.tumblr.com/cb6f36c302200c648bf44670ada2305e/2b7c3e65e62eb0d6-47/s2048x3072/f4675eb55ccda97da38e96bf2cedb7b947b917f0.jpg", 1200)}
             alt="Hero Background"
             className="w-full h-full object-cover object-[center_20%] grayscale opacity-30 dark:opacity-20"
             referrerPolicy="no-referrer"
+            width={1200}
+            height={800}
           />
           {/* Fading from right to left overlay */}
           <div className={`absolute inset-0 z-10 bg-gradient-to-r ${
@@ -190,10 +193,13 @@ export default function Home({ products, categories, loading, onAddToCart }: Hom
                 className="relative w-full md:w-[45%] md:max-h-[550px] aspect-[2/3] rounded-[3rem] overflow-hidden group cursor-zoom-in shadow-2xl bg-zinc-900"
               >
                   <img 
-                    src="https://64.media.tumblr.com/6d12019b559087745a3d1db1e01ebf6d/96ff0d2545ab50fb-5b/s2048x3072/10de0c48cbf4f18ed46249e525cb0dd9ebab8425.jpg" 
+                    src={optimizeImageUrl("https://64.media.tumblr.com/6d12019b559087745a3d1db1e01ebf6d/96ff0d2545ab50fb-5b/s2048x3072/10de0c48cbf4f18ed46249e525cb0dd9ebab8425.jpg", 800)} 
                     alt="Handmade process" 
                     className="w-full h-full object-cover transition-all duration-1000 group-hover:scale-102 grayscale opacity-85 group-hover:opacity-100"
                     referrerPolicy="no-referrer"
+                    loading="lazy"
+                    width={800}
+                    height={1200}
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 flex items-end p-8">
                     <p className="text-white font-light italic tracking-widest text-[10px] uppercase">
@@ -259,10 +265,13 @@ export default function Home({ products, categories, loading, onAddToCart }: Hom
                     className="relative min-w-[200px] md:min-w-[260px] h-[280px] md:h-[350px] rounded-[2rem] overflow-hidden group cursor-pointer shadow-sm hover:shadow-xl transition-all duration-500 shrink-0"
                   >
                     <img 
-                       src={bgImage} 
+                       src={optimizeImageUrl(bgImage, 400)} 
                       className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-110 pointer-events-none"
                       alt={category.name}
                       draggable="false"
+                      loading="lazy"
+                      width={400}
+                      height={500}
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent flex flex-col justify-end p-10 pointer-events-none">
                       <h3 className="text-2xl font-light italic text-white mb-2 uppercase tracking-wide">{category.name}</h3>
@@ -474,10 +483,13 @@ export default function Home({ products, categories, loading, onAddToCart }: Hom
                   onClick={() => navigate(collab.link)}
                 >
                   <img 
-                    src={collab.image} 
+                    src={optimizeImageUrl(collab.image, 600)} 
                     alt={title} 
                     className="w-full h-full object-cover object-top transition-transform duration-1000 group-hover:scale-105"
                     referrerPolicy="no-referrer"
+                    loading="lazy"
+                    width={600}
+                    height={800}
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/35 to-transparent flex flex-col justify-end p-8">
                     <span className="text-[9px] font-bold text-white/50 uppercase tracking-[0.3em] mb-2">{category}</span>
