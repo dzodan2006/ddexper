@@ -14,7 +14,7 @@ interface NavbarProps {
 
 export default function Navbar({ products, cartCount, onCartToggle }: NavbarProps) {
   const { theme, toggleTheme } = useTheme();
-  const { language, setLanguage, t } = useLanguage();
+  const { language, setLanguage, t, formatCurrency } = useLanguage();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -340,9 +340,9 @@ export default function Navbar({ products, cartCount, onCartToggle }: NavbarProp
                             <p className="text-[10px] text-zinc-500 uppercase tracking-widest mt-1">{product.category}</p>
                             <p className="text-sm font-bold mt-2">
                               {product.discount_price ? (
-                                <span className="text-red-500">{product.discount_price.toLocaleString()} din</span>
+                                <span className="text-red-500">{formatCurrency(product.discount_price)}</span>
                               ) : (
-                                <span className={theme === 'dark' ? 'text-white' : 'text-black'}>{product.price.toLocaleString()} din</span>
+                                <span className={theme === 'dark' ? 'text-white' : 'text-black'}>{formatCurrency(product.price)}</span>
                               )}
                             </p>
                           </Link>

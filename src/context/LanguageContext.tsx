@@ -466,7 +466,7 @@ const translations: Record<Language, Record<string, string>> = {
     'product.securityDesc': 'Шифрование SSL платежей',
     'product.returnTitle': 'Возврат',
     'product.returnDesc': '30-дневный срок',
-    'product.currencySymbol': 'руб.',
+    'product.currencySymbol': 'din',
 
     // Contact Page
     'contact.subtitle': 'Будем на связи',
