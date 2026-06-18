@@ -1,0 +1,31 @@
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300;1,400&family=Italiana&family=Inter:wght@300;400;500;600&family=Outfit:wght@300;400;500&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Outfit", "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-serif: "Cormorant Garamond", Georgia, serif;
+  --font-luxury: "Italiana", "Cormorant Garamond", serif;
+}
+
+@layer base {
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
+  /* Global baseline to transform bold fonts into thin luxury serifs */
+  h1, h2, h3, h4, h5, h6 {
+    font-family: "Italiana", "Cormorant Garamond", serif;
+    font-weight: 300 !important;
+    letter-spacing: 0.12em;
+  }
+
+  /* Map font-bold and font-semibold utility classes to thin, elegant serif font */
+  .font-bold, .font-semibold, .font-extrabold, .font-black {
+    font-family: "Cormorant Garamond", Georgia, serif !important;
+    font-weight: 300 !important;
+  }
+}

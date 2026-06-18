@@ -1,0 +1,27 @@
+# .cpanel.yml - Automatska Git konfiguracija za cPanel
+# Ova datoteka govori cPanel-u šta da uradi kada uradite "Git Push" u cPanel Git Repozitorijumu.
+#
+# VAŽNO: Zamenite 'tvoj_korisnik' sa vašim stvarnim cPanel korisničkim imenom (npr. /home/srdjandzodan/).
+
+---
+deployment:
+  tasks:
+    # 1. Definisanje putanje za izvorni kod aplikacije (Node.js App koren)
+    - export APP_PATH=/home/tvoj_korisnik/node_app
+    
+    # 2. Definisanje putanje za javni folder (gde se obično nalaze statički fajlovi na cPanel-u)
+    - export PUBLIC_PATH=/home/tvoj_korisnik/public_html
+
+    # 3. Kreiranje foldera ako ne postoje
+    - /bin/mkdir -p $APP_PATH
+
+    # 4. Sinhronizovanje celog koda u vaš skriveni node_app folder na cPanel-u
+    # (Preporučuje se da se Node kod nalazi van 'public_html' iz bezbednosnih razloga)
+    - /usr/bin/rsync -arv --exclude='.git' --exclude='node_modules' --exclude='.env' * $APP_PATH/
+
+    # 5. Ukoliko radite "build" direktno pre push-a na vašem računaru (najlakša opcija):
+    # Kopiranje završenog "dist" foldera u javni public_html ako želite direktno serviranje statičkih sajtova
+    # - /usr/bin/rsync -arv $APP_PATH/dist/ $PUBLIC_PATH/
+
+    # 6. Registracija promena kod cPanel Phusion Passenger-a (restartuje Node.js aplikaciju)
+    - /bin/touch $APP_PATH/tmp/restart.txt
