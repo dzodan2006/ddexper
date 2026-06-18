@@ -8,7 +8,7 @@ const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 const isValidUrl = supabaseUrl && supabaseUrl.startsWith('https://');
 
 if (!isValidUrl || !supabaseAnonKey) {
-  console.error('Supabase credentials missing or invalid! Ensure VITE_SUPABASE_URL is like "https://xyz.supabase.co"');
+  console.warn('Supabase credentials missing or invalid! Ensure VITE_SUPABASE_URL is like "https://xyz.supabase.co"');
 }
 
 export const supabase = createClient(

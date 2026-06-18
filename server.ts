@@ -10,6 +10,12 @@ const PORT = 3000;
 // Enable JSON body parsing
 app.use(express.json());
 
+// Explicit route to serve robots.txt as plain text and prevent HTML catch-all fallback
+app.get("/robots.txt", (req, res) => {
+  res.type("text/plain");
+  res.send("User-agent: *\nAllow: /\n");
+});
+
 // RaiAccept credentials resolution helper to guarantee zero hardcoded credentials inside git code
 const getRaiAcceptCredentials = (isProd: boolean) => {
   const clientId = process.env.RAIACCEPT_CLIENT_ID || "kr2gs4117arvbnaperqff5dml";
