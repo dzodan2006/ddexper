@@ -642,7 +642,7 @@ function AppContent() {
                   theme === 'dark' ? 'text-white' : 'text-black'
                 }`}>DD DESIGN</span>
                 <p className={`${theme === 'dark' ? 'text-zinc-400' : 'text-gray-600'} text-sm leading-relaxed`}>
-                  DD DESIGN je vaš izvor za moderni dizajn i vrhunsku kvalitetu. Svaki proizvod je pažljivo odabran.
+                  DD DESIGN je vaš izvor za moderan dizajn i vrhunski kvalitet. Svaki proizvod je pažljivo odabran.
                 </p>
                 <div className="flex space-x-4">
                   <a href="https://www.instagram.com/dddesign.rs" target="_blank" rel="noopener noreferrer" className={`${theme === 'dark' ? 'text-zinc-500 hover:text-white' : 'text-gray-400 hover:text-black'} transition-colors`}>
