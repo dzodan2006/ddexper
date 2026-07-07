@@ -19,7 +19,7 @@ interface HomeProps {
 
 export default function Home({ products, categories, loading, onAddToCart }: HomeProps) {
   const { theme } = useTheme();
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const navigate = useNavigate();
   const [zoomImage, setZoomImage] = useState<string | null>(null);
   const [scrollProgress, setScrollProgress] = useState(0);
@@ -100,21 +100,31 @@ export default function Home({ products, categories, loading, onAddToCart }: Hom
   return (
     <>
       {/* Editorial Hero Section */}
-      <section className="relative pt-32 pb-24 transition-colors duration-500 overflow-hidden min-h-[85vh] flex items-center bg-transparent">
-        {/* Background image fading from right to left */}
-        <div className="absolute inset-y-0 right-0 w-full lg:w-[60%] z-0 select-none pointer-events-none">
-          <img 
-            src={optimizeImageUrl("https://64.media.tumblr.com/cb6f36c302200c648bf44670ada2305e/2b7c3e65e62eb0d6-47/s2048x3072/f4675eb55ccda97da38e96bf2cedb7b947b917f0.jpg", 1200)}
-            alt="Hero Background"
-            className="w-full h-full object-cover object-[center_20%] grayscale opacity-30 dark:opacity-20"
-            referrerPolicy="no-referrer"
-            width={1200}
-            height={800}
+      <section className={`relative pt-32 pb-24 transition-colors duration-500 overflow-hidden min-h-[85vh] flex items-center ${
+        theme === 'dark' ? 'bg-black' : 'bg-white'
+      }`}>
+        {/* Background video fading from right to left */}
+        <div className="absolute inset-y-0 right-0 w-full lg:w-[60%] z-0 select-none pointer-events-none overflow-hidden">
+          <video 
+            src="https://64.media.tumblr.com/b690c05a80fc9216db5de5b44bca4cfd/8522166cc6acb9e1-e3/s720/b85697bbb73c0399ef54d55b516aa385f346a2b6.mov"
+            autoPlay
+            loop
+            muted
+            playsInline
+            className="w-full h-full object-cover grayscale opacity-35 dark:opacity-25"
+          />
+          {/* Subtle Film Grain Overlay */}
+          <div 
+            className="absolute inset-0 z-10 pointer-events-none opacity-[0.06] dark:opacity-[0.10] mix-blend-overlay" 
+            style={{ 
+              backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E")`,
+              backgroundRepeat: 'repeat',
+            }} 
           />
           {/* Fading from right to left overlay */}
-          <div className={`absolute inset-0 z-10 bg-gradient-to-r ${
+          <div className={`absolute inset-0 z-20 bg-gradient-to-r ${
             theme === 'dark' 
-              ? 'from-[#000000] via-[#000000]/60 to-transparent' 
+              ? 'from-black via-black/60 to-transparent' 
               : 'from-white via-white/60 to-transparent'
           }`} />
         </div>
@@ -215,9 +225,20 @@ export default function Home({ products, categories, loading, onAddToCart }: Hom
       {/* Categories Showcase */}
       <section className="py-32 transition-colors duration-500 bg-transparent">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-20">
+          <div className="text-center mb-16 flex flex-col items-center">
             <span className={`text-[10px] font-light italic uppercase tracking-[0.3em] mb-4 block ${theme === 'dark' ? 'text-zinc-500' : 'text-gray-400'}`}>{t('home.categoriesTag')}</span>
-            <h2 className={`text-3xl md:text-5xl font-extralight tracking-wide uppercase transition-colors ${theme === 'dark' ? 'text-white' : 'text-black'}`}>{t('home.categoriesTitle')}</h2>
+            <h2 className={`text-3xl md:text-5xl font-extralight tracking-wide uppercase transition-colors mb-6 ${theme === 'dark' ? 'text-white' : 'text-black'}`}>{t('home.categoriesTitle')}</h2>
+            <Link 
+              to="/kategorije" 
+              className={`inline-flex items-center space-x-2 text-[10px] font-light uppercase tracking-widest border px-6 py-2.5 rounded-full transition-all ${
+                theme === 'dark' 
+                  ? 'border-zinc-850 text-zinc-400 hover:text-white hover:border-zinc-500 hover:bg-zinc-950/25' 
+                  : 'border-gray-200 text-gray-500 hover:text-black hover:border-black hover:bg-gray-50/25'
+              }`}
+            >
+              <span>{language === 'sr' ? 'Sve Kategorije' : language === 'ru' ? 'Все Категории' : 'All Categories'}</span>
+              <ArrowRight className="w-3 h-3" />
+            </Link>
           </div>
 
           <div className="relative group/nav">

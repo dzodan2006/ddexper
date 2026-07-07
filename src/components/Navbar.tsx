@@ -1,20 +1,21 @@
-import { ShoppingCart, Search, Menu, X, ArrowRight, Sun, Moon } from 'lucide-react';
+import { ShoppingCart, Search, Menu, X, ArrowRight, Sun, Moon, ChevronDown } from 'lucide-react';
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Product } from '../types';
+import { Product, Category } from '../types';
 import { useTheme } from '../context/ThemeContext';
 import { useLanguage } from '../context/LanguageContext';
 
 interface NavbarProps {
   products: Product[];
+  categories?: Category[];
   cartCount: number;
   onCartToggle: () => void;
 }
 
-export default function Navbar({ products, cartCount, onCartToggle }: NavbarProps) {
+export default function Navbar({ products, categories = [], cartCount, onCartToggle }: NavbarProps) {
   const { theme, toggleTheme } = useTheme();
-  const { language, setLanguage, t, formatCurrency } = useLanguage();
+  const { language, setLanguage, t, formatCurrency, translateCategoryName } = useLanguage();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -23,10 +24,16 @@ export default function Navbar({ products, cartCount, onCartToggle }: NavbarProp
   const [isLangDropdownOpen, setIsLangDropdownOpen] = useState(false);
   const langDropdownRef = React.useRef<HTMLDivElement>(null);
 
+  const [isProductsDropdownOpen, setIsProductsDropdownOpen] = useState(false);
+  const productsDropdownRef = React.useRef<HTMLDivElement>(null);
+
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (langDropdownRef.current && !langDropdownRef.current.contains(event.target as Node)) {
         setIsLangDropdownOpen(false);
+      }
+      if (productsDropdownRef.current && !productsDropdownRef.current.contains(event.target as Node)) {
+        setIsProductsDropdownOpen(false);
       }
     };
     document.addEventListener('mousedown', handleClickOutside);
@@ -88,11 +95,69 @@ export default function Navbar({ products, cartCount, onCartToggle }: NavbarProp
             {/* Desktop Menu */}
             <div className="hidden md:flex items-center space-x-8">
               <Link to="/" className={`text-sm font-medium transition-colors ${theme === 'dark' ? 'text-zinc-400 hover:text-white' : 'text-gray-500 hover:text-black'}`}>{t('nav.home')}</Link>
-              <Link to="/shop" className={`text-sm font-medium transition-colors ${theme === 'dark' ? 'text-zinc-400 hover:text-white' : 'text-gray-500 hover:text-black'}`}>{t('nav.products')}</Link>
+              
+              {/* Products Dropdown */}
+              <div className="relative" ref={productsDropdownRef}>
+                <button
+                  onClick={() => setIsProductsDropdownOpen(!isProductsDropdownOpen)}
+                  className={`flex items-center space-x-1 text-sm font-medium transition-colors ${
+                    isProductsDropdownOpen 
+                      ? (theme === 'dark' ? 'text-white' : 'text-black')
+                      : (theme === 'dark' ? 'text-zinc-400 hover:text-white' : 'text-gray-500 hover:text-black')
+                  }`}
+                  aria-expanded={isProductsDropdownOpen}
+                >
+                  <span>{t('nav.products')}</span>
+                  <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-200 ${isProductsDropdownOpen ? 'rotate-180' : ''}`} />
+                </button>
+                <AnimatePresence>
+                  {isProductsDropdownOpen && (
+                    <motion.div
+                      initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                      animate={{ opacity: 1, y: 0, scale: 1 }}
+                      exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                      transition={{ duration: 0.15 }}
+                      className={`absolute left-0 mt-2 py-2 w-56 rounded-2xl border shadow-2xl z-[90] overflow-hidden backdrop-blur-xl ${
+                        theme === 'dark' 
+                          ? 'bg-black/95 border-zinc-850 text-zinc-300' 
+                          : 'bg-white/95 border-gray-100 text-gray-700'
+                      }`}
+                    >
+                      {/* Option for ALL products */}
+                      <button
+                        onClick={() => {
+                          navigate('/shop');
+                          setIsProductsDropdownOpen(false);
+                        }}
+                        className={`w-full text-left px-4 py-2.5 text-xs uppercase tracking-wider font-semibold transition-all ${
+                          theme === 'dark' ? 'hover:bg-zinc-900/50 hover:text-white' : 'hover:bg-gray-50 hover:text-black'
+                        } border-b ${theme === 'dark' ? 'border-zinc-900' : 'border-gray-150'}`}
+                      >
+                        {language === 'sr' ? 'Svi Proizvodi' : language === 'ru' ? 'Все Продукты' : 'All Products'}
+                      </button>
+                      
+                      {categories.map((category, idx) => (
+                        <button
+                          key={category.Id || idx}
+                          onClick={() => {
+                            navigate(`/shop?category=${category.Id}`);
+                            setIsProductsDropdownOpen(false);
+                          }}
+                          className={`w-full text-left px-4 py-2.5 text-xs uppercase tracking-wider font-semibold transition-all ${
+                            theme === 'dark' ? 'hover:bg-zinc-900/50 hover:text-white' : 'hover:bg-gray-50 hover:text-black'
+                          }`}
+                        >
+                          {translateCategoryName(category.name)}
+                        </button>
+                      ))}
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
+
               <Link to="/nova-kolekcija" className={`text-sm font-medium transition-colors uppercase tracking-widest text-[10px] ${theme === 'dark' ? 'text-zinc-400 hover:text-white' : 'text-gray-500 hover:text-black'}`}>{t('nav.new')}</Link>
               <Link to="/editorijali" className={`text-sm font-medium transition-colors uppercase tracking-widest text-[10px] ${theme === 'dark' ? 'text-zinc-400 hover:text-white' : 'text-gray-500 hover:text-black'}`}>{t('nav.editorial')}</Link>
               <Link to="/saradnje" className={`text-sm font-medium transition-colors uppercase tracking-widest text-[10px] ${theme === 'dark' ? 'text-zinc-400 hover:text-white' : 'text-gray-500 hover:text-black'}`}>{t('nav.press')}</Link>
-              <Link to="/kategorije" className={`text-sm font-medium transition-colors uppercase tracking-widest text-[10px] ${theme === 'dark' ? 'text-zinc-400 hover:text-white' : 'text-gray-500 hover:text-black'}`}>{t('nav.categories')}</Link>
               <Link to="/snizenja" className="text-sm font-light italic text-red-500 hover:text-red-600 transition-colors uppercase tracking-widest text-[10px]">{t('nav.sale')}</Link>
             </div>
  
@@ -204,11 +269,55 @@ export default function Navbar({ products, cartCount, onCartToggle }: NavbarProp
             >
               <div className="px-4 py-6 space-y-4">
                 <Link to="/" onClick={() => setIsMenuOpen(false)} className={`block text-lg font-medium ${theme === 'dark' ? 'text-white' : 'text-black'}`}>{t('nav.home')}</Link>
-                <Link to="/shop" onClick={() => setIsMenuOpen(false)} className={`block text-lg font-medium ${theme === 'dark' ? 'text-white' : 'text-black'}`}>{t('nav.products')}</Link>
+                
+                {/* Collapsible Products Categories menu for mobile */}
+                <div className="space-y-1">
+                  <button
+                    onClick={() => setIsProductsDropdownOpen(!isProductsDropdownOpen)}
+                    className={`flex items-center justify-between w-full text-lg font-medium text-left ${theme === 'dark' ? 'text-white' : 'text-black'}`}
+                  >
+                    <span>{t('nav.products')}</span>
+                    <ChevronDown className={`w-5 h-5 transition-transform duration-200 ${isProductsDropdownOpen ? 'rotate-180' : ''}`} />
+                  </button>
+                  <AnimatePresence>
+                    {isProductsDropdownOpen && (
+                      <motion.div
+                        initial={{ opacity: 0, height: 0 }}
+                        animate={{ opacity: 1, height: 'auto' }}
+                        exit={{ opacity: 0, height: 0 }}
+                        className="pl-4 pt-2 pb-2 space-y-3 flex flex-col border-l border-zinc-200 dark:border-zinc-800 ml-1"
+                      >
+                        <Link 
+                          to="/shop" 
+                          onClick={() => {
+                            setIsMenuOpen(false);
+                            setIsProductsDropdownOpen(false);
+                          }} 
+                          className={`text-sm ${theme === 'dark' ? 'text-zinc-400 hover:text-white' : 'text-gray-600 hover:text-black'}`}
+                        >
+                          {language === 'sr' ? 'Svi Proizvodi' : language === 'ru' ? 'Все Продукты' : 'All Products'}
+                        </Link>
+                        {categories.map((category, idx) => (
+                          <Link 
+                            key={category.Id || idx}
+                            to={`/shop?category=${category.Id}`}
+                            onClick={() => {
+                              setIsMenuOpen(false);
+                              setIsProductsDropdownOpen(false);
+                            }}
+                            className={`text-sm ${theme === 'dark' ? 'text-zinc-400 hover:text-white' : 'text-gray-600 hover:text-black'}`}
+                          >
+                            {translateCategoryName(category.name)}
+                          </Link>
+                        ))}
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
+
                 <Link to="/nova-kolekcija" onClick={() => setIsMenuOpen(false)} className={`block text-lg font-medium ${theme === 'dark' ? 'text-white' : 'text-black'}`}>{t('nav.new')}</Link>
                 <Link to="/editorijali" onClick={() => setIsMenuOpen(false)} className={`block text-lg font-medium ${theme === 'dark' ? 'text-white' : 'text-black'}`}>{t('nav.editorial')}</Link>
                 <Link to="/saradnje" onClick={() => setIsMenuOpen(false)} className={`block text-lg font-medium ${theme === 'dark' ? 'text-white' : 'text-black'}`}>{t('nav.press')}</Link>
-                <Link to="/kategorije" onClick={() => setIsMenuOpen(false)} className={`block text-lg font-medium ${theme === 'dark' ? 'text-white' : 'text-black'}`}>{t('nav.categories')}</Link>
                 <Link to="/snizenja" onClick={() => setIsMenuOpen(false)} className="block text-lg font-light italic text-red-500">{t('nav.sale')}</Link>
                 
                 {/* Mobile Language Choices */}

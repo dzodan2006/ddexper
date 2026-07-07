@@ -589,7 +589,7 @@ function AppContent() {
         theme === 'dark' ? 'bg-[#000000]' : 'bg-white'
       }`} />
       <ScrollToTop />
-      <Navbar products={products} cartCount={cartCount} onCartToggle={() => setIsCartOpen(!isCartOpen)} />
+      <Navbar products={products} categories={categories} cartCount={cartCount} onCartToggle={() => setIsCartOpen(!isCartOpen)} />
       <FadingBackground />
       <div className={`min-h-screen font-sans transition-colors duration-500 flex flex-col relative z-10 bg-transparent ${
         theme === 'dark' 
