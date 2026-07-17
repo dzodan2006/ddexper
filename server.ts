@@ -522,6 +522,544 @@ app.post("/api/payments/refund", async (req, res) => {
   }
 });
 
+// Order notification endpoint with SMTP2GO integration
+app.post("/api/orders/send-notification", async (req, res) => {
+  try {
+    const {
+      orderNumber,
+      customerName,
+      email,
+      phone,
+      address,
+      city,
+      postalCode,
+      paymentMethod,
+      totalPrice,
+      shippingCost,
+      items
+    } = req.body;
+
+    if (!orderNumber || !email) {
+      return res.status(400).json({
+        success: false,
+        error: "Missing required order details."
+      });
+    }
+
+    const apiKey = process.env.SMTP2GO_API_KEY || "api-0D65C8F726A948E7BE68974F2B80F0C6";
+    let sender = process.env.SMTP2GO_SENDER || "promocija@dddesign.rs";
+    if (!sender || typeof sender !== "string" || !sender.includes("@")) {
+      sender = "promocija@dddesign.rs";
+    }
+    const adminEmail = process.env.SMTP2GO_ADMIN_EMAIL || "srdjandzodan4@gmail.com, info@dddesign.rs";
+
+    console.log(`[Order Notification] Sending confirmation for order: ${orderNumber} to: ${email}`);
+
+    // Build items HTML for Customer Email
+    const itemsHtml = Array.isArray(items) ? items.map((item: any) => {
+      const details = [];
+      if (item.selectedSize) details.push(`Vel: ${item.selectedSize}`);
+      if (item.selectedColor) details.push(`Boja: ${item.selectedColor}`);
+      const detailsStr = details.length > 0 ? ` <span style="font-size: 11px; color: #a1a1aa; font-family: 'Outfit', sans-serif;">(${details.join(", ")})</span>` : "";
+      
+      return `
+        <tr style="border-bottom: 1px solid #222222;">
+          <td style="padding: 14px 0; color: #ffffff; line-height: 1.4; font-family: 'Outfit', sans-serif; font-size: 14px;">
+            <strong style="font-weight: 400; color: #ffffff;">${item.name || "Artikal"}</strong>${detailsStr}
+          </td>
+          <td style="padding: 14px 0; text-align: center; color: #a1a1aa; font-family: 'Outfit', sans-serif; font-size: 14px;">
+            ${item.quantity || 1}
+          </td>
+          <td style="padding: 14px 0; text-align: right; color: #ffffff; font-family: 'Outfit', sans-serif; font-weight: bold; font-size: 14px;">
+            ${(item.price || 0) * (item.quantity || 1)} RSD
+          </td>
+        </tr>
+      `;
+    }).join("") : "";
+
+    // Build items HTML for Admin Email
+    const itemsHtmlAdmin = Array.isArray(items) ? items.map((item: any) => {
+      const details = [];
+      if (item.selectedSize) details.push(`Vel: ${item.selectedSize}`);
+      if (item.selectedColor) details.push(`Boja: ${item.selectedColor}`);
+      const detailsStr = details.length > 0 ? ` (${details.join(", ")})` : "";
+
+      return `
+        <tr style="border-bottom: 1px solid #222222;">
+          <td style="padding: 10px 0; color: #ffffff; font-family: 'Outfit', sans-serif; font-size: 13.5px;">
+            <strong>${item.name || "Artikal"}</strong>${detailsStr}
+          </td>
+          <td style="padding: 10px 0; text-align: center; color: #a1a1aa; font-family: 'Outfit', sans-serif; font-size: 13.5px;">
+            ${item.quantity || 1}
+          </td>
+          <td style="padding: 10px 0; text-align: right; color: #ffffff; font-family: 'Outfit', sans-serif; font-size: 13.5px; font-weight: bold;">
+            ${(item.price || 0) * (item.quantity || 1)} RSD
+          </td>
+        </tr>
+      `;
+    }).join("") : "";
+
+    // 1. Send Order Confirmation Email to Customer
+    const customerResponse = await fetch("https://api.smtp2go.com/v3/email/send", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        api_key: apiKey,
+        sender: sender,
+        to: [email],
+        subject: `Potvrda porudžbine ${orderNumber} - DD DESIGN`,
+        html_body: `
+          <!DOCTYPE html>
+          <html>
+          <head>
+            <meta charset="utf-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>Potvrda porudžbine - DD DESIGN</title>
+            <style>
+              @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300;1,400&family=Italiana&family=Outfit:wght@300;400;500&display=swap');
+            </style>
+          </head>
+          <body style="font-family: 'Outfit', 'Helvetica Neue', Arial, sans-serif; background-color: #000000; color: #ffffff; margin: 0; padding: 0; -webkit-font-smoothing: antialiased;">
+            <div style="background-color: #000000; padding: 40px 10px;">
+              <div style="font-family: 'Outfit', 'Helvetica Neue', Arial, sans-serif; max-width: 600px; margin: 0 auto; background-color: #0a0a0a; border: 1px solid #1c1c1e; border-radius: 4px; overflow: hidden; box-shadow: 0 4px 24px rgba(0, 0, 0, 0.5);">
+                <!-- Elegant Brand Banner using Tumblr Image optimized via Weserv -->
+                <div style="background-image: url('https://images.weserv.nl/?url=64.media.tumblr.com/cb6f36c302200c648bf44670ada2305e/2b7c3e65e62eb0d6-47/s2048x3072/f4675eb55ccda97da38e96bf2cedb7b947b917f0.jpg&w=600&h=260&fit=cover'); background-size: cover; background-position: center; height: 200px; position: relative;">
+                   <div style="position: absolute; inset: 0; background-color: rgba(0, 0, 0, 0.45); top:0; left:0; right:0; bottom:0;"></div>
+                  <table style="width: 100%; height: 100%; position: relative; z-index: 10; border-collapse: collapse;">
+                    <tr>
+                      <td style="text-align: center; vertical-align: middle; padding: 20px;">
+                        <h1 style="font-family: 'Italiana', serif; color: #ffffff; font-size: 32px; font-weight: 300; letter-spacing: 0.25em; margin: 0; text-transform: uppercase; text-shadow: 0 2px 10px rgba(0,0,0,0.5);">DD DESIGN</h1>
+                        <p style="font-family: 'Outfit', sans-serif; color: #f4f4f5; font-size: 10px; letter-spacing: 0.3em; text-transform: uppercase; margin: 8px 0 0 0; text-shadow: 0 1px 4px rgba(0,0,0,0.5);">Modern Design & Premium Quality</p>
+                      </td>
+                    </tr>
+                  </table>
+                </div>
+                
+                <div style="padding: 40px 35px;">
+                  <!-- Title -->
+                  <div style="text-align: center; margin-bottom: 35px;">
+                    <h2 style="font-family: 'Italiana', serif; color: #ffffff; font-size: 22px; font-weight: 300; margin: 0 0 12px 0; letter-spacing: 0.15em; text-transform: uppercase;">Hvala Vam na porudžbini!</h2>
+                    <p style="font-family: 'Cormorant Garamond', Georgia, serif; font-style: italic; font-size: 16px; color: #a1a1aa; margin: 0; line-height: 1.6;">
+                      Vaša porudžbina <strong>${orderNumber}</strong> je uspešno primljena i trenutno se obrađuje.
+                    </p>
+                  </div>
+ 
+                  <!-- Order Info Box -->
+                  <div style="background-color: #111111; border: 1px solid #222222; padding: 24px; margin-bottom: 35px; border-radius: 2px;">
+                    <h3 style="font-family: 'Italiana', serif; color: #ffffff; font-size: 13px; font-weight: bold; margin-top: 0; border-bottom: 1px solid #222222; padding-bottom: 10px; text-transform: uppercase; letter-spacing: 0.15em; margin-bottom: 15px;">Podaci o dostavi</h3>
+                    <table style="width: 100%; border-collapse: collapse; font-size: 13.5px; color: #d4d4d8; line-height: 1.6;">
+                      <tr>
+                        <td style="padding: 6px 0; color: #a1a1aa; width: 120px; font-family: 'Outfit', sans-serif;">Primalac:</td>
+                        <td style="padding: 6px 0; color: #ffffff; font-weight: bold; font-family: 'Outfit', sans-serif;">${customerName}</td>
+                      </tr>
+                      <tr>
+                        <td style="padding: 6px 0; color: #a1a1aa; font-family: 'Outfit', sans-serif;">Telefon:</td>
+                        <td style="padding: 6px 0; color: #ffffff; font-family: 'Outfit', sans-serif;">${phone}</td>
+                      </tr>
+                      <tr>
+                        <td style="padding: 6px 0; color: #a1a1aa; font-family: 'Outfit', sans-serif;">Adresa:</td>
+                        <td style="padding: 6px 0; color: #ffffff; font-family: 'Outfit', sans-serif;">${address}, ${postalCode} ${city}</td>
+                      </tr>
+                      <tr>
+                        <td style="padding: 6px 0; color: #a1a1aa; font-family: 'Outfit', sans-serif;">Plaćanje:</td>
+                        <td style="padding: 6px 0; color: #ffffff; font-weight: bold; font-family: 'Outfit', sans-serif;">${paymentMethod === 'card' ? 'Online karticom (RaiAccept - PLAĆENO)' : 'Plaćanje pouzećem (kuriru prilikom isporuke)'}</td>
+                      </tr>
+                    </table>
+                  </div>
+ 
+                  <!-- Items Table -->
+                  <div style="margin-bottom: 35px;">
+                    <h3 style="font-family: 'Italiana', serif; color: #ffffff; font-size: 13px; font-weight: bold; margin-top: 0; border-bottom: 1px solid #222222; padding-bottom: 10px; text-transform: uppercase; letter-spacing: 0.15em; margin-bottom: 15px;">Pregled poručenih artikala</h3>
+                    <table style="width: 100%; border-collapse: collapse; font-size: 13.5px;">
+                      <thead>
+                        <tr style="border-bottom: 1px solid #222222;">
+                          <th style="font-family: 'Italiana', serif; text-align: left; padding: 10px 0; color: #a1a1aa; font-weight: 300; letter-spacing: 0.1em; text-transform: uppercase;">Naziv</th>
+                          <th style="font-family: 'Italiana', serif; text-align: center; padding: 10px 0; color: #a1a1aa; font-weight: 300; letter-spacing: 0.1em; text-transform: uppercase; width: 60px;">Kol.</th>
+                          <th style="font-family: 'Italiana', serif; text-align: right; padding: 10px 0; color: #a1a1aa; font-weight: 300; letter-spacing: 0.1em; text-transform: uppercase; width: 100px;">Cena</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        ${itemsHtml}
+                      </tbody>
+                      <tfoot>
+                        <tr style="border-top: 1px solid #222222;">
+                          <td colspan="2" style="padding: 12px 0; color: #a1a1aa; font-family: 'Outfit', sans-serif;">Dostava:</td>
+                          <td style="padding: 12px 0; text-align: right; color: #ffffff; font-family: 'Outfit', sans-serif;">${shippingCost > 0 ? `${shippingCost} RSD` : 'Besplatna'}</td>
+                        </tr>
+                        <tr style="border-top: 1px solid #222222; font-weight: bold;">
+                          <td colspan="2" style="padding: 14px 0; color: #ffffff; font-family: 'Italiana', serif; font-size: 16px; letter-spacing: 0.05em; text-transform: uppercase;">Ukupno za uplatu:</td>
+                          <td style="padding: 14px 0; text-align: right; color: #ffffff; font-family: 'Outfit', sans-serif; font-size: 16px; font-weight: bold;">${totalPrice} RSD</td>
+                        </tr>
+                      </tfoot>
+                    </table>
+                  </div>
+ 
+                  <!-- Brand Message / Callout -->
+                  <div style="background-color: #111111; border-left: 2px solid #ffffff; padding: 20px; margin-bottom: 35px; border-radius: 0 4px 4px 0;">
+                    <p style="font-family: 'Cormorant Garamond', Georgia, serif; font-size: 15px; color: #e4e4e7; line-height: 1.6; margin: 0;">
+                      <strong>Ručna izrada i unikatni modeli:</strong> Svi modeli DD Design su unikatni i ručno izrađeni. Isporuka za modele koji trenutno nisu na stanju može trajati od 5 do 10 radnih dana. Hvala Vam na strpljenju i razumevanju.
+                    </p>
+                  </div>
+ 
+                  <!-- Action button -->
+                  <div style="text-align: center; margin: 40px 0;">
+                    <a href="https://dddesign.rs/shop" style="font-family: 'Outfit', sans-serif; background-color: #ffffff; color: #000000; padding: 14px 32px; font-size: 11px; font-weight: 500; text-decoration: none; border-radius: 0px; letter-spacing: 0.25em; text-transform: uppercase; display: inline-block; border: 1px solid #ffffff;">
+                      Poseti Prodavnicu
+                    </a>
+                  </div>
+ 
+                  <p style="font-family: 'Cormorant Garamond', Georgia, serif; font-style: italic; font-size: 15px; color: #a1a1aa; line-height: 1.7; margin-top: 30px; text-align: center;">
+                    Ukoliko imate bilo kakvih pitanja, slobodno nam odgovorite na ovaj email ili nas pozovite.<br /><br />
+                    Srdačan pozdrav,<br />
+                    <strong style="font-family: 'Italiana', serif; font-style: normal; font-size: 15px; letter-spacing: 0.1em; color: #ffffff;">Vaš DD DESIGN Tim</strong>
+                  </p>
+                </div>
+                
+                <!-- Fine print footer -->
+                <div style="background-color: #050505; padding: 35px; border-top: 1px solid #1c1c1e; text-align: center;">
+                  <p style="margin: 0 0 10px 0; font-family: 'Outfit', sans-serif; font-size: 11px; color: #71717a; line-height: 1.6;">Ova poruka je automatski generisana sistemom elektronskih porudžbina.</p>
+                  <p style="margin: 0; font-family: 'Outfit', sans-serif; font-size: 11px; color: #71717a; letter-spacing: 1px; text-transform: uppercase;">© 2026 DD DESIGN. Sva prava zadržana.</p>
+                </div>
+                </div>
+              </div>
+            </div>
+          </body>
+          </html>
+        `
+      })
+    });
+
+    const customerData = await customerResponse.json().catch(() => ({}));
+    console.log(`[Order Notification] Customer email response status:`, customerResponse.status);
+
+    // 2. Send Order Alert Email to Admin
+    const adminRecipients = adminEmail.split(",").map(e => e.trim()).filter(Boolean);
+    if (adminRecipients.length > 0) {
+      const adminResponse = await fetch("https://api.smtp2go.com/v3/email/send", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          api_key: apiKey,
+          sender: sender,
+          to: adminRecipients,
+          subject: `🛒 NOVA PORUDŽBINA: ${orderNumber} - ${customerName}`,
+          html_body: `
+            <!DOCTYPE html>
+            <html>
+            <head>
+              <meta charset="utf-8">
+              <meta name="viewport" content="width=device-width, initial-scale=1.0">
+              <style>
+                @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300;1,400&family=Italiana&family=Outfit:wght@300;400;500&display=swap');
+              </style>
+            </head>
+            <body style="font-family: 'Outfit', 'Helvetica Neue', Arial, sans-serif; background-color: #000000; margin: 0; padding: 0;">
+              <div style="background-color: #000000; padding: 40px 10px;">
+                <div style="font-family: 'Outfit', sans-serif; max-width: 600px; margin: 0 auto; background-color: #0a0a0a; border: 1px solid #1c1c1e; border-radius: 4px; overflow: hidden; box-shadow: 0 4px 24px rgba(0, 0, 0, 0.5);">
+                  <!-- Admin Header -->
+                  <div style="background-color: #000000; color: #ffffff; padding: 25px 30px; text-align: center; border-bottom: 1px solid #1c1c1e;">
+                    <h1 style="font-family: 'Italiana', serif; color: #ffffff; font-size: 18px; font-weight: 300; letter-spacing: 0.2em; margin: 0; text-transform: uppercase;">Nova Porudžbina</h1>
+                    <p style="font-family: 'Outfit', sans-serif; color: #a1a1aa; font-size: 10px; letter-spacing: 0.15em; text-transform: uppercase; margin: 5px 0 0 0;">Sistem elektronske trgovine — DD Design</p>
+                  </div>
+                  
+                  <div style="padding: 30px 25px;">
+                    <p style="font-size: 14px; color: #ffffff; line-height: 1.6; margin-top: 0; margin-bottom: 20px;">
+                      Prisigla je nova porudžbina <strong>${orderNumber}</strong> na veb sajtu:
+                    </p>
+ 
+                    <div style="background-color: #111111; border: 1px solid #222222; padding: 20px; border-radius: 2px; margin-bottom: 25px; font-size: 13.5px; line-height: 1.6; color: #ffffff;">
+                      <table style="width: 100%; border-collapse: collapse;">
+                        <tr>
+                          <td style="padding: 4px 0; color: #a1a1aa; width: 120px; font-family: 'Outfit', sans-serif;">Kupac:</td>
+                          <td style="padding: 4px 0; color: #ffffff; font-weight: bold; font-family: 'Outfit', sans-serif;">${customerName}</td>
+                        </tr>
+                        <tr>
+                          <td style="padding: 4px 0; color: #a1a1aa; font-family: 'Outfit', sans-serif;">Email:</td>
+                          <td style="padding: 4px 0; color: #ffffff; font-family: 'Outfit', sans-serif;"><a href="mailto:${email}" style="color: #ffffff; text-decoration: none;">${email}</a></td>
+                        </tr>
+                        <tr>
+                          <td style="padding: 4px 0; color: #a1a1aa; font-family: 'Outfit', sans-serif;">Telefon:</td>
+                          <td style="padding: 4px 0; color: #ffffff; font-family: 'Outfit', sans-serif;">${phone}</td>
+                        </tr>
+                        <tr>
+                          <td style="padding: 4px 0; color: #a1a1aa; font-family: 'Outfit', sans-serif;">Adresa:</td>
+                          <td style="padding: 4px 0; color: #ffffff; font-family: 'Outfit', sans-serif;">${address}, ${postalCode} ${city}</td>
+                        </tr>
+                        <tr>
+                          <td style="padding: 4px 0; color: #a1a1aa; font-family: 'Outfit', sans-serif;">Metod plaćanja:</td>
+                          <td style="padding: 4px 0; color: #ffffff; font-weight: bold; font-family: 'Outfit', sans-serif;">${paymentMethod === 'card' ? 'Online kartica (RaiAccept - PLAĆENO)' : 'Plaćanje pouzećem (COD)'}</td>
+                        </tr>
+                        <tr>
+                          <td style="padding: 4px 0; color: #a1a1aa; font-family: 'Outfit', sans-serif;">Ukupan iznos:</td>
+                          <td style="padding: 4px 0; color: #ffffff; font-weight: bold; font-family: 'Outfit', sans-serif;">${totalPrice} RSD</td>
+                        </tr>
+                      </table>
+                    </div>
+ 
+                    <h3 style="font-family: 'Italiana', serif; font-size: 13px; color: #ffffff; border-bottom: 1px solid #222222; padding-bottom: 8px; margin-top: 0; margin-bottom: 15px; letter-spacing: 0.1em; text-transform: uppercase;">Artikli u porudžbini</h3>
+                    <table style="width: 100%; border-collapse: collapse; font-size: 13px; margin-bottom: 25px;">
+                      <thead>
+                        <tr style="border-bottom: 1px solid #222222; text-align: left;">
+                          <th style="padding: 8px 0; color: #a1a1aa; font-family: 'Italiana', serif; font-weight: 300; letter-spacing: 0.05em; text-transform: uppercase;">Artikal</th>
+                          <th style="padding: 8px 0; color: #a1a1aa; text-align: center; width: 50px; font-family: 'Italiana', serif; font-weight: 300; letter-spacing: 0.05em; text-transform: uppercase;">Kol.</th>
+                          <th style="padding: 8px 0; color: #a1a1aa; text-align: right; width: 80px; font-family: 'Italiana', serif; font-weight: 300; letter-spacing: 0.05em; text-transform: uppercase;">Cena</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        ${itemsHtmlAdmin}
+                      </tbody>
+                    </table>
+ 
+                    <div style="text-align: center; margin: 30px 0 10px 0;">
+                      <a href="https://dddesign.rs/admin" style="font-family: 'Outfit', sans-serif; background-color: #ffffff; color: #000000; padding: 12px 24px; font-size: 11px; font-weight: 500; text-decoration: none; border-radius: 0px; letter-spacing: 0.15em; text-transform: uppercase; display: inline-block; border: 1px solid #ffffff;">
+                        Otvori Admin Panel
+                      </a>
+                    </div>
+                  </div>
+ 
+                  <div style="background-color: #050505; padding: 25px; border-top: 1px solid #1c1c1e; text-align: center;">
+                    <p style="margin: 0; font-family: 'Outfit', sans-serif; font-size: 10px; color: #71717a; line-height: 1.5;">
+                      Sistem: DD Design Automated Order Manager<br />
+                      Vreme kreiranja: ${new Date().toLocaleString('sr-RS', { timeZone: 'Europe/Belgrade' })}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </body>
+            </html>
+          `
+        })
+      });
+
+      const adminData = await adminResponse.json().catch(() => ({}));
+      console.log(`[Order Notification] Admin email response status:`, adminResponse.status);
+    }
+
+    return res.json({
+      success: true,
+      message: "Order confirmation emails dispatched."
+    });
+
+  } catch (err: any) {
+    console.error("[Order Notification] Error sending notification emails:", err);
+    return res.status(500).json({
+      success: false,
+      error: "Failed to dispatch order notification emails."
+    });
+  }
+});
+
+// Newsletter subscription endpoint with SMTP2GO integration
+app.post("/api/newsletter/subscribe", async (req, res) => {
+  try {
+    const { email } = req.body;
+    if (!email || typeof email !== "string" || !email.includes("@")) {
+      return res.status(400).json({
+        success: false,
+        error: "Molimo unesite ispravnu e-mail adresu."
+      });
+    }
+
+    const apiKey = process.env.SMTP2GO_API_KEY || "api-0D65C8F726A948E7BE68974F2B80F0C6";
+    let sender = process.env.SMTP2GO_SENDER || "promocija@dddesign.rs";
+    if (!sender || typeof sender !== "string" || !sender.includes("@")) {
+      console.warn(`[Newsletter] Warning: Invalid SMTP2GO_SENDER configured ("${sender}"). Falling back to "promocija@dddesign.rs".`);
+      sender = "promocija@dddesign.rs";
+    }
+    const adminEmail = process.env.SMTP2GO_ADMIN_EMAIL || "srdjandzodan4@gmail.com, info@dddesign.rs";
+
+    console.log(`[Newsletter] Subscribing email: ${email} using SMTP2GO`);
+
+    // 1. Send Welcome Email to Subscriber
+    const welcomeResponse = await fetch("https://api.smtp2go.com/v3/email/send", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        api_key: apiKey,
+        sender: sender,
+        to: [email],
+        subject: "Dobrodošli u DD Design zajednicu",
+        text_body: "Uspešno ste se pretplatili na DD Design newsletter! Hvala na poverenju.",
+        html_body: `
+          <!DOCTYPE html>
+          <html>
+          <head>
+            <meta charset="utf-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>Dobrodošli u DD DESIGN zajednicu</title>
+            <style>
+              @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300;1,400&family=Italiana&family=Outfit:wght@300;400;500&display=swap');
+            </style>
+          </head>
+          <body style="font-family: 'Outfit', 'Helvetica Neue', Arial, sans-serif; background-color: #000000; color: #ffffff; margin: 0; padding: 0; -webkit-font-smoothing: antialiased;">
+            <div style="background-color: #000000; padding: 40px 10px;">
+              <div style="font-family: 'Outfit', 'Helvetica Neue', Arial, sans-serif; max-width: 600px; margin: 0 auto; background-color: #0a0a0a; border: 1px solid #1c1c1e; border-radius: 4px; overflow: hidden; box-shadow: 0 4px 24px rgba(0, 0, 0, 0.5);">
+                <!-- Elegant Handcrafted Banner using Tumblr Image optimized via Weserv -->
+                <div style="background-image: url('https://images.weserv.nl/?url=64.media.tumblr.com/6d12019b559087745a3d1db1e01ebf6d/96ff0d2545ab50fb-5b/s2048x3072/10de0c48cbf4f18ed46249e525cb0dd9ebab8425.jpg&w=600&h=260&fit=cover'); background-size: cover; background-position: center; height: 200px; position: relative;">
+                  <div style="position: absolute; inset: 0; background-color: rgba(0, 0, 0, 0.45); top:0; left:0; right:0; bottom:0;"></div>
+                  <table style="width: 100%; height: 100%; position: relative; z-index: 10; border-collapse: collapse;">
+                    <tr>
+                      <td style="text-align: center; vertical-align: middle; padding: 20px;">
+                        <h1 style="font-family: 'Italiana', serif; color: #ffffff; font-size: 32px; font-weight: 300; letter-spacing: 0.25em; margin: 0; text-transform: uppercase; text-shadow: 0 2px 10px rgba(0,0,0,0.5);">DD DESIGN</h1>
+                        <p style="font-family: 'Outfit', sans-serif; color: #f4f4f5; font-size: 10px; letter-spacing: 0.3em; text-transform: uppercase; margin: 8px 0 0 0; text-shadow: 0 1px 4px rgba(0,0,0,0.5);">Zajednica Ljubitelja Unikatne Mode</p>
+                      </td>
+                    </tr>
+                  </table>
+                </div>
+                
+                <div style="padding: 40px 35px;">
+                  <!-- Greeting -->
+                  <p style="font-family: 'Cormorant Garamond', Georgia, serif; font-style: italic; font-size: 18px; color: #ffffff; line-height: 1.6; margin-top: 0; margin-bottom: 25px;">Poštovani,</p>
+                  
+                  <p style="font-family: 'Cormorant Garamond', Georgia, serif; font-size: 16px; color: #d4d4d8; line-height: 1.8; margin-bottom: 20px;">
+                    Hvala Vam što ste se pretplatili na ekskluzivni <strong>DD DESIGN</strong> newsletter!
+                  </p>
+                  
+                  <p style="font-family: 'Cormorant Garamond', Georgia, serif; font-size: 16px; color: #d4d4d8; line-height: 1.8; margin-bottom: 25px;">
+                    Sada ste deo naše odabrane zajednice koja slavi autentičnost i vrhunsku ručnu izradu. Prvi ćete saznati za naše nove sezonske kolekcije, limitirana izdanja modnih komada, ekskluzivne popuste i inspirativne priče koje prate stvaranje svakog našeg modela od najfinije taft svile.
+                  </p>
+ 
+                  <!-- Feature Callout box with image style -->
+                  <div style="background-color: #111111; border-left: 2px solid #ffffff; padding: 20px; margin-bottom: 35px; border-radius: 0 4px 4px 0;">
+                    <p style="font-family: 'Cormorant Garamond', Georgia, serif; font-size: 15px; color: #e4e4e7; line-height: 1.6; margin: 0;">
+                      <strong>Dizajn sa karakterom:</strong> Svaki komad brenda DD Design, iza kojeg stoji kreatorka Danijela Gojković, nosi jedinstvenu priču i ručno je šiven kako bi naglasio Vašu eleganciju i jedinstvenost.
+                    </p>
+                  </div>
+                  
+                  <!-- Action button -->
+                  <div style="text-align: center; margin: 40px 0;">
+                    <a href="https://dddesign.rs/shop" style="font-family: 'Outfit', sans-serif; background-color: #ffffff; color: #000000; padding: 14px 32px; font-size: 11px; font-weight: 500; text-decoration: none; border-radius: 0px; letter-spacing: 0.25em; text-transform: uppercase; display: inline-block; border: 1px solid #ffffff;">
+                      Istražite Kolekciju
+                    </a>
+                  </div>
+                  
+                  <p style="font-family: 'Cormorant Garamond', Georgia, serif; font-style: italic; font-size: 15px; color: #a1a1aa; line-height: 1.7; text-align: center; margin-top: 35px;">
+                    Radujemo se što ćemo zajedno pisati novu modnu priču.<br /><br />
+                    Srdačan pozdrav,<br />
+                    <strong style="font-family: 'Italiana', serif; font-style: normal; font-size: 15px; letter-spacing: 0.1em; color: #ffffff;">Vaš DD DESIGN Tim</strong>
+                  </p>
+                </div>
+                
+                <!-- Fine print footer -->
+                <div style="background-color: #050505; padding: 35px; border-top: 1px solid #1c1c1e; text-align: center;">
+                  <p style="margin: 0 0 10px 0; font-family: 'Outfit', sans-serif; font-size: 11px; color: #71717a; line-height: 1.6;">Ova poruka je poslata jer ste se prijavili na newsletter na sajtu dddesign.rs.</p>
+                  <p style="margin: 0 0 15px 0; font-family: 'Outfit', sans-serif; font-size: 11px; color: #71717a; line-height: 1.6;">Ukoliko želite da se odjavite, pišite nam na <a href="mailto:${sender}" style="color: #ffffff; text-decoration: underline;">${sender}</a>.</p>
+                  <p style="margin: 0; font-family: 'Outfit', sans-serif; font-size: 11px; color: #71717a; letter-spacing: 1px; text-transform: uppercase;">© 2026 DD DESIGN. Sva prava zadržana.</p>
+                </div>
+              </div>
+            </div>
+          </body>
+          </html>
+        `
+      })
+    });
+
+    const welcomeData = await welcomeResponse.json().catch(() => ({}));
+    console.log("[Newsletter] SMTP2GO Welcome response status:", welcomeResponse.status);
+
+    // 2. Send Admin Notification Email
+    const adminRecipients = adminEmail.split(",").map(e => e.trim()).filter(Boolean);
+    if (adminRecipients.length > 0) {
+      const adminResponse = await fetch("https://api.smtp2go.com/v3/email/send", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          api_key: apiKey,
+          sender: sender,
+          to: adminRecipients,
+          subject: "📢 NOVI PRETPLATNIK: DD Design Newsletter",
+          text_body: `Novi pretplatnik na newsletter: ${email}\nDatum: ${new Date().toLocaleString('sr-RS')}`,
+          html_body: `
+            <!DOCTYPE html>
+            <html>
+            <head>
+              <meta charset="utf-8">
+              <meta name="viewport" content="width=device-width, initial-scale=1.0">
+              <style>
+                @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300;1,400&family=Italiana&family=Outfit:wght@300;400;500&display=swap');
+              </style>
+            </head>
+            <body style="font-family: 'Outfit', 'Helvetica Neue', Arial, sans-serif; background-color: #000000; margin: 0; padding: 0;">
+              <div style="background-color: #000000; padding: 40px 10px;">
+                <div style="font-family: 'Outfit', sans-serif; max-width: 600px; margin: 0 auto; background-color: #0a0a0a; border: 1px solid #1c1c1e; border-radius: 4px; overflow: hidden; box-shadow: 0 4px 24px rgba(0, 0, 0, 0.5);">
+                  <!-- Admin Header -->
+                  <div style="background-color: #000000; color: #ffffff; padding: 25px 30px; text-align: center; border-bottom: 1px solid #1c1c1e;">
+                    <h1 style="font-family: 'Italiana', serif; color: #ffffff; font-size: 18px; font-weight: 300; letter-spacing: 0.2em; margin: 0; text-transform: uppercase;">Novi Pretplatnik</h1>
+                    <p style="font-family: 'Outfit', sans-serif; color: #a1a1aa; font-size: 10px; letter-spacing: 0.15em; text-transform: uppercase; margin: 5px 0 0 0;">Sistem obaveštenja — DD Design</p>
+                  </div>
+                  
+                  <div style="padding: 30px 25px;">
+                    <p style="font-size: 14px; color: #ffffff; line-height: 1.6; margin-top: 0; margin-bottom: 20px;">
+                       Novi korisnik se uspešno prijavio na Vaš newsletter na sajtu:
+                    </p>
+                    
+                    <div style="background-color: #111111; border: 1px solid #222222; border-left: 2px solid #ffffff; padding: 20px; border-radius: 0 4px 4px 0; margin: 20px 0;">
+                      <span style="font-size: 16px; font-weight: bold; color: #ffffff; font-family: 'Outfit', sans-serif;">${email}</span>
+                    </div>
+                    
+                    <p style="font-size: 12px; color: #a1a1aa; margin-top: 25px;">
+                      Vreme prijave: ${new Date().toLocaleString('sr-RS', { timeZone: 'Europe/Belgrade' })}<br />
+                      Sistem: DD Design Automated Notifications
+                    </p>
+                  </div>
+                  
+                  <div style="background-color: #050505; padding: 25px; border-top: 1px solid #1c1c1e; text-align: center;">
+                    <p style="margin: 0; font-family: 'Outfit', sans-serif; font-size: 10px; color: #71717a; line-height: 1.5;">
+                      DD Design Automated Notifications System
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </body>
+            </html>
+          `
+        })
+      });
+      const adminData = await adminResponse.json().catch(() => ({}));
+      console.log("[Newsletter] SMTP2GO Admin notification status:", adminResponse.status);
+    }
+
+    // Try to save to local subscribers.json file as fallback registry
+    try {
+      const fs = await import("fs/promises");
+      const subFilePath = path.join(process.cwd(), "subscribers.json");
+      let list: string[] = [];
+      try {
+        const fileContent = await fs.readFile(subFilePath, "utf-8");
+        list = JSON.parse(fileContent);
+      } catch (e) {
+        // File doesn't exist yet, that's fine
+      }
+      if (!list.includes(email)) {
+        list.push(email);
+        await fs.writeFile(subFilePath, JSON.stringify(list, null, 2), "utf-8");
+      }
+    } catch (fsErr) {
+      console.error("[Newsletter] Failed to save subscriber locally:", fsErr);
+    }
+
+    return res.json({
+      success: true,
+      message: "Uspešno ste se prijavili na naš newsletter!"
+    });
+
+  } catch (err: any) {
+    console.error("[Newsletter] Error handling subscription:", err);
+    return res.status(500).json({
+      success: false,
+      error: "Došlo je do greške prilikom prijave na newsletter. Molimo pokušajte ponovo."
+    });
+  }
+});
+
 async function startServer() {
   if (process.env.VERCEL === "1" || process.env.IS_VERCEL === "true" || process.env.NOW_REGION || process.env.AWS_REGION) {
     console.log("[RaiAccept] Skipping listener startup: running inside Vercel Serverless Function / Cloud Environment");

@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { useEffect, useState, lazy, Suspense } from 'react';
+import { useEffect, useState, lazy, Suspense, FormEvent } from 'react';
 import { BrowserRouter, Routes, Route, Link, useLocation } from 'react-router-dom';
 import { Instagram, Facebook } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
@@ -247,6 +247,47 @@ export default function App() {
 function AppContent() {
   const { theme } = useTheme();
   useSEO(); // Run dynamic SEO optimization on route change
+
+  // Newsletter subscription state
+  const [newsletterEmail, setNewsletterEmail] = useState('');
+  const [newsletterStatus, setNewsletterStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
+  const [newsletterMessage, setNewsletterMessage] = useState('');
+
+  const handleNewsletterSubmit = async (e: FormEvent) => {
+    e.preventDefault();
+    if (!newsletterEmail || !newsletterEmail.includes('@')) {
+      setNewsletterStatus('error');
+      setNewsletterMessage('Molimo unesite ispravnu e-mail adresu.');
+      return;
+    }
+
+    setNewsletterStatus('loading');
+    setNewsletterMessage('');
+
+    try {
+      const response = await fetch('/api/newsletter/subscribe', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email: newsletterEmail }),
+      });
+
+      const data = await response.json();
+      if (response.ok && data.success) {
+        setNewsletterStatus('success');
+        setNewsletterMessage(data.message || 'Uspešno ste se prijavili na naš newsletter!');
+        setNewsletterEmail('');
+      } else {
+        setNewsletterStatus('error');
+        setNewsletterMessage(data.error || 'Došlo je do greške. Pokušajte ponovo.');
+      }
+    } catch (err) {
+      console.error('Newsletter error:', err);
+      setNewsletterStatus('error');
+      setNewsletterMessage('Došlo je do mrežne greške. Pokušajte ponovo.');
+    }
+  };
 
   
   // Inicijalizacija stanja iz localStorage (keša) ako postoji
@@ -633,7 +674,7 @@ function AppContent() {
           </Suspense>
         </main>
         <footer className={`pt-24 pb-12 border-t mt-auto transition-colors duration-500 ${
-          theme === 'dark' ? 'bg-[#111] border-zinc-900' : 'bg-gray-50 border-gray-200'
+          theme === 'dark' ? 'bg-[#000000] border-zinc-900' : 'bg-gray-50 border-gray-200'
         }`}>
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="grid grid-cols-1 md:grid-cols-4 gap-12 mb-20">
@@ -686,22 +727,41 @@ function AppContent() {
                   theme === 'dark' ? 'text-white' : 'text-black'
                 }`}>Newsletter</h4>
                 <p className={`${theme === 'dark' ? 'text-zinc-400' : 'text-gray-600'} text-sm mb-6`}>Pretplatite se za novosti i posebne ponude.</p>
-                <form className="flex space-x-2">
+                <form onSubmit={handleNewsletterSubmit} className="flex space-x-2">
                   <input 
                     type="email" 
                     placeholder="E-mail adresa" 
+                    value={newsletterEmail}
+                    onChange={(e) => setNewsletterEmail(e.target.value)}
+                    disabled={newsletterStatus === 'loading'}
+                    required
                     className={`${
                       theme === 'dark' 
                         ? 'bg-[#1a1a1a] border-zinc-800 text-white focus:border-white' 
                         : 'bg-white border-gray-200 text-black focus:border-black'
-                    } border px-4 py-3 rounded-xl text-sm w-full focus:outline-none transition-colors`}
+                    } border px-4 py-3 rounded-xl text-sm w-full focus:outline-none transition-colors disabled:opacity-50`}
                   />
-                  <button className={`${
-                    theme === 'dark' ? 'bg-white text-black hover:bg-zinc-200' : 'bg-black text-white hover:bg-gray-800'
-                  } px-6 py-3 rounded-xl transition-all font-bold text-sm`}>
-                    OK
+                  <button 
+                    type="submit"
+                    disabled={newsletterStatus === 'loading'}
+                    className={`${
+                      theme === 'dark' ? 'bg-white text-black hover:bg-zinc-200' : 'bg-black text-white hover:bg-gray-800'
+                    } px-6 py-3 rounded-xl transition-all font-bold text-sm min-w-[70px] flex items-center justify-center disabled:opacity-50`}
+                  >
+                    {newsletterStatus === 'loading' ? '...' : 'OK'}
                   </button>
                 </form>
+                {newsletterMessage && (
+                  <p className={`mt-3 text-xs font-medium transition-colors duration-300 ${
+                    newsletterStatus === 'success' 
+                      ? 'text-emerald-500' 
+                      : newsletterStatus === 'error' 
+                        ? 'text-rose-500' 
+                        : 'text-zinc-400'
+                  }`}>
+                    {newsletterMessage}
+                  </p>
+                )}
               </div>
             </div>
             

@@ -380,6 +380,69 @@ export default function Checkout({ cart, clearCart }: CheckoutProps) {
   const shippingCost = total >= 10000 ? 0 : 400;
   const grandTotal = total + shippingCost;
 
+  const sendOrderNotificationEmail = async (orderCode: string) => {
+    const sentKey = `order_email_sent_${orderCode}`;
+    if (localStorage.getItem(sentKey)) {
+      console.log(`[Notification] Email already dispatched for ${orderCode}. Skipping.`);
+      return;
+    }
+    localStorage.setItem(sentKey, "true");
+
+    try {
+      console.log(`[Notification] Fetching order details from Supabase for ${orderCode}...`);
+      const { data: dbOrder, error } = await supabase
+        .from('orders')
+        .select(`
+          *,
+          order_items (
+            id,
+            quantity,
+            price,
+            products (
+              name
+            )
+          )
+        `)
+        .eq('order_number', orderCode)
+        .maybeSingle();
+
+      if (error) throw error;
+      if (!dbOrder) {
+        console.warn(`[Notification] Order ${orderCode} not found in database.`);
+        return;
+      }
+
+      const itemsForEmail = dbOrder.order_items?.map((item: any) => ({
+        name: item.products?.name || "Artikal",
+        quantity: item.quantity,
+        price: item.price
+      })) || [];
+
+      console.log(`[Notification] Sending order ${orderCode} email payload to backend...`);
+      await fetch("/api/orders/send-notification", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          orderNumber: dbOrder.order_number,
+          customerName: dbOrder.customer_name,
+          email: dbOrder.email,
+          phone: dbOrder.phone,
+          address: dbOrder.address,
+          city: dbOrder.city,
+          postalCode: dbOrder.postal_code,
+          paymentMethod: dbOrder.payment_method || 'card',
+          totalPrice: dbOrder.total_price,
+          shippingCost: dbOrder.total_price >= 10000 ? 0 : 400,
+          items: itemsForEmail
+        })
+      });
+      console.log("[Notification] Successfully dispatched order confirmation email.");
+    } catch (err) {
+      console.error("[Notification] Error dispatching order confirmation email:", err);
+      localStorage.removeItem(sentKey);
+    }
+  };
+
   // Sync RaiAccept payment status with Supabase order table using live transaction status checks
   React.useEffect(() => {
     if (urlStatus && urlOrderCode && step === 'verifying') {
@@ -398,6 +461,7 @@ export default function Checkout({ cart, clearCart }: CheckoutProps) {
                 .from('orders')
                 .update({ payment_status: 'paid', order_status: 'processing' })
                 .eq('order_number', urlOrderCode);
+              sendOrderNotificationEmail(urlOrderCode);
               setStep('success');
               clearCart();
             } else {
@@ -476,6 +540,8 @@ export default function Checkout({ cart, clearCart }: CheckoutProps) {
                 console.error("[Verification] Database update error:", updateError);
               }
 
+              sendOrderNotificationEmail(urlOrderCode);
+
               setStep('success');
               clearCart();
               
@@ -505,6 +571,7 @@ export default function Checkout({ cart, clearCart }: CheckoutProps) {
               .from('orders')
               .update({ payment_status: 'paid', order_status: 'processing' })
               .eq('order_number', urlOrderCode);
+            sendOrderNotificationEmail(urlOrderCode);
             setStep('success');
             clearCart();
           } else {
@@ -736,6 +803,7 @@ export default function Checkout({ cart, clearCart }: CheckoutProps) {
         }
 
         setOrderNumber(orderCode);
+        sendOrderNotificationEmail(orderCode);
         setStep('success');
         clearCart();
       } catch (err: any) {
