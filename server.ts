@@ -1,8 +1,34 @@
 import express from "express";
 import path from "path";
 import dotenv from "dotenv";
+import { createClient } from "@supabase/supabase-js";
 
 dotenv.config();
+
+// Initialize Supabase client
+const rawSupabaseUrl = process.env.VITE_SUPABASE_URL || "";
+const supabaseUrl = rawSupabaseUrl.replace(/\/rest\/v1\/?$/, "").replace(/\/$/, "");
+const supabaseAnonKey = process.env.VITE_SUPABASE_ANON_KEY || "";
+
+const isSupabaseConfigured = !!(
+  supabaseUrl &&
+  supabaseUrl.startsWith("https://") &&
+  !supabaseUrl.includes("your-project-id") &&
+  !supabaseUrl.includes("placeholder-project") &&
+  supabaseAnonKey &&
+  !supabaseAnonKey.includes("your-anon-key") &&
+  !supabaseAnonKey.includes("placeholder-key")
+);
+
+const supabase = isSupabaseConfigured
+  ? createClient(supabaseUrl, supabaseAnonKey)
+  : null;
+
+if (!supabase) {
+  console.warn("[Server Supabase] Supabase credentials missing or invalid in server environment.");
+} else {
+  console.log("[Server Supabase] Client successfully initialized.");
+}
 
 const app = express();
 const PORT = 3000;
@@ -1025,6 +1051,24 @@ app.post("/api/newsletter/subscribe", async (req, res) => {
       });
       const adminData = await adminResponse.json().catch(() => ({}));
       console.log("[Newsletter] SMTP2GO Admin notification status:", adminResponse.status);
+    }
+
+    // Try to save to Supabase Newsletter_list table
+    if (supabase) {
+      try {
+        const { data, error } = await supabase
+          .from("Newsletter_list")
+          .insert([{ Mails: email }]);
+        if (error) {
+          console.error("[Newsletter] Error saving to Supabase table Newsletter_list:", error);
+        } else {
+          console.log("[Newsletter] Successfully saved to Supabase Newsletter_list:", email);
+        }
+      } catch (dbErr) {
+        console.error("[Newsletter] Supabase exception during save:", dbErr);
+      }
+    } else {
+      console.warn("[Newsletter] Supabase not configured or available. Skipped database registry.");
     }
 
     // Try to save to local subscribers.json file as fallback registry
