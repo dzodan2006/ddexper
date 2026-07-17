@@ -162,7 +162,12 @@ const checkoutTranslations = {
     cardFailFallback: "Plaćanje karticom nije uspešno obavljeno ili je otkazano od strane korisnika.",
     codErrorAlert: "Došlo je do greške prilikom prelaska na plaćanje pouzećem.",
     emptyCartTitle: "Vaša korpa je prazna",
-    backShopBtn: "Povratak u prodavnicu"
+    backShopBtn: "Povratak u prodavnicu",
+    errAgreeTerms: "Morate se složiti sa uslovima kupovine",
+    agreeTermsLabel: "Slažem se sa uslovima kupovine",
+    subscribeNewsletterLabel: "Želim da dobijam promotivne poruke o vašim proizvodima i popustima",
+    notesLabel: "Beleška / Lične preferencije ili informacije o dostavi",
+    notesPlaceholder: "Napišite ukoliko imate posebne zahteve za dostavu, lične mere ili specifične preferencije..."
   },
   en: {
     backBtn: "Back",
@@ -245,7 +250,12 @@ const checkoutTranslations = {
     cardFailFallback: "Card payment was not completed successfully or was canceled by user.",
     codErrorAlert: "An error occurred while switching to Cash on Delivery.",
     emptyCartTitle: "Your cart is empty",
-    backShopBtn: "Back to Shop"
+    backShopBtn: "Back to Shop",
+    errAgreeTerms: "You must agree to the terms of purchase",
+    agreeTermsLabel: "I agree with the terms of purchase",
+    subscribeNewsletterLabel: "I want to receive promotional messages about your products and discounts",
+    notesLabel: "Note / Personal preferences or delivery instructions",
+    notesPlaceholder: "Write if you have special delivery requests, custom measurements or specific preferences..."
   },
   ru: {
     backBtn: "Назад",
@@ -328,7 +338,12 @@ const checkoutTranslations = {
     cardFailFallback: "Оплата по карте не была завершена успешно или была отменена пользователем.",
     codErrorAlert: "Произошла ошибка при переключении на оплату при получении.",
     emptyCartTitle: "Ваша корзина пуста",
-    backShopBtn: "Назад в магазин"
+    backShopBtn: "Назад в магазин",
+    errAgreeTerms: "Вы должны согласиться с условиями покупки",
+    agreeTermsLabel: "Я согласен с условиями покупки",
+    subscribeNewsletterLabel: "Я хочу получать промо-сообщения о ваших товарах и скидках",
+    notesLabel: "Примечание / Личные предпочтения или инструкции по доставке",
+    notesPlaceholder: "Напишите, если у вас есть особые пожелания по доставке, индивидуальные мерки или предпочтения..."
   }
 };
 
@@ -372,6 +387,9 @@ export default function Checkout({ cart, clearCart }: CheckoutProps) {
       : null
   );
   const [orderNumber, setOrderNumber] = useState<string | null>(urlOrderCode);
+  const [notes, setNotes] = useState('');
+  const [agreeTerms, setAgreeTerms] = useState(false);
+  const [subscribeNewsletter, setSubscribeNewsletter] = useState(false);
 
   const [verificationLoading, setVerificationLoading] = useState(false);
   const [verificationResult, setVerificationResult] = useState<any>(null);
@@ -626,6 +644,10 @@ export default function Checkout({ cart, clearCart }: CheckoutProps) {
     if (!formData.zip.trim()) newErrors.zip = ct('errZip');
     else if (!zipRegex.test(formData.zip)) newErrors.zip = ct('errZipDigits');
 
+    if (!agreeTerms) {
+      newErrors.agreeTerms = ct('errAgreeTerms');
+    }
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -653,23 +675,50 @@ export default function Checkout({ cart, clearCart }: CheckoutProps) {
         const orderCode = `DD-${Date.now().toString().slice(-6)}-${Math.floor(1000 + Math.random() * 9000)}`;
         
         // 1. Snimi porudžbinu u tabelu orders
-        const { data: orderData, error: orderError } = await supabase
+        let orderPayload: any = {
+          order_number: orderCode,
+          customer_name: `${formData.firstName} ${formData.lastName}`.trim(),
+          email: formData.email.trim(),
+          phone: formData.phone.trim(),
+          address: formData.address.trim(),
+          city: formData.city.trim(),
+          postal_code: Number(formData.zip),
+          total_price: grandTotal,
+          payment_method: formData.paymentMethod,
+          payment_status: 'pending',
+          order_status: 'pending',
+          notes: notes.trim()
+        };
+
+        let { data: orderData, error: orderError } = await supabase
           .from('orders')
-          .insert({
-            order_number: orderCode,
-            customer_name: `${formData.firstName} ${formData.lastName}`.trim(),
-            email: formData.email.trim(),
-            phone: formData.phone.trim(),
-            address: formData.address.trim(),
-            city: formData.city.trim(),
-            postal_code: Number(formData.zip),
-            total_price: grandTotal,
-            payment_method: formData.paymentMethod,
-            payment_status: 'pending',
-            order_status: 'pending'
-          })
+          .insert(orderPayload)
           .select('id')
           .single();
+
+        // Safe database migration fallback:
+        // If 'notes' column doesn't exist, retry without it and append notes to the address field instead.
+        if (orderError && (orderError.message?.includes('column "notes" of relation "orders" does not exist') || orderError.code === '42703')) {
+          console.warn("[Checkout] Dedicated 'notes' column does not exist in 'orders' table. Appending to address as fallback.");
+          const fallbackAddress = notes.trim() 
+            ? `${formData.address.trim()} [Beleška: ${notes.trim()}]`
+            : formData.address.trim();
+          
+          orderPayload = {
+            ...orderPayload,
+            address: fallbackAddress
+          };
+          delete orderPayload.notes;
+
+          const retryResult = await supabase
+            .from('orders')
+            .insert(orderPayload)
+            .select('id')
+            .single();
+
+          orderData = retryResult.data;
+          orderError = retryResult.error;
+        }
 
         if (orderError) throw orderError;
         if (!orderData) throw new Error("Došlo je do greške prilikom kreiranja porudžbine.");
@@ -697,6 +746,23 @@ export default function Checkout({ cart, clearCart }: CheckoutProps) {
           .insert(orderItemsToInsert);
 
         if (itemsError) throw itemsError;
+
+        // If the user opted in to receive promotional messages (Newsletter list), subscribe them in the background!
+        if (subscribeNewsletter && formData.email.trim()) {
+          fetch('/api/newsletter/subscribe', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email: formData.email.trim() })
+          }).then(res => {
+            if (res.ok) {
+              console.log("[Checkout] Successfully registered newsletter subscriber during checkout.");
+            } else {
+              console.warn("[Checkout] Newsletter subscription returned non-OK status.");
+            }
+          }).catch(err => {
+            console.error("[Checkout] Background newsletter subscription error:", err);
+          });
+        }
 
         if (formData.paymentMethod === 'card') {
           // Prepare the payload for RaiAccept API
@@ -986,6 +1052,88 @@ export default function Checkout({ cart, clearCart }: CheckoutProps) {
                     />
                     {errors.zip && <p className="text-[10px] text-red-500 font-bold uppercase tracking-widest ml-1">{errors.zip}</p>}
                   </div>
+                </div>
+
+                <div className="space-y-2 mt-6">
+                  <label className={`text-xs font-bold uppercase tracking-widest ${theme === 'dark' ? 'text-zinc-600' : 'text-gray-400'}`}>
+                    {ct('notesLabel')}
+                  </label>
+                  <textarea 
+                    name="notes" 
+                    value={notes} 
+                    onChange={(e) => setNotes(e.target.value)}
+                    className={`w-full border rounded-xl py-4 px-4 min-h-[100px] resize-y focus:ring-2 transition-all border-transparent text-sm ${
+                      theme === 'dark' ? 'bg-zinc-900 text-white focus:ring-white' : 'bg-gray-50 text-black focus:ring-black'
+                    }`}
+                    placeholder={ct('notesPlaceholder')}
+                  />
+                </div>
+
+                <div className="space-y-4 pt-6 border-t border-current/10 mt-6">
+                  <label className="flex items-start space-x-3 cursor-pointer group select-none">
+                    <div className="relative flex items-center mt-0.5">
+                      <input 
+                        type="checkbox" 
+                        checked={agreeTerms}
+                        onChange={(e) => {
+                          setAgreeTerms(e.target.checked);
+                          if (e.target.checked && errors.agreeTerms) {
+                            setErrors(prev => {
+                              const next = { ...prev };
+                              delete next.agreeTerms;
+                              return next;
+                            });
+                          }
+                        }}
+                        className="sr-only"
+                      />
+                      <div className={`w-5 h-5 rounded border transition-all flex items-center justify-center ${
+                        agreeTerms 
+                          ? (theme === 'dark' ? 'bg-white border-white' : 'bg-black border-black')
+                          : (theme === 'dark' ? 'border-zinc-800 bg-zinc-900 group-hover:border-zinc-700' : 'border-gray-300 bg-white group-hover:border-gray-400')
+                      }`}>
+                        {agreeTerms && (
+                          <svg className={`w-3.5 h-3.5 ${theme === 'dark' ? 'text-black' : 'text-white'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="3">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                          </svg>
+                        )}
+                      </div>
+                    </div>
+                    <span className={`text-xs font-medium leading-relaxed ${theme === 'dark' ? 'text-zinc-400' : 'text-gray-600'}`}>
+                      {ct('agreeTermsLabel')}{' '}
+                      <a href="/terms-of-service" target="_blank" rel="noopener noreferrer" className="underline hover:opacity-80">
+                        {currentLang === 'sr' ? '(Pročitaj uslove)' : currentLang === 'ru' ? '(Читать условия)' : '(Read terms)'}
+                      </a>
+                    </span>
+                  </label>
+                  {errors.agreeTerms && (
+                    <p className="text-[10px] text-red-500 font-bold uppercase tracking-widest ml-1">{errors.agreeTerms}</p>
+                  )}
+
+                  <label className="flex items-start space-x-3 cursor-pointer group select-none">
+                    <div className="relative flex items-center mt-0.5">
+                      <input 
+                        type="checkbox" 
+                        checked={subscribeNewsletter}
+                        onChange={(e) => setSubscribeNewsletter(e.target.checked)}
+                        className="sr-only"
+                      />
+                      <div className={`w-5 h-5 rounded border transition-all flex items-center justify-center ${
+                        subscribeNewsletter 
+                          ? (theme === 'dark' ? 'bg-white border-white' : 'bg-black border-black')
+                          : (theme === 'dark' ? 'border-zinc-800 bg-zinc-900 group-hover:border-zinc-700' : 'border-gray-300 bg-white group-hover:border-gray-400')
+                      }`}>
+                        {subscribeNewsletter && (
+                          <svg className={`w-3.5 h-3.5 ${theme === 'dark' ? 'text-black' : 'text-white'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="3">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                          </svg>
+                        )}
+                      </div>
+                    </div>
+                    <span className={`text-xs font-medium leading-relaxed ${theme === 'dark' ? 'text-zinc-400' : 'text-gray-600'}`}>
+                      {ct('subscribeNewsletterLabel')}
+                    </span>
+                  </label>
                 </div>
 
                 <button 

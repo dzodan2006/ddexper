@@ -32,6 +32,7 @@ interface Order {
   payment_method: string;
   payment_status: string;
   order_status: string;
+  notes?: string;
   order_items?: OrderItem[];
 }
 
@@ -554,6 +555,12 @@ export default function Admin() {
                                 {new Date(order.created_at).toLocaleString('sr-RS')}
                               </span>
                             </div>
+                            {order.notes && (
+                              <div className="mt-4 p-3.5 rounded-xl bg-zinc-500/10 border border-current/10 space-y-1">
+                                <p className="text-[10px] font-bold uppercase tracking-widest text-zinc-500">Beleška kupca</p>
+                                <p className="text-xs italic leading-relaxed">{order.notes}</p>
+                              </div>
+                            )}
                           </div>
                         </div>
 
