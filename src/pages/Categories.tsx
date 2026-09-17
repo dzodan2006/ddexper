@@ -1,9 +1,12 @@
+import { useMemo } from 'react';
 import { motion } from 'motion/react';
 import { useNavigate } from 'react-router-dom';
 import { Product, Category } from '../types';
 import { ArrowRight, LayoutGrid } from 'lucide-react';
 import { useTheme } from '../context/ThemeContext';
 import { useLanguage } from '../context/LanguageContext';
+import { sortCategories, getCategoryImage } from '../lib/categories';
+import LazyCategoryImage from '../components/LazyCategoryImage';
 
 interface CategoriesProps {
   categories: Category[];
@@ -15,6 +18,8 @@ export default function Categories({ categories, products, loading }: Categories
   const navigate = useNavigate();
   const { theme } = useTheme();
   const { t, translateCategoryName } = useLanguage();
+
+  const sortedCategories = useMemo(() => sortCategories(categories), [categories]);
 
   return (
     <div className={`py-24 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto min-h-screen transition-colors duration-500`}>
@@ -52,9 +57,8 @@ export default function Categories({ categories, products, loading }: Categories
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {categories.map((category, idx) => {
-              const categoryProduct = products.find(p => p.category_id === category.Id || p.category === category.name);
-              const bgImage = categoryProduct?.image_url || 'https://images.unsplash.com/photo-1441984904996-e0b6ba687e12?auto=format&fit=crop&q=80&w=800';
+            {sortedCategories.map((category, idx) => {
+              const bgImage = getCategoryImage(category, products);
               const name = translateCategoryName(category.name);
 
               return (
@@ -66,11 +70,11 @@ export default function Categories({ categories, products, loading }: Categories
                     theme === 'dark' ? 'border border-zinc-900' : 'border border-transparent'
                   }`}
                 >
-                  <img 
+                  <LazyCategoryImage 
                     src={bgImage} 
-                    className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-110"
                     alt={name}
-                    referrerPolicy="no-referrer"
+                    width={800}
+                    height={1000}
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent flex flex-col justify-end p-10">
                     <h3 className="text-3xl font-bold text-white mb-2 uppercase tracking-tight">{name}</h3>

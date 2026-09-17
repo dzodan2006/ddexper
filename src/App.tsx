@@ -15,6 +15,7 @@ import Navbar from './components/Navbar';
 import CartDrawer from './components/CartDrawer';
 import CookieConsent from './components/CookieConsent';
 import ScrollToTop from './components/ScrollToTop';
+import { sortCategories } from './lib/categories';
 
 const Home = lazy(() => import('./pages/Home'));
 const Shop = lazy(() => import('./pages/Shop'));
@@ -297,8 +298,23 @@ function AppContent() {
   });
   
   const [categories, setCategories] = useState<Category[]>(() => {
+    const cachedV5 = localStorage.getItem('dd_categories_cache_v5');
+    if (cachedV5) {
+      try {
+        return sortCategories(JSON.parse(cachedV5));
+      } catch {
+        // ignore JSON parse issue
+      }
+    }
     const cached = localStorage.getItem('dd_categories_cache_v4');
-    return cached ? JSON.parse(cached) : [];
+    if (cached) {
+      try {
+        return sortCategories(JSON.parse(cached));
+      } catch {
+        // ignore
+      }
+    }
+    return [];
   });
 
   const [cart, setCart] = useState<CartItem[]>(() => {
@@ -325,8 +341,9 @@ function AppContent() {
           .select("*");
         
         if (catData) {
-          setCategories(catData);
-          localStorage.setItem('dd_categories_cache_v4', JSON.stringify(catData));
+          const sorted = sortCategories(catData);
+          setCategories(sorted);
+          localStorage.setItem('dd_categories_cache_v5', JSON.stringify(sorted));
         }
 
         // Dohvati proizvode

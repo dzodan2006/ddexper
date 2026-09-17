@@ -5,6 +5,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { Product, Category } from '../types';
 import { useTheme } from '../context/ThemeContext';
 import { useLanguage } from '../context/LanguageContext';
+import { sortCategories } from '../lib/categories';
 
 interface NavbarProps {
   products: Product[];
@@ -136,7 +137,7 @@ export default function Navbar({ products, categories = [], cartCount, onCartTog
                         {language === 'sr' ? 'Svi Proizvodi' : language === 'ru' ? 'Все Продукты' : 'All Products'}
                       </button>
                       
-                      {categories.map((category, idx) => (
+                      {sortCategories(categories).map((category, idx) => (
                         <button
                           key={category.Id || idx}
                           onClick={() => {
@@ -297,7 +298,7 @@ export default function Navbar({ products, categories = [], cartCount, onCartTog
                         >
                           {language === 'sr' ? 'Svi Proizvodi' : language === 'ru' ? 'Все Продукты' : 'All Products'}
                         </Link>
-                        {categories.map((category, idx) => (
+                        {sortCategories(categories).map((category, idx) => (
                           <Link 
                             key={category.Id || idx}
                             to={`/shop?category=${category.Id}`}

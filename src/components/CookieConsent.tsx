@@ -32,6 +32,7 @@ export default function CookieConsent() {
     localStorage.removeItem('dd_categories_cache_v3');
     localStorage.removeItem('dd_products_cache_v4');
     localStorage.removeItem('dd_categories_cache_v4');
+    localStorage.removeItem('dd_categories_cache_v5');
     
     // Obavesti korisnika
     setIsVisible(false);

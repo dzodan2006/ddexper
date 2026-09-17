@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, RefObject } from 'react';
+import { useState, useEffect, useRef, RefObject, useMemo } from 'react';
 import { motion, useMotionValue } from 'motion/react';
 import { ArrowRight, ShoppingBag, Truck, ShieldCheck, Package, CreditCard, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Product, Category } from '../types';
@@ -8,7 +8,9 @@ import { useTheme } from '../context/ThemeContext';
 import { useLanguage } from '../context/LanguageContext';
 import { animate } from 'motion/react';
 import ImageZoomModal from '../components/ImageZoomModal';
+import LazyCategoryImage from '../components/LazyCategoryImage';
 import { optimizeImageUrl } from '../lib/utils';
+import { sortCategories, getCategoryImage } from '../lib/categories';
 
 interface HomeProps {
   products: Product[];
@@ -19,10 +21,12 @@ interface HomeProps {
 
 export default function Home({ products, categories, loading, onAddToCart }: HomeProps) {
   const { theme } = useTheme();
-  const { t, language } = useLanguage();
+  const { t, language, translateCategoryName } = useLanguage();
   const navigate = useNavigate();
   const [zoomImage, setZoomImage] = useState<string | null>(null);
   const [scrollProgress, setScrollProgress] = useState(0);
+
+  const sortedCategories = useMemo(() => sortCategories(categories), [categories]);
   const [featuredScrollProgress, setFeaturedScrollProgress] = useState(0);
   const [catConstraints, setCatConstraints] = useState({ left: 0, right: 0 });
   const [featuredConstraints, setFeaturedConstraints] = useState({ left: 0, right: 0 });
@@ -273,29 +277,27 @@ export default function Home({ products, categories, loading, onAddToCart }: Hom
               style={{ x: xCategories }}
               className="flex items-center space-x-6 pb-12 cursor-grab active:cursor-grabbing"
             >
-              {categories.map((category, idx) => {
-                const categoryProduct = products.find(p => p.category_id === category.Id || p.category === category.name);
-                const bgImage = categoryProduct?.image_url || 'https://images.unsplash.com/photo-1441984904996-e0b6ba687e12?auto=format&fit=crop&q=80&w=800';
+              {sortedCategories.map((category, idx) => {
+                const bgImage = getCategoryImage(category, products);
+                const displayName = translateCategoryName(category.name);
 
                 return (
                   <motion.div
                     key={category.Id || idx}
                     whileHover={{ y: -10 }}
-                    onClick={() => navigate('/shop')}
+                    onClick={() => navigate(`/shop?category=${category.Id}`)}
                     onDragStart={(e) => e.preventDefault()}
                     className="relative min-w-[200px] md:min-w-[260px] h-[280px] md:h-[350px] rounded-[2rem] overflow-hidden group cursor-pointer shadow-sm hover:shadow-xl transition-all duration-500 shrink-0"
                   >
-                    <img 
-                       src={optimizeImageUrl(bgImage, 400)} 
-                      className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-110 pointer-events-none"
-                      alt={category.name}
-                      draggable="false"
-                      loading="lazy"
-                      width={400}
-                      height={500}
+                    <LazyCategoryImage 
+                      src={bgImage}
+                      alt={displayName}
+                      width={600}
+                      height={750}
+                      draggable={false}
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent flex flex-col justify-end p-10 pointer-events-none">
-                      <h3 className="text-2xl font-light italic text-white mb-2 uppercase tracking-wide">{category.name}</h3>
+                      <h3 className="text-2xl font-light italic text-white mb-2 uppercase tracking-wide">{displayName}</h3>
                       <div className="flex items-center space-x-2 text-white/60 text-xs font-light italic uppercase tracking-widest group-hover:text-white transition-colors">
                         <span>{t('home.exploreModels')}</span>
                         <ArrowRight className="w-3.5 h-3.5 transition-transform group-hover:translate-x-1" />

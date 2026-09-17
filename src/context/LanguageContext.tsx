@@ -489,22 +489,39 @@ const translations: Record<Language, Record<string, string>> = {
 };
 
 const categoryTranslations: Record<Language, Record<string, string>> = {
-  sr: {},
+  sr: {
+    'haljine': 'Haljine',
+    'odela/kompleti': 'Odela / Kompleti',
+    'kombinezoni': 'Kombinezoni',
+    'majice/košulje': 'Košulje / Majice',
+    'kosulje/majice': 'Košulje / Majice',
+    'Pantalone/Suknje': 'Pantalone / Suknje',
+    'pantalone/suknje': 'Pantalone / Suknje',
+    'kaputi/mantili': 'Kaputi / Mantili',
+    'kaputi': 'Kaputi',
+    'sakoi': 'Sakoi',
+    'suknje': 'Suknje',
+    'mantili': 'Mantili'
+  },
   en: {
-    'Kaputi': 'Coats', 'Kaput': 'Coat',
+    'haljine': 'Dresses', 'Haljine': 'Dresses', 'Haljina': 'Dress',
+    'odela/kompleti': 'Suits & Sets', 'Odela/kompleti': 'Suits & Sets', 'Odela': 'Suits', 'Odelo': 'Suit',
+    'kombinezoni': 'Jumpsuits', 'Kombinezoni': 'Jumpsuits',
+    'majice/košulje': 'Shirts & Tops', 'kosulje/majice': 'Shirts & Tops', 'Košulje/majice': 'Shirts & Tops',
+    'Pantalone/Suknje': 'Pants & Skirts', 'pantalone/suknje': 'Pants & Skirts', 'Suknje': 'Skirts', 'Suknja': 'Skirt',
+    'kaputi/mantili': 'Coats & Trench Coats', 'Kaputi/mantili': 'Coats & Trench Coats', 'Kaputi': 'Coats', 'Kaput': 'Coat', 'kaputi': 'Coats',
     'Sakoi': 'Blazers', 'Sako': 'Blazer',
-    'Haljine': 'Dresses', 'Haljina': 'Dress',
-    'Odela': 'Suits', 'Odelo': 'Suit',
-    'Suknje': 'Skirts', 'Suknja': 'Skirt',
     'Mantili': 'Trench Coats', 'Mantil': 'Trench Coat',
     'Ostalo': 'Other', 'Sve': 'All'
   },
   ru: {
-    'Kaputi': 'Пальто', 'Kaput': 'Пальто',
+    'haljine': 'Платья', 'Haljine': 'Платья', 'Haljina': 'Платье',
+    'odela/kompleti': 'Костюмы и комплекты', 'Odela/kompleti': 'Костюмы и комплекты', 'Odela': 'Костюмы', 'Odelo': 'Костюм',
+    'kombinezoni': 'Комбинезоны', 'Kombinezoni': 'Комбинезоны',
+    'majice/košulje': 'Рубашки и топы', 'kosulje/majice': 'Рубашки и топы', 'Košulje/majice': 'Рубашки и топы',
+    'Pantalone/Suknje': 'Брюки и юбки', 'pantalone/suknje': 'Брюки и юбки', 'Suknje': 'Юбки', 'Suknja': 'Юбка',
+    'kaputi/mantili': 'Пальто и плащи', 'Kaputi/mantili': 'Пальто и плащи', 'Kaputi': 'Пальто', 'Kaput': 'Пальто', 'kaputi': 'Пальто',
     'Sakoi': 'Жакеты', 'Sako': 'Жакет',
-    'Haljine': 'Платья', 'Haljina': 'Платье',
-    'Odela': 'Костюмы', 'Odelo': 'Костюм',
-    'Suknje': 'Юбки', 'Suknja': 'Юбка',
     'Mantili': 'Плащи / Тренчи', 'Mantil': 'Тренч',
     'Ostalo': 'Другое', 'Sve': 'Все'
   }

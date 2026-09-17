@@ -6,6 +6,7 @@ import { Search, X, SlidersHorizontal, ChevronDown, ArrowUpDown, Layers } from '
 import { useTheme } from '../context/ThemeContext';
 import { useLanguage } from '../context/LanguageContext';
 import { motion, useMotionValue } from 'motion/react';
+import { sortCategories } from '../lib/categories';
 
 interface ShopProps {
   products: Product[];
@@ -89,7 +90,7 @@ export default function Shop({ products, categories, loading, onAddToCart }: Sho
     };
   }, [categories, loading]);
 
-  const allCategories = [{ id: 'Sve', Id: 'Sve', name: 'Sve' }, ...categories.map(c => ({ ...c, Id: String(c.Id) }))];
+  const allCategories = [{ id: 'Sve', Id: 'Sve', name: 'Sve' }, ...sortCategories(categories).map(c => ({ ...c, Id: String(c.Id) }))];
   const totalDots = 3;
 
   useEffect(() => {
