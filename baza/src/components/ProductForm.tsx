@@ -254,13 +254,11 @@ export default function ProductForm({ product, categories, sizes, colors, onClos
         }
 
         // Update colors (Delete old first, then insert new)
-        try {
-          await supabase.from('product_colors').delete().eq('product_id', productId);
-        } catch (colorDelErr) {
-          try {
-            await supabase.from('Product_colors').delete().eq('product_id', productId);
-          } catch (colorDelErr2) {
-            console.warn('Could not delete product_colors during update:', colorDelErr2);
+        const { error: colorDelErr1 } = await supabase.from('Product_colors').delete().eq('product_id', productId);
+        if (colorDelErr1) {
+          const { error: colorDelErr2 } = await supabase.from('product_colors').delete().eq('product_id', productId);
+          if (colorDelErr2) {
+            console.warn('Notice deleting product_colors during update:', colorDelErr2.message);
           }
         }
 

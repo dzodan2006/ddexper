@@ -332,6 +332,106 @@ app.delete("/api/admin/categories/:id", async (req, res) => {
   }
 });
 
+// Endpoint to delete product securely from database (bypasses RLS with service role and cascades child tables)
+app.delete("/api/admin/products/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+    if (!id) {
+      return res.status(400).json({ success: false, error: "ID proizvoda je obavezan." });
+    }
+
+    const db = supabaseAdmin || supabase;
+    if (!db) {
+      return res.status(500).json({ success: false, error: "Baza podataka nije dostupna." });
+    }
+
+    const prodIdNum = Number(id);
+    console.log(`[Product Delete] Processing complete deletion for product ID: ${id}...`);
+
+    // 1. Delete associated colors from 'Product_colors' (capital P as in schema) and 'product_colors'
+    const { error: colErr1 } = await db
+      .from("Product_colors")
+      .delete()
+      .eq("product_id", prodIdNum);
+
+    if (colErr1) {
+      console.warn("[Product Delete] Notice deleting Product_colors:", colErr1.message);
+      const { error: colErr2 } = await db
+        .from("product_colors")
+        .delete()
+        .eq("product_id", prodIdNum);
+      if (colErr2) {
+        console.warn("[Product Delete] Notice deleting product_colors:", colErr2.message);
+      }
+    }
+
+    // 2. Delete associated sizes from 'product_sizes'
+    const { error: szErr } = await db
+      .from("product_sizes")
+      .delete()
+      .eq("product_id", prodIdNum);
+    if (szErr) {
+      console.warn("[Product Delete] Notice deleting product_sizes:", szErr.message);
+    }
+
+    // 3. Delete associated images from 'product_images'
+    const { error: imgErr } = await db
+      .from("product_images")
+      .delete()
+      .eq("product_id", prodIdNum);
+    if (imgErr) {
+      console.warn("[Product Delete] Notice deleting product_images:", imgErr.message);
+    }
+
+    // 4. Safely unlink from order_items (keep past customer order receipts intact, but clear product reference)
+    try {
+      await db
+        .from("order_items")
+        .update({ product_id: null })
+        .eq("product_id", prodIdNum);
+    } catch (orderItemErr: any) {
+      console.warn("[Product Delete] Notice unlinking order_items:", orderItemErr?.message);
+    }
+
+    // 5. Delete the product itself from 'products' table
+    const { error: prodErr } = await db
+      .from("products")
+      .delete()
+      .eq("id", prodIdNum);
+
+    if (prodErr) {
+      console.error("[Product Delete] Error deleting product from database:", prodErr);
+      return res.status(500).json({ success: false, error: prodErr.message });
+    }
+
+    // 6. Remove product ID from ordering.json if present
+    try {
+      const fs = await import("fs/promises");
+      try {
+        const raw = await fs.readFile(ORDERING_FILE, "utf-8");
+        const parsed = JSON.parse(raw);
+        if (Array.isArray(parsed.productOrder)) {
+          const filtered = parsed.productOrder.filter((pid: any) => Number(pid) !== prodIdNum);
+          if (filtered.length !== parsed.productOrder.length) {
+            parsed.productOrder = filtered;
+            await fs.writeFile(ORDERING_FILE, JSON.stringify(parsed, null, 2), "utf-8");
+            console.log(`[Product Delete] Removed product ID ${prodIdNum} from ordering.json.`);
+          }
+        }
+      } catch {}
+    } catch {}
+
+    console.log(`[Product Delete] Product ID ${id} deleted successfully.`);
+    return res.json({ success: true, message: `Proizvod #${id} je uspešno obrisan.` });
+  } catch (err: any) {
+    console.error("[Product Delete] Exception while deleting product:", err);
+    return res.status(500).json({
+      success: false,
+      error: err.message || "Greška pri brisanju proizvoda."
+    });
+  }
+});
+
 // Custom Product and Category ordering endpoints (persisted in ordering.json)
 const ORDERING_FILE = path.join(process.cwd(), "ordering.json");
 

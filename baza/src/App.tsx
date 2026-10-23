@@ -241,43 +241,76 @@ export default function App() {
   // Delete product action
   const handleDeleteProduct = async (id: number) => {
     try {
-      // 1. Delete matching entries in product_sizes
-      const { error: szError } = await supabase
-        .from('product_sizes')
-        .delete()
-        .eq('product_id', id);
-      if (szError) throw szError;
+      let isDeleted = false;
 
-      // Delete matching entries in product_colors
+      // 1. Try server-side delete first (uses service role key to bypass RLS and reliably clear child rows)
       try {
-        await supabase.from('product_colors').delete().eq('product_id', id);
-      } catch (e) {
-        try {
-          await supabase.from('Product_colors').delete().eq('product_id', id);
-        } catch (e2) {
-          console.warn('Could not delete product_colors during cleanup:', e2);
+        const res = await fetch(`/api/admin/products/${id}`, {
+          method: 'DELETE',
+          headers: { 'Content-Type': 'application/json' }
+        });
+        if (res.ok) {
+          const resData = await res.json();
+          if (resData.success) {
+            isDeleted = true;
+          }
         }
+      } catch (srvErr) {
+        console.warn('Backend product delete API call failed, falling back to direct Supabase client:', srvErr);
       }
 
-      // 2. Delete matching entries in product_images
-      const { error: imgError } = await supabase
-        .from('product_images')
-        .delete()
-        .eq('product_id', id);
-      if (imgError) throw imgError;
+      // 2. Direct Supabase fallback
+      if (!isDeleted) {
+        // Delete matching entries in Product_colors (Note capital P as per schema)
+        const { error: colErr1 } = await supabase
+          .from('Product_colors')
+          .delete()
+          .eq('product_id', id);
 
-      // 3. Delete from products
-      const { error: prodError } = await supabase
-        .from('products')
-        .delete()
-        .eq('id', id);
-      if (prodError) throw prodError;
+        if (colErr1) {
+          // Fallback to lowercase table if exists
+          await supabase
+            .from('product_colors')
+            .delete()
+            .eq('product_id', id);
+        }
 
-      // Reload
+        // Delete matching entries in product_sizes
+        await supabase
+          .from('product_sizes')
+          .delete()
+          .eq('product_id', id);
+
+        // Delete matching entries in product_images
+        await supabase
+          .from('product_images')
+          .delete()
+          .eq('product_id', id);
+
+        // Safely unlink from order_items if product was in an order
+        try {
+          await supabase
+            .from('order_items')
+            .update({ product_id: null })
+            .eq('product_id', id);
+        } catch (orderItemErr: any) {
+          console.warn('Notice unlinking order_items:', orderItemErr?.message);
+        }
+
+        // Delete from products table
+        const { error: prodError } = await supabase
+          .from('products')
+          .delete()
+          .eq('id', id);
+
+        if (prodError) throw prodError;
+      }
+
+      // Reload all data
       await loadAllData(true);
     } catch (err: any) {
       console.error(err);
-      alert('Greška pri brisanju: ' + err.message);
+      alert('Greška pri brisanju proizvoda: ' + (err.message || 'Nepoznata greška.'));
     }
   };
 
