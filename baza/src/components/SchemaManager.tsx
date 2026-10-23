@@ -140,28 +140,119 @@ export default function SchemaManager({ categories, sizes, colors, products, onR
     if (!catId) return;
 
     const prodCount = getProductCountForCategory(Number(catId));
-    if (prodCount > 0) {
-      setCatError(`Ne možete obrisati kategoriju koja sadrži ${prodCount} proizvoda. Prvo premestite ili obrišite te proizvode.`);
-      return;
-    }
+    const confirmMessage = prodCount > 0
+      ? `Kategorija "${cat.name}" sadrži ${prodCount} proizvoda.\n\nAko je obrišete, ti proizvodi NEĆE biti izbrisani, već će im kategorija biti postavljena na "Bez kategorije".\n\nDa li želite da nastavite sa brisanjem?`
+      : `Da li ste sigurni da želite da obrišete kategoriju "${cat.name}"?`;
 
-    if (!window.confirm(`Da li ste sigurni da želite da obrišete kategoriju "${cat.name}"?`)) return;
+    if (!window.confirm(confirmMessage)) return;
 
     setCatLoading(true);
     setCatError('');
     setCatSuccess('');
 
     try {
-      const { error } = await supabase
-        .from('categories')
-        .delete()
-        .or(`Id.eq.${catId},id.eq.${catId}`);
+      let isDeleted = false;
 
-      if (error) throw error;
-      setCatSuccess('Kategorija obrisana!');
+      // 1. Try server-side deletion first (uses Service Role Key to safely bypass RLS and unassign products)
+      try {
+        const response = await fetch(`/api/admin/categories/${catId}`, {
+          method: 'DELETE',
+          headers: { 'Content-Type': 'application/json' }
+        });
+        if (response.ok) {
+          const resData = await response.json();
+          if (resData.success) {
+            isDeleted = true;
+          }
+        }
+      } catch (srvErr) {
+        console.warn('Backend category delete API call failed, falling back to direct Supabase client:', srvErr);
+      }
+
+      // 2. Fallback to direct client-side Supabase deletion if backend is unreachable
+      if (!isDeleted) {
+        // First unassign products in database so foreign key doesn't block deletion
+        try {
+          await supabase
+            .from('products')
+            .update({ category_id: null })
+            .eq('category_id', Number(catId));
+        } catch (e: any) {
+          console.warn('Could not unassign products before category deletion:', e?.message);
+        }
+
+        // Unassign any promo codes locked to this category
+        try {
+          await supabase
+            .from('promo_codes')
+            .update({ Category_id: null })
+            .eq('Category_id', Number(catId));
+        } catch (e) {
+          try {
+            await supabase
+              .from('promo_codes')
+              .update({ category_id: null })
+              .eq('category_id', Number(catId));
+          } catch (e2) {}
+        }
+
+        // Delete from 'categories' table
+        // Notice: Column is 'Id' (capital I) or 'id' (lowercase)
+        // We NEVER use 'category_id' because categories does not have that column!
+        // We do NOT use .or() because PostgREST schema cache rejects missing columns in .or()
+        let directSuccess = false;
+        let lastErr: any = null;
+
+        // Try primary 'Id' (capital I as defined in database schema)
+        const { error: errCap } = await supabase
+          .from('categories')
+          .delete()
+          .eq('Id', Number(catId));
+
+        if (!errCap) {
+          directSuccess = true;
+        } else {
+          lastErr = errCap;
+          // Try lowercase 'id'
+          const { error: errLow } = await supabase
+            .from('categories')
+            .delete()
+            .eq('id', Number(catId));
+
+          if (!errLow) {
+            directSuccess = true;
+            lastErr = null;
+          } else {
+            lastErr = errLow;
+          }
+        }
+
+        if (!directSuccess && lastErr) {
+          throw lastErr;
+        }
+      }
+
+      // Clean local ordering state and caches
+      setOrderedCats(prev => prev.filter(c => Number(c.Id ?? c.id) !== Number(catId)));
+      setSnapshotCats(prev => prev.filter(c => Number(c.Id ?? c.id) !== Number(catId)));
+
+      try {
+        const cachedOrder = localStorage.getItem('dd_category_order');
+        if (cachedOrder) {
+          const ids: number[] = JSON.parse(cachedOrder);
+          const filtered = ids.filter(id => Number(id) !== Number(catId));
+          localStorage.setItem('dd_category_order', JSON.stringify(filtered));
+        }
+        localStorage.removeItem('dd_categories_cache_v5');
+        localStorage.removeItem('dd_categories_cache_v4');
+      } catch (cacheErr) {
+        console.warn('Error clearing category local cache:', cacheErr);
+      }
+
+      setCatSuccess(`Kategorija "${cat.name}" je uspešno obrisana!`);
       onRefresh();
     } catch (err: any) {
-      console.error(err);
+      console.error('Error deleting category:', err);
       setCatError(err.message || 'Greška pri brisanju kategorije.');
     } finally {
       setCatLoading(false);

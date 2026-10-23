@@ -225,6 +225,113 @@ app.delete("/api/admin/orders/:id", async (req, res) => {
   }
 });
 
+// Endpoint to delete category securely from database (bypasses RLS with service role)
+app.delete("/api/admin/categories/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+    if (!id) {
+      return res.status(400).json({ success: false, error: "ID kategorije je obavezan." });
+    }
+
+    const db = supabaseAdmin || supabase;
+    if (!db) {
+      return res.status(500).json({ success: false, error: "Baza podataka nije dostupna." });
+    }
+
+    const catIdNum = Number(id);
+    console.log(`[Category Delete] Request to delete category ID: ${id}...`);
+
+    // 1. Unassign products referencing this category (category_id = id) to avoid foreign key errors
+    try {
+      const { error: unassignProdErr } = await db
+        .from("products")
+        .update({ category_id: null })
+        .eq("category_id", catIdNum);
+
+      if (unassignProdErr) {
+        console.warn("[Category Delete] Updating products category_id returned:", unassignProdErr.message);
+      }
+    } catch (e: any) {
+      console.warn("[Category Delete] Exception unassigning products:", e?.message);
+    }
+
+    // 2. Unassign promo_codes referencing this category (Category_id = id or category_id = id)
+    try {
+      await db.from("promo_codes").update({ Category_id: null }).eq("Category_id", catIdNum);
+    } catch (e) {
+      try {
+        await db.from("promo_codes").update({ category_id: null }).eq("category_id", catIdNum);
+      } catch (e2) {}
+    }
+
+    // 3. Delete from 'categories' table
+    // Categories table uses primary key 'Id' (capital I) or 'id' (lowercase)
+    // NEVER use 'category_id' here because category_id is only a column on products!
+    let deleteError: any = null;
+    let deleted = false;
+
+    // First attempt: uppercase 'Id'
+    const { error: errCap } = await db
+      .from("categories")
+      .delete()
+      .eq("Id", catIdNum);
+
+    if (!errCap) {
+      deleted = true;
+    } else {
+      console.warn("[Category Delete] Uppercase 'Id' attempt returned:", errCap.message);
+      deleteError = errCap;
+
+      // Second attempt: lowercase 'id'
+      const { error: errLow } = await db
+        .from("categories")
+        .delete()
+        .eq("id", catIdNum);
+
+      if (!errLow) {
+        deleted = true;
+        deleteError = null;
+      } else {
+        console.error("[Category Delete] Lowercase 'id' attempt returned:", errLow.message);
+        deleteError = errLow;
+      }
+    }
+
+    if (!deleted && deleteError) {
+      return res.status(500).json({
+        success: false,
+        error: deleteError.message || "Greška pri brisanju kategorije iz baze."
+      });
+    }
+
+    // 4. Remove deleted category from ordering.json if present
+    try {
+      const fs = await import("fs/promises");
+      try {
+        const raw = await fs.readFile(ORDERING_FILE, "utf-8");
+        const parsed = JSON.parse(raw);
+        if (Array.isArray(parsed.categoryOrder)) {
+          const filtered = parsed.categoryOrder.filter((cid: any) => Number(cid) !== catIdNum);
+          if (filtered.length !== parsed.categoryOrder.length) {
+            parsed.categoryOrder = filtered;
+            await fs.writeFile(ORDERING_FILE, JSON.stringify(parsed, null, 2), "utf-8");
+            console.log(`[Category Delete] Cleaned category ID ${catIdNum} from ordering.json.`);
+          }
+        }
+      } catch {}
+    } catch {}
+
+    console.log(`[Category Delete] Category ID ${id} deleted successfully.`);
+    return res.json({ success: true, message: `Kategorija #${id} je uspešno obrisana.` });
+  } catch (err: any) {
+    console.error("[Category Delete] Exception while deleting category:", err);
+    return res.status(500).json({
+      success: false,
+      error: err.message || "Greška pri brisanju kategorije."
+    });
+  }
+});
+
 // Custom Product and Category ordering endpoints (persisted in ordering.json)
 const ORDERING_FILE = path.join(process.cwd(), "ordering.json");
 
