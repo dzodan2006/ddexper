@@ -1,9 +1,19 @@
 import { createClient } from '@supabase/supabase-js';
 
-const rawUrl = import.meta.env.VITE_SUPABASE_URL || '';
+const rawUrl = 
+  (import.meta.env.NEXT_PUBLIC_SUPABASE_URL as string | undefined) ||
+  (import.meta.env.VITE_SUPABASE_URL as string | undefined) ||
+  (typeof process !== 'undefined' ? process.env?.NEXT_PUBLIC_SUPABASE_URL : '') ||
+  '';
+
 // Čistimo URL ako sadrži /rest/v1/ na kraju jer ga SDK sam dodaje
 const supabaseUrl = rawUrl.replace(/\/rest\/v1\/?$/, '').replace(/\/$/, '');
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+
+const supabaseAnonKey = 
+  (import.meta.env.NEXT_PUBLIC_SUPABASE_ANON_KEY as string | undefined) ||
+  (import.meta.env.VITE_SUPABASE_ANON_KEY as string | undefined) ||
+  (typeof process !== 'undefined' ? process.env?.NEXT_PUBLIC_SUPABASE_ANON_KEY : '') ||
+  '';
 
 // Provera da li su kredencijali zaista validni i nisu placeholderi
 const isRealUrl = supabaseUrl && 
@@ -20,7 +30,7 @@ const isRealKey = supabaseAnonKey &&
 export const isSupabaseConfigured = !!(isRealUrl && isRealKey);
 
 if (!isSupabaseConfigured) {
-  console.warn('Supabase credentials missing or invalid! Ensure VITE_SUPABASE_URL is like "https://xyz.supabase.co"');
+  console.warn('Supabase credentials missing or invalid! Ensure NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY are configured.');
 }
 
 // Custom mock graditelj koji bezbedno presreće ulančane query pozive

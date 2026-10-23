@@ -5,10 +5,27 @@
 
 import { createClient } from '@supabase/supabase-js';
 
-// Default project credentials
-export const DEFAULT_SUPABASE_URL = 'https://xorvrwulsfpltkfruyse.supabase.co';
-export const DEFAULT_SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhvcnZyd3Vsc2ZwbHRrZnJ1eXNlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY4NzYzMjIsImV4cCI6MjA5MjQ1MjMyMn0.CM1dI1XyVsDjFpd5DDQM9ClGCIPvuywkeLh1JMUdLbw';
-export const DEFAULT_SUPABASE_SERVICE_ROLE = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhvcnZyd3Vsc2ZwbHRrZnJ1eXNlIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3Njg3NjMyMiwiZXhwIjoyMDkyNDUyMzIyfQ.qWAOcE-pLJHhUHRJauEMRrLX02pdqiNRmW6u_67xcJ4';
+// Environment credentials with fallback defaults
+const envUrl = 
+  (import.meta as any).env?.NEXT_PUBLIC_SUPABASE_URL ||
+  (import.meta as any).env?.VITE_SUPABASE_URL ||
+  (typeof process !== 'undefined' ? process.env?.NEXT_PUBLIC_SUPABASE_URL : '') ||
+  '';
+
+const envAnon = 
+  (import.meta as any).env?.NEXT_PUBLIC_SUPABASE_ANON_KEY ||
+  (import.meta as any).env?.VITE_SUPABASE_ANON_KEY ||
+  (typeof process !== 'undefined' ? process.env?.NEXT_PUBLIC_SUPABASE_ANON_KEY : '') ||
+  '';
+
+const envServiceRole = 
+  (import.meta as any).env?.SUPABASE_SERVICE_ROLE_KEY ||
+  (typeof process !== 'undefined' ? process.env?.SUPABASE_SERVICE_ROLE_KEY : '') ||
+  '';
+
+export const DEFAULT_SUPABASE_URL = (envUrl && envUrl.trim() !== '') ? envUrl.trim() : 'https://xorvrwulsfpltkfruyse.supabase.co';
+export const DEFAULT_SUPABASE_ANON = (envAnon && envAnon.trim() !== '') ? envAnon.trim() : 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhvcnZyd3Vsc2ZwbHRrZnJ1eXNlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY4NzYzMjIsImV4cCI6MjA5MjQ1MjMyMn0.CM1dI1XyVsDjFpd5DDQM9ClGCIPvuywkeLh1JMUdLbw';
+export const DEFAULT_SUPABASE_SERVICE_ROLE = (envServiceRole && envServiceRole.trim() !== '') ? envServiceRole.trim() : 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhvcnZyd3Vsc2ZwbHRrZnJ1eXNlIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3Njg3NjMyMiwiZXhwIjoyMDkyNDUyMzIyfQ.qWAOcE-pLJHhUHRJauEMRrLX02pdqiNRmW6u_67xcJ4';
 export const DEFAULT_SUPABASE_JWT_SECRET = '304a23d8-6df8-476e-a2a9-48f403c48a9b';
 
 // Check local storage values

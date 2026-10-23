@@ -6,29 +6,57 @@ import { createClient } from "@supabase/supabase-js";
 
 dotenv.config();
 
-// Initialize Supabase client
-const rawSupabaseUrl = process.env.VITE_SUPABASE_URL || "";
+// Initialize Supabase client for Server API functions
+// Prioritizes NEXT_PUBLIC_SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY to bypass RLS securely on backend
+const rawSupabaseUrl = 
+  process.env.NEXT_PUBLIC_SUPABASE_URL || 
+  process.env.SUPABASE_URL || 
+  process.env.VITE_SUPABASE_URL || 
+  "";
 const supabaseUrl = rawSupabaseUrl.replace(/\/rest\/v1\/?$/, "").replace(/\/$/, "");
-const supabaseAnonKey = process.env.VITE_SUPABASE_ANON_KEY || "";
+
+const supabaseServiceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY || "";
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || process.env.VITE_SUPABASE_ANON_KEY || "";
+
+// Server prefers SUPABASE_SERVICE_ROLE_KEY to bypass RLS for administrative endpoints,
+// falling back to anon key if service role is not provided.
+const serverSupabaseKey = supabaseServiceRoleKey || supabaseAnonKey;
 
 const isSupabaseConfigured = !!(
   supabaseUrl &&
   supabaseUrl.startsWith("https://") &&
   !supabaseUrl.includes("your-project-id") &&
   !supabaseUrl.includes("placeholder-project") &&
-  supabaseAnonKey &&
-  !supabaseAnonKey.includes("your-anon-key") &&
-  !supabaseAnonKey.includes("placeholder-key")
+  serverSupabaseKey &&
+  !serverSupabaseKey.includes("your-anon-key") &&
+  !serverSupabaseKey.includes("placeholder-key")
 );
 
-const supabase = isSupabaseConfigured
-  ? createClient(supabaseUrl, supabaseAnonKey)
+export const supabase = isSupabaseConfigured
+  ? createClient(supabaseUrl, serverSupabaseKey, {
+      auth: {
+        persistSession: false,
+        autoRefreshToken: false,
+      }
+    })
   : null;
 
+// Explicit admin client when service role key is present
+export const supabaseAdmin = (isSupabaseConfigured && supabaseServiceRoleKey)
+  ? createClient(supabaseUrl, supabaseServiceRoleKey, {
+      auth: {
+        persistSession: false,
+        autoRefreshToken: false,
+      }
+    })
+  : supabase;
+
 if (!supabase) {
-  console.warn("[Server Supabase] Supabase credentials missing or invalid in server environment.");
+  console.warn("[Server Supabase] Supabase credentials missing or invalid in server environment. Ensure NEXT_PUBLIC_SUPABASE_URL is configured.");
+} else if (supabaseServiceRoleKey) {
+  console.log("[Server Supabase] Client successfully initialized with SUPABASE_SERVICE_ROLE_KEY (RLS bypass enabled).");
 } else {
-  console.log("[Server Supabase] Client successfully initialized.");
+  console.log("[Server Supabase] Client initialized with NEXT_PUBLIC_SUPABASE_ANON_KEY (Standard RLS active).");
 }
 
 const app = express();
