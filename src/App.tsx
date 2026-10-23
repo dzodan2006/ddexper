@@ -969,18 +969,6 @@ function AppContent() {
               {/* Copyright Row */}
               <div className="flex flex-col sm:flex-row justify-between items-center gap-4 text-xs pt-4 border-t border-zinc-900/5 dark:border-zinc-900/40">
                 <p>© 2026 DD DESIGN. Sva prava pridržana.</p>
-                <Link 
-                  to="/vlasnici"
-                  className={`inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-medium tracking-wide transition-all ${
-                    theme === 'dark'
-                      ? 'bg-zinc-900/90 hover:bg-zinc-800 text-zinc-400 hover:text-white border border-zinc-800 hover:border-zinc-700 shadow-xs'
-                      : 'bg-zinc-100 hover:bg-zinc-200 text-zinc-600 hover:text-black border border-zinc-200 hover:border-zinc-300 shadow-xs'
-                  }`}
-                  title="Stranica za vlasnike - DDDesign baza proizvoda i administracija"
-                >
-                  <Database className="w-3.5 h-3.5 text-indigo-400" />
-                  <span>Stranica za vlasnike</span>
-                </Link>
               </div>
             </div>
           </div>
