@@ -128,28 +128,31 @@ export default function Shop({ products, categories, loading, onAddToCart }: Sho
     setSearchParams(newParams);
   };
 
+  const syncUrlTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  const debounceSyncPriceParams = (newMin: number, newMax: number) => {
+    if (syncUrlTimeoutRef.current) clearTimeout(syncUrlTimeoutRef.current);
+    syncUrlTimeoutRef.current = setTimeout(() => {
+      const newParams: { [key: string]: string } = {};
+      if (searchQuery) newParams.search = searchQuery;
+      if (selectedCategoryId !== 'Sve') newParams.category = selectedCategoryId;
+      if (newMin > 0) newParams.minPrice = String(newMin);
+      if (newMax < priceLimit) newParams.maxPrice = String(newMax);
+      if (sortType !== 'default') newParams.sort = sortType;
+      setSearchParams(newParams, { replace: true });
+    }, 300);
+  };
+
   const handleMinPriceChange = (val: number) => {
     const finalVal = Math.min(val, maxPrice);
     setMinPrice(finalVal);
-    const newParams: { [key: string]: string } = {};
-    if (searchQuery) newParams.search = searchQuery;
-    if (selectedCategoryId !== 'Sve') newParams.category = selectedCategoryId;
-    if (finalVal > 0) newParams.minPrice = String(finalVal);
-    if (maxPrice < priceLimit) newParams.maxPrice = String(maxPrice);
-    if (sortType !== 'default') newParams.sort = sortType;
-    setSearchParams(newParams);
+    debounceSyncPriceParams(finalVal, maxPrice);
   };
 
   const handleMaxPriceChange = (val: number) => {
     const finalVal = Math.max(val, minPrice);
     setMaxPrice(finalVal);
-    const newParams: { [key: string]: string } = {};
-    if (searchQuery) newParams.search = searchQuery;
-    if (selectedCategoryId !== 'Sve') newParams.category = selectedCategoryId;
-    if (minPrice > 0) newParams.minPrice = String(minPrice);
-    if (finalVal < priceLimit) newParams.maxPrice = String(finalVal);
-    if (sortType !== 'default') newParams.sort = sortType;
-    setSearchParams(newParams);
+    debounceSyncPriceParams(minPrice, finalVal);
   };
 
   const handleSortChange = (val: string) => {
@@ -313,26 +316,29 @@ export default function Shop({ products, categories, loading, onAddToCart }: Sho
                   setShowCategoryMenu(false);
                   setShowSortOptions(false);
                 }}
-                className={`flex items-center space-x-3 px-6 py-4 rounded-full border text-[10px] font-light italic uppercase tracking-widest transition-all ${
+                className={`flex items-center space-x-2.5 px-6 py-4 rounded-full border text-[10px] font-light italic uppercase tracking-widest transition-colors ${
                   theme === 'dark' 
                     ? 'bg-[#000000] border-zinc-900 hover:border-zinc-700 text-white' 
                     : 'bg-white border-gray-200 hover:border-gray-300 text-black'
                 }`}
               >
-                <SlidersHorizontal className="w-3.5 h-3.5" />
-                <span>{t('shop.filterPrice')}{minPrice > 0 || maxPrice < priceLimit ? `: ${formatCurrency(minPrice)} - ${formatCurrency(maxPrice)}` : ''}</span>
-                <ChevronDown className={`w-3.5 h-3.5 transition-transform ${showPriceFilter ? 'rotate-180' : ''}`} />
+                <SlidersHorizontal className="w-3.5 h-3.5 shrink-0" />
+                <span className="whitespace-nowrap">{t('shop.filterPrice')}</span>
+                {(minPrice > 0 || maxPrice < priceLimit) && (
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0" title="Filter je aktivan" />
+                )}
+                <ChevronDown className={`w-3.5 h-3.5 shrink-0 transition-transform ${showPriceFilter ? 'rotate-180' : ''}`} />
               </button>
 
               {showPriceFilter && (
-                <div className={`absolute top-full left-0 mt-3 p-8 rounded-[2rem] border shadow-2xl z-20 animate-in fade-in zoom-in-95 duration-200 w-80 ${
+                <div className={`absolute top-full left-0 mt-3 p-7 rounded-[2rem] border shadow-2xl z-20 w-80 max-w-[calc(100vw-2rem)] select-none animate-in fade-in zoom-in-95 duration-150 ${
                   theme === 'dark' ? 'bg-[#000000] border-zinc-800' : 'bg-white border-gray-100'
                 }`}>
-                  <div className="space-y-8">
-                    <div className="space-y-3">
-                      <div className="flex justify-between items-center mb-1.5">
+                  <div className="space-y-6">
+                    <div className="space-y-2.5">
+                      <div className="flex justify-between items-center mb-1">
                         <span className={`text-[10px] font-medium uppercase tracking-widest ${theme === 'dark' ? 'text-zinc-400' : 'text-gray-500'}`}>Od (najmanja cena)</span>
-                        <span className={`text-xs font-semibold ${theme === 'dark' ? 'text-white' : 'text-black'}`}>{formatCurrency(minPrice)}</span>
+                        <span className={`text-xs font-semibold font-mono tabular-nums ${theme === 'dark' ? 'text-white' : 'text-black'}`}>{formatCurrency(minPrice)}</span>
                       </div>
                       <input 
                         type="range" 
@@ -340,14 +346,14 @@ export default function Shop({ products, categories, loading, onAddToCart }: Sho
                         max={priceLimit} 
                         value={minPrice} 
                         onChange={(e) => handleMinPriceChange(Number(e.target.value))}
-                        className="price-slider w-full accent-black dark:accent-white h-2 bg-zinc-200 dark:bg-zinc-700 rounded-lg cursor-pointer transition-colors"
+                        className="price-slider w-full accent-black dark:accent-white h-2 bg-zinc-200 dark:bg-zinc-700 rounded-lg cursor-pointer"
                       />
                     </div>
 
-                    <div className="space-y-3">
-                      <div className="flex justify-between items-center mb-1.5">
+                    <div className="space-y-2.5">
+                      <div className="flex justify-between items-center mb-1">
                         <span className={`text-[10px] font-medium uppercase tracking-widest ${theme === 'dark' ? 'text-zinc-400' : 'text-gray-500'}`}>Do (najveća cena)</span>
-                        <span className={`text-xs font-semibold ${theme === 'dark' ? 'text-white' : 'text-black'}`}>{formatCurrency(maxPrice)}</span>
+                        <span className={`text-xs font-semibold font-mono tabular-nums ${theme === 'dark' ? 'text-white' : 'text-black'}`}>{formatCurrency(maxPrice)}</span>
                       </div>
                       <input 
                         type="range" 
@@ -355,13 +361,13 @@ export default function Shop({ products, categories, loading, onAddToCart }: Sho
                         max={priceLimit} 
                         value={maxPrice} 
                         onChange={(e) => handleMaxPriceChange(Number(e.target.value))}
-                        className="price-slider w-full accent-black dark:accent-white h-2 bg-zinc-200 dark:bg-zinc-700 rounded-lg cursor-pointer transition-colors"
+                        className="price-slider w-full accent-black dark:accent-white h-2 bg-zinc-200 dark:bg-zinc-700 rounded-lg cursor-pointer"
                       />
                     </div>
 
                     <div className="flex justify-between items-center text-[10px] uppercase font-mono tracking-tight text-zinc-400 pt-3 border-t border-zinc-800/10 dark:border-zinc-800">
                       <span>0 RSD</span>
-                      <span>{formatCurrency(priceLimit)}</span>
+                      <span className="font-mono tabular-nums">{formatCurrency(priceLimit)}</span>
                     </div>
 
                     {(minPrice > 0 || maxPrice < priceLimit) && (
@@ -369,13 +375,9 @@ export default function Shop({ products, categories, loading, onAddToCart }: Sho
                         onClick={() => {
                           setMinPrice(0);
                           setMaxPrice(priceLimit);
-                          const newParams: { [key: string]: string } = {};
-                          if (searchQuery) newParams.search = searchQuery;
-                          if (selectedCategoryId !== 'Sve') newParams.category = selectedCategoryId;
-                          if (sortType !== 'default') newParams.sort = sortType;
-                          setSearchParams(newParams);
+                          debounceSyncPriceParams(0, priceLimit);
                         }}
-                        className="w-full text-center py-2 text-[10px] uppercase tracking-widest text-zinc-400 hover:text-white transition-colors underline cursor-pointer"
+                        className="w-full text-center py-1.5 text-[10px] uppercase tracking-widest text-zinc-400 hover:text-white transition-colors underline cursor-pointer"
                       >
                         Poništi filter cene
                       </button>

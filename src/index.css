@@ -112,11 +112,7 @@ html:not(.dark) input[type="range"].price-slider::-moz-range-thumb {
   border: 2px solid #ffffff;
 }
 
-input[type="range"].price-slider::-webkit-slider-thumb:hover {
-  transform: scale(1.15);
-}
-
-input[type="range"].price-slider::-moz-range-thumb:hover {
-  transform: scale(1.15);
+input[type="range"].price-slider {
+  touch-action: none;
 }
 
