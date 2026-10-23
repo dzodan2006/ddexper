@@ -1,6 +1,7 @@
 import express from "express";
 import path from "path";
 import dotenv from "dotenv";
+import crypto from "crypto";
 import { createClient } from "@supabase/supabase-js";
 
 dotenv.config();
@@ -40,6 +41,214 @@ app.use(express.json());
 app.get("/robots.txt", (req, res) => {
   res.type("text/plain");
   res.send("User-agent: *\nAllow: /\n");
+});
+
+// Owner Authentication Session Helpers
+const OWNER_SESSION_SECRET = process.env.OWNER_SESSION_SECRET || "dddesign_owner_portal_super_secret_auth_key_2026";
+
+function createOwnerToken(user: { id: any; username: string }) {
+  const payload = {
+    id: user.id,
+    username: user.username,
+    exp: Date.now() + 30 * 24 * 60 * 60 * 1000 // 30 days valid
+  };
+  const body = Buffer.from(JSON.stringify(payload)).toString("base64url");
+  const signature = crypto.createHmac("sha256", OWNER_SESSION_SECRET).update(body).digest("base64url");
+  return `${body}.${signature}`;
+}
+
+function verifyOwnerToken(token: string) {
+  if (!token || typeof token !== "string" || !token.includes(".")) return null;
+  const parts = token.split(".");
+  if (parts.length !== 2) return null;
+  const [body, signature] = parts;
+  const expectedSig = crypto.createHmac("sha256", OWNER_SESSION_SECRET).update(body).digest("base64url");
+  if (signature !== expectedSig) return null;
+  try {
+    const payload = JSON.parse(Buffer.from(body, "base64url").toString("utf-8"));
+    if (payload.exp && Date.now() > payload.exp) return null;
+    return payload;
+  } catch {
+    return null;
+  }
+}
+
+// Endpoint to authenticate owner from 'accounts' table securely on backend
+app.post("/api/owner/login", async (req, res) => {
+  try {
+    const { username, password } = req.body;
+    if (!username || !password) {
+      return res.status(400).json({ success: false, error: "Korisničko ime i lozinka su obavezni." });
+    }
+
+    if (!supabase) {
+      return res.status(500).json({ success: false, error: "Baza podataka nije dostupna." });
+    }
+
+    // Secure query: search accounts table by username
+    // Passwords are never sent or exposed to the client
+    const trimmedUsername = String(username).trim();
+    const { data: accounts, error } = await supabase
+      .from("accounts")
+      .select("id, username, password")
+      .ilike("username", trimmedUsername)
+      .limit(1);
+
+    if (error) {
+      console.error("[Owner Auth] Supabase query error:", error);
+      return res.status(500).json({ success: false, error: "Greška pri proveri naloga u bazi." });
+    }
+
+    if (!accounts || accounts.length === 0) {
+      return res.status(401).json({ success: false, error: "Pogrešno korisničko ime ili lozinka." });
+    }
+
+    const account = accounts[0];
+    if (String(account.password) !== String(password)) {
+      return res.status(401).json({ success: false, error: "Pogrešno korisničko ime ili lozinka." });
+    }
+
+    // Password verified! Generate token and return sanitized user data (NO password returned)
+    const token = createOwnerToken({ id: account.id, username: account.username });
+    return res.json({
+      success: true,
+      token,
+      user: {
+        id: account.id,
+        username: account.username
+      }
+    });
+  } catch (err: any) {
+    console.error("[Owner Auth] Exception during login:", err);
+    return res.status(500).json({ success: false, error: "Greška na serveru pri autentifikaciji." });
+  }
+});
+
+// Endpoint to verify owner session token
+app.post("/api/owner/verify-session", async (req, res) => {
+  try {
+    const authHeader = req.headers.authorization;
+    let token = req.body?.token;
+    if (!token && authHeader && authHeader.startsWith("Bearer ")) {
+      token = authHeader.substring(7);
+    }
+
+    if (!token) {
+      return res.status(401).json({ success: false, error: "Sesija ne postoji." });
+    }
+
+    const payload = verifyOwnerToken(token);
+    if (!payload) {
+      return res.status(401).json({ success: false, error: "Sesija je istekla ili je nevažeća." });
+    }
+
+    return res.json({
+      success: true,
+      user: {
+        id: payload.id,
+        username: payload.username
+      }
+    });
+  } catch (err: any) {
+    return res.status(401).json({ success: false, error: "Nevažeća sesija." });
+  }
+});
+
+// Endpoint to delete order and associated order_items securely from database
+app.delete("/api/admin/orders/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+    if (!id) {
+      return res.status(400).json({ success: false, error: "ID porudžbine je obavezan." });
+    }
+
+    if (!supabase) {
+      return res.status(500).json({ success: false, error: "Baza podataka nije dostupna." });
+    }
+
+    console.log(`[Order Delete] Processing deletion for order ID: ${id}...`);
+
+    // 1. Delete associated order items first to satisfy foreign key integrity
+    const { error: itemsError } = await supabase
+      .from("order_items")
+      .delete()
+      .eq("order_id", id);
+
+    if (itemsError) {
+      console.warn("[Order Delete] Notice: deleting items returned:", itemsError.message);
+    }
+
+    // 2. Delete the order record
+    const { error: orderError } = await supabase
+      .from("orders")
+      .delete()
+      .eq("id", id);
+
+    if (orderError) {
+      console.error("[Order Delete] Error deleting order from database:", orderError);
+      return res.status(500).json({ success: false, error: orderError.message });
+    }
+
+    console.log(`[Order Delete] Order ID ${id} deleted successfully.`);
+    return res.json({ success: true, message: `Porudžbina #${id} je uspešno obrisana.` });
+  } catch (err: any) {
+    console.error("[Order Delete] Exception while deleting order:", err);
+    return res.status(500).json({ success: false, error: err.message || "Greška pri brisanju porudžbine." });
+  }
+});
+
+// Custom Product and Category ordering endpoints (persisted in ordering.json)
+const ORDERING_FILE = path.join(process.cwd(), "ordering.json");
+
+app.get("/api/ordering", async (req, res) => {
+  try {
+    const fs = await import("fs/promises");
+    try {
+      const data = await fs.readFile(ORDERING_FILE, "utf-8");
+      const parsed = JSON.parse(data);
+      return res.json({
+        success: true,
+        productOrder: Array.isArray(parsed.productOrder) ? parsed.productOrder : [],
+        categoryOrder: Array.isArray(parsed.categoryOrder) ? parsed.categoryOrder : []
+      });
+    } catch {
+      return res.json({ success: true, productOrder: [], categoryOrder: [] });
+    }
+  } catch (err: any) {
+    return res.json({ success: true, productOrder: [], categoryOrder: [] });
+  }
+});
+
+app.post("/api/ordering", async (req, res) => {
+  try {
+    const fs = await import("fs/promises");
+    const { productOrder, categoryOrder } = req.body;
+
+    let current = { productOrder: [] as any[], categoryOrder: [] as any[] };
+    try {
+      const data = await fs.readFile(ORDERING_FILE, "utf-8");
+      current = JSON.parse(data);
+    } catch {
+      // ignore
+    }
+
+    const updated = {
+      productOrder: Array.isArray(productOrder) ? productOrder : current.productOrder || [],
+      categoryOrder: Array.isArray(categoryOrder) ? categoryOrder : current.categoryOrder || []
+    };
+
+    await fs.writeFile(ORDERING_FILE, JSON.stringify(updated, null, 2), "utf-8");
+    console.log(`[Ordering] Saved ordering configuration: ${updated.productOrder.length} products, ${updated.categoryOrder.length} categories.`);
+
+    return res.json({
+      success: true,
+      message: "Redosled uspešno sačuvan.",
+      ...updated
+    });
+  } catch (err: any) {
+    console.error("[Ordering] Error saving ordering:", err);
+    return res.status(500).json({ success: false, error: err.message });
+  }
 });
 
 // RaiAccept credentials resolution helper to guarantee zero hardcoded credentials inside git code
@@ -1104,6 +1313,286 @@ app.post("/api/newsletter/subscribe", async (req, res) => {
   }
 });
 
+// Endpoint to retrieve public SMTP configuration for Owner Portal Newsletter Manager
+app.get("/api/email-config", (req, res) => {
+  const apiKey = process.env.SMTP2GO_API_KEY || "api-0D65C8F726A948E7BE68974F2B80F0C6";
+  const sender = process.env.SMTP2GO_SENDER || "promocija@dddesign.rs";
+  const adminEmail = process.env.SMTP2GO_ADMIN_EMAIL || "srdjandzodan4@gmail.com";
+
+  return res.json({
+    sender,
+    adminEmail,
+    hasApiKey: !!apiKey
+  });
+});
+
+// Endpoint to broadcast email campaign from Owner Portal Newsletter Manager
+app.post("/api/send-email", async (req, res) => {
+  try {
+    const { subject, htmlBody, recipients, customApiKey, customSender } = req.body;
+
+    if (!Array.isArray(recipients) || recipients.length === 0) {
+      return res.status(400).json({ success: false, error: "Nema primalaca za slanje." });
+    }
+
+    if (!subject || typeof subject !== "string") {
+      return res.status(400).json({ success: false, error: "Naslov e-maila je obavezan." });
+    }
+
+    if (!htmlBody || typeof htmlBody !== "string") {
+      return res.status(400).json({ success: false, error: "Sadržaj e-maila je obavezan." });
+    }
+
+    const apiKey = customApiKey || process.env.SMTP2GO_API_KEY || "api-0D65C8F726A948E7BE68974F2B80F0C6";
+    let sender = customSender || process.env.SMTP2GO_SENDER || "promocija@dddesign.rs";
+    if (!sender || typeof sender !== "string" || !sender.includes("@")) {
+      sender = "promocija@dddesign.rs";
+    }
+
+    console.log(`[Send Email] Broadcasting email to ${recipients.length} recipients via SMTP2GO. Sender: ${sender}`);
+
+    const smtpResponse = await fetch("https://api.smtp2go.com/v3/email/send", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        api_key: apiKey,
+        sender,
+        to: recipients,
+        subject,
+        html_body: htmlBody
+      })
+    });
+
+    const smtpData = await smtpResponse.json().catch(() => ({}));
+
+    if (!smtpResponse.ok) {
+      console.error("[Send Email] SMTP2GO error response:", smtpResponse.status, smtpData);
+      return res.status(smtpResponse.status).json({
+        success: false,
+        error: "Greška prilikom slanja preko SMTP2GO.",
+        details: smtpData
+      });
+    }
+
+    return res.json({
+      success: true,
+      message: `Uspešno poslato na ${recipients.length} adresa.`,
+      data: smtpData
+    });
+  } catch (err: any) {
+    console.error("[Send Email] Exception during sending:", err);
+    return res.status(500).json({
+      success: false,
+      error: err.message || "Došlo je do greške na serveru prilikom slanja poruke."
+    });
+  }
+});
+
+// Endpoint to automatically notify newsletter subscribers when a new product is added
+app.post("/api/newsletter/notify-new-product", async (req, res) => {
+  try {
+    const { productId, name, price, discount_price, description, image_url, categoryName } = req.body;
+
+    if (!name) {
+      return res.status(400).json({ success: false, error: "Naziv proizvoda je obavezan." });
+    }
+
+    // 1. Gather all unique subscriber emails
+    const emailSet = new Set<string>();
+
+    if (supabase) {
+      try {
+        // Try Newsletter_list
+        const { data: listCase } = await supabase.from("Newsletter_list").select("*");
+        if (listCase) {
+          listCase.forEach((r: any) => {
+            const m = r.Mails || r.mails || r.mail || r.email;
+            if (m && typeof m === "string" && m.includes("@")) emailSet.add(m.trim().toLowerCase());
+          });
+        }
+
+        // Try lowercase newsletter_list
+        const { data: listLower } = await supabase.from("newsletter_list").select("*");
+        if (listLower) {
+          listLower.forEach((r: any) => {
+            const m = r.mail || r.Mails || r.email;
+            if (m && typeof m === "string" && m.includes("@")) emailSet.add(m.trim().toLowerCase());
+          });
+        }
+
+        // Try newsletter_subscribers
+        const { data: listSub } = await supabase.from("newsletter_subscribers").select("email");
+        if (listSub) {
+          listSub.forEach((r: any) => {
+            if (r.email && typeof r.email === "string" && r.email.includes("@")) {
+              emailSet.add(r.email.trim().toLowerCase());
+            }
+          });
+        }
+      } catch (dbErr) {
+        console.warn("[New Product Notify] Supabase fetch warning:", dbErr);
+      }
+    }
+
+    // Also check local fallback file subscribers.json
+    try {
+      const fs = await import("fs/promises");
+      const subFilePath = path.join(process.cwd(), "subscribers.json");
+      const fileContent = await fs.readFile(subFilePath, "utf-8");
+      const localList: string[] = JSON.parse(fileContent);
+      if (Array.isArray(localList)) {
+        localList.forEach(m => {
+          if (m && typeof m === "string" && m.includes("@")) emailSet.add(m.trim().toLowerCase());
+        });
+      }
+    } catch {
+      // Ignore if file doesn't exist
+    }
+
+    const recipients = Array.from(emailSet);
+
+    if (recipients.length === 0) {
+      console.log("[New Product Notify] No newsletter subscribers found to notify.");
+      return res.json({ success: true, count: 0, message: "Nema prijavljenih pretplatnika na newsletter listi." });
+    }
+
+    const apiKey = process.env.SMTP2GO_API_KEY || "api-0D65C8F726A948E7BE68974F2B80F0C6";
+    let sender = process.env.SMTP2GO_SENDER || "promocija@dddesign.rs";
+    if (!sender || typeof sender !== "string" || !sender.includes("@")) {
+      sender = "promocija@dddesign.rs";
+    }
+
+    console.log(`[New Product Notify] Dispatching new product announcement "${name}" to ${recipients.length} subscribers...`);
+
+    const formattedPrice = Number(price || 0).toLocaleString("sr-RS") + " RSD";
+    const hasDiscount = discount_price && Number(discount_price) > 0;
+    const formattedDiscountPrice = hasDiscount ? Number(discount_price).toLocaleString("sr-RS") + " RSD" : null;
+
+    const fallbackImg = "https://images.unsplash.com/photo-1539109136881-3be0616acf4b?w=600";
+    const finalImage = image_url && image_url.startsWith("http") ? image_url : fallbackImg;
+    const cleanDesc = description ? description.replace(/<[^>]*>/g, "").slice(0, 220) : "Novi unikatni modni komad iz najnovije selekcije DD DESIGN brenda.";
+
+    const htmlBody = `<!DOCTYPE html>
+<html lang="sr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Novi komad u DD DESIGN kolekciji: ${name}</title>
+</head>
+<body style="margin: 0; padding: 40px 10px; background-color: #0d0d0d; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; color: #ffffff; text-align: center; -webkit-font-smoothing: antialiased;">
+    <table border="0" cellpadding="0" cellspacing="0" width="100%" style="background-color: #0d0d0d;">
+        <tr>
+            <td align="center">
+                <table border="0" cellpadding="0" cellspacing="0" width="460" style="background-color: #0d0d0d; max-width: 460px; width: 100%;">
+                    
+                    <!-- LOGO -->
+                    <tr>
+                        <td align="center" style="padding: 0 0 25px 0;">
+                            <h1 style="margin: 0; font-family: 'Times New Roman', Times, serif; font-size: 26px; font-weight: 300; letter-spacing: 8px; color: #ffffff; text-transform: uppercase;">
+                                <a href="https://dddesign.rs" target="_blank" style="color: #ffffff; text-decoration: none;">DD DESIGN</a>
+                            </h1>
+                        </td>
+                    </tr>
+
+                    <!-- HERO IMAGE -->
+                    <tr>
+                        <td align="center">
+                            <a href="https://dddesign.rs/shop" target="_blank" style="text-decoration: none; display: block;">
+                                <img src="${finalImage}" alt="${name}" width="460" style="display: block; border: 0; width: 100%; max-width: 460px; height: auto; border-radius: 4px; object-fit: cover;">
+                            </a>
+                        </td>
+                    </tr>
+
+                    <!-- PRODUCT DETAILS -->
+                    <tr>
+                        <td align="center" style="padding: 35px 20px 20px 20px; text-align: center;">
+                            <p style="margin: 0 0 10px 0; font-size: 11px; letter-spacing: 4px; color: #a1a1aa; text-transform: uppercase;">
+                                ${categoryName ? categoryName.toUpperCase() + " • " : ""}NOVI MODEL U KOLEKCIJI
+                            </p>
+                            
+                            <h2 style="margin: 0 0 15px 0; font-family: 'Times New Roman', Times, serif; font-size: 24px; font-weight: 300; line-height: 1.3; color: #ffffff; letter-spacing: 1px;">
+                                ${name}
+                            </h2>
+
+                            <!-- PRICE DISPLAY -->
+                            <div style="margin: 0 0 20px 0; font-size: 18px; font-weight: bold; letter-spacing: 1px;">
+                                ${hasDiscount ? `
+                                  <span style="color: #ef4444; margin-right: 12px; font-size: 20px;">${formattedDiscountPrice}</span>
+                                  <span style="color: #71717a; text-decoration: line-through; font-size: 15px;">${formattedPrice}</span>
+                                ` : `
+                                  <span style="color: #ffffff;">${formattedPrice}</span>
+                                `}
+                            </div>
+                            
+                            <p style="margin: 0 0 30px 0; font-size: 13.5px; line-height: 1.7; color: #cccccc; letter-spacing: 0.3px; max-width: 400px;">
+                                ${cleanDesc}
+                            </p>
+                            
+                            <!-- CTA BUTTON -->
+                            <a href="https://dddesign.rs/shop" target="_blank" style="display: inline-block; font-size: 12px; font-weight: bold; color: #000000; background-color: #ffffff; text-decoration: none; letter-spacing: 3px; text-transform: uppercase; padding: 14px 32px; border-radius: 2px; transition: all 0.3s ease;">
+                                POGLEDAJ NA SAJTU &rarr;
+                            </a>
+                        </td>
+                    </tr>
+
+                    <!-- MINI FOOTER -->
+                    <tr>
+                        <td align="center" style="padding: 50px 20px 10px 20px; text-align: center;">
+                            <p style="margin: 0; font-size: 9px; letter-spacing: 2px; color: #52525b; text-transform: uppercase; line-height: 1.6;">
+                                Ručna izrada • Unikatan dizajn • DD DESIGN<br>
+                                Primili ste ovo obaveštenje jer ste pretplaćeni na naš newsletter.
+                            </p>
+                        </td>
+                    </tr>
+
+                </table>
+            </td>
+        </tr>
+    </table>
+</body>
+</html>`;
+
+    const smtpResponse = await fetch("https://api.smtp2go.com/v3/email/send", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        api_key: apiKey,
+        sender,
+        to: recipients,
+        subject: `🌟 Novi model u DD DESIGN kolekciji: ${name}`,
+        html_body: htmlBody
+      })
+    });
+
+    const smtpData = await smtpResponse.json().catch(() => ({}));
+
+    if (!smtpResponse.ok) {
+      console.error("[New Product Notify] SMTP2GO error response:", smtpResponse.status, smtpData);
+      return res.status(smtpResponse.status).json({
+        success: false,
+        error: "Greška prilikom slanja preko SMTP2GO.",
+        details: smtpData
+      });
+    }
+
+    console.log(`[New Product Notify] Successfully dispatched to ${recipients.length} subscribers!`);
+    return res.json({
+      success: true,
+      count: recipients.length,
+      message: `Uspešno poslato obaveštenje na ${recipients.length} newsletter adresa.`
+    });
+
+  } catch (err: any) {
+    console.error("[New Product Notify] Server exception:", err);
+    return res.status(500).json({
+      success: false,
+      error: err.message || "Greška na serveru prilikom obaveštavanja newsletter pretplatnika."
+    });
+  }
+});
+
 async function startServer() {
   if (process.env.VERCEL === "1" || process.env.IS_VERCEL === "true" || process.env.NOW_REGION || process.env.AWS_REGION) {
     console.log("[RaiAccept] Skipping listener startup: running inside Vercel Serverless Function / Cloud Environment");
@@ -1113,7 +1602,10 @@ async function startServer() {
   if (process.env.NODE_ENV !== "production") {
     const { createServer: createViteServer } = await import("vite");
     const vite = await createViteServer({
-      server: { middlewareMode: true },
+      server: { 
+        middlewareMode: true,
+        hmr: false
+      },
       appType: "spa",
     });
     app.use(vite.middlewares);

@@ -108,9 +108,9 @@ export default function ProductCard({ product, onAddToCart }: ProductCardProps) 
                 </button>
               ) : (
                 <div className="flex flex-wrap gap-1 justify-center animate-in fade-in slide-in-from-bottom-2 duration-300">
-                  {p.sizes.map((size) => (
+                  {p.sizes.map((size, idx) => (
                     <button
-                      key={size.id}
+                      key={size.id ? `${size.id}-${idx}` : idx}
                       onClick={(e) => {
                         e.preventDefault();
                         e.stopPropagation();

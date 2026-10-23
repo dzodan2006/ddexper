@@ -389,7 +389,7 @@ export default function Home({ products, categories, loading, onAddToCart }: Hom
               >
                 {products.slice(0, 10).map((product, index) => (
                   <div 
-                    key={product.id || `home-prod-${index}`} 
+                    key={product.id ? `${product.id}-${index}` : `home-prod-${index}`} 
                     className="w-32 md:w-48 flex-none pointer-events-auto"
                     onDragStart={(e) => e.preventDefault()}
                   >

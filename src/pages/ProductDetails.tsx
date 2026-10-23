@@ -212,9 +212,9 @@ export default function ProductDetails({ products, onAddToCart }: ProductDetails
                 </button>
               </div>
               <div className="flex flex-wrap gap-3">
-                {product.sizes.map((size: any) => (
+                {product.sizes.map((size: any, idx: number) => (
                   <button
-                    key={size.id}
+                    key={size.id ? `${size.id}-${idx}` : idx}
                     onClick={() => setSelectedSize(String(size.name))}
                     className={`px-6 py-3 rounded-xl border text-sm font-medium transition-all ${
                       selectedSize === size.name
@@ -237,9 +237,9 @@ export default function ProductDetails({ products, onAddToCart }: ProductDetails
             
             {product.colors && product.colors.length > 0 ? (
               <div className="flex flex-wrap gap-3">
-                {product.colors.map((color: any) => (
+                {product.colors.map((color: any, idx: number) => (
                   <button
-                    key={color.id}
+                    key={color.id ? `${color.id}-${idx}` : idx}
                     onClick={() => setSelectedColor(String(color.name))}
                     className={`px-6 py-3 rounded-xl border text-sm font-medium transition-all ${
                       selectedColor === color.name

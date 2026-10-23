@@ -41,11 +41,75 @@ export function getCategoryOrderIndex(cat: { name?: string; Id?: string | number
 }
 
 /**
- * Sortira niz kategorija prema definisanom redosledu
+ * Sortira niz kategorija prema definisanom redosledu ili sačuvanom rasporedu
  */
-export function sortCategories<T extends { name?: string; Id?: string | number }>(categories: T[]): T[] {
+export function sortCategories<T extends { name?: string; Id?: string | number }>(categories: T[], customOrder?: (string | number)[]): T[] {
   if (!categories || !Array.isArray(categories)) return [];
+
+  let orderList = customOrder;
+  if (!orderList && typeof window !== 'undefined') {
+    try {
+      const cached = localStorage.getItem('dd_category_order');
+      if (cached) orderList = JSON.parse(cached);
+    } catch {
+      // ignore
+    }
+  }
+
+  if (Array.isArray(orderList) && orderList.length > 0) {
+    const orderMap = new Map<string, number>();
+    orderList.forEach((item, idx) => {
+      orderMap.set(String(item).toLowerCase().trim(), idx);
+    });
+
+    return [...categories].sort((a, b) => {
+      const idA = String(a.Id ?? (a as any).id ?? '').toLowerCase().trim();
+      const idB = String(b.Id ?? (b as any).id ?? '').toLowerCase().trim();
+      const nameA = (a.name || '').toLowerCase().trim();
+      const nameB = (b.name || '').toLowerCase().trim();
+
+      const rankA = orderMap.has(idA) ? orderMap.get(idA)! : (orderMap.has(nameA) ? orderMap.get(nameA)! : getCategoryOrderIndex(a) + 100);
+      const rankB = orderMap.has(idB) ? orderMap.get(idB)! : (orderMap.has(nameB) ? orderMap.get(nameB)! : getCategoryOrderIndex(b) + 100);
+
+      return rankA - rankB;
+    });
+  }
+
   return [...categories].sort((a, b) => getCategoryOrderIndex(a) - getCategoryOrderIndex(b));
+}
+
+/**
+ * Sortira niz proizvoda prema sačuvanom korisničkom redosledu
+ */
+export function sortProductsByCustomOrder<T extends { id: string | number }>(products: T[], customOrder?: (string | number)[]): T[] {
+  if (!products || !Array.isArray(products)) return [];
+
+  let orderList = customOrder;
+  if (!orderList && typeof window !== 'undefined') {
+    try {
+      const cached = localStorage.getItem('dd_product_order');
+      if (cached) orderList = JSON.parse(cached);
+    } catch {
+      // ignore
+    }
+  }
+
+  if (!Array.isArray(orderList) || orderList.length === 0) {
+    return products;
+  }
+
+  const orderMap = new Map<string, number>();
+  orderList.forEach((id, idx) => {
+    orderMap.set(String(id), idx);
+  });
+
+  return [...products].sort((a, b) => {
+    const idA = String(a.id);
+    const idB = String(b.id);
+    const rankA = orderMap.has(idA) ? orderMap.get(idA)! : 999999;
+    const rankB = orderMap.has(idB) ? orderMap.get(idB)! : 999999;
+    return rankA - rankB;
+  });
 }
 
 /**

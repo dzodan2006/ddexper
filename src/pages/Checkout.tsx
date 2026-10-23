@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'motion/react';
-import { ArrowLeft, CreditCard, Truck, CheckCircle, Package, User, MapPin, Mail, Phone, ShoppingBag, ShieldCheck, XCircle, AlertTriangle } from 'lucide-react';
-import { CartItem } from '../types';
+import { ArrowLeft, CreditCard, Truck, CheckCircle, Package, User, MapPin, Mail, Phone, ShoppingBag, ShieldCheck, XCircle, AlertTriangle, Tag, Percent, X } from 'lucide-react';
+import { CartItem, PromoCode } from '../types';
 import { useTheme } from '../context/ThemeContext';
 import { supabase } from '../lib/supabase';
 
@@ -122,6 +122,12 @@ const checkoutTranslations = {
     shipping: "Dostava",
     shippingFree: "Besplatna",
     grandTotal: "Ukupno za uplatu",
+    promoTitle: "Promo kod za popust",
+    promoPlaceholder: "Unesite promo kod...",
+    promoApply: "Primeni",
+    promoDiscount: "Popust",
+    promoApplied: "Primenjen kod",
+    promoRemove: "Ukloni",
     securityGuarantee: "Sigurna kupovina",
     securitySSL: "Sigurna kupovina i zaštita podataka. Svi vaši podaci su enkriptovani i bezbedni.",
     handmadeNotice: "Svi modeli DD Design su unikatni i ručno izrađeni. Isporuka za modele koji nisu na stanju je 5-10 radnih dana.",
@@ -210,6 +216,12 @@ const checkoutTranslations = {
     shipping: "Shipping",
     shippingFree: "Free",
     grandTotal: "Total Amount",
+    promoTitle: "Promo Discount Code",
+    promoPlaceholder: "Enter promo code...",
+    promoApply: "Apply",
+    promoDiscount: "Discount",
+    promoApplied: "Applied code",
+    promoRemove: "Remove",
     securityGuarantee: "Secure Purchase",
     securitySSL: "Safe shopping and data protection. All of your details are fully encrypted and secure.",
     handmadeNotice: "All DD Design models are unique and handcrafted. Delivery for out-of-stock items takes 5-10 business days.",
@@ -298,6 +310,12 @@ const checkoutTranslations = {
     shipping: "Доставка",
     shippingFree: "Бесплатно",
     grandTotal: "Итого к оплате",
+    promoTitle: "Промокод на скидку",
+    promoPlaceholder: "Введите код...",
+    promoApply: "Применить",
+    promoDiscount: "Скидка",
+    promoApplied: "Промокод активирован",
+    promoRemove: "Удалить",
     securityGuarantee: "Безопасная покупка",
     securitySSL: "Безопасная покупка и защита данных. Все ваши данные полностью зашифрованы и защищены.",
     handmadeNotice: "Все модели DD Design уникальны и изготавливаются вручную. Срок изготовления для моделей под заказ — 5-10 рабочих дней.",
@@ -394,9 +412,97 @@ export default function Checkout({ cart, clearCart }: CheckoutProps) {
   const [verificationLoading, setVerificationLoading] = useState(false);
   const [verificationResult, setVerificationResult] = useState<any>(null);
 
+  // Promo code state
+  const [promoCodeInput, setPromoCodeInput] = useState('');
+  const [appliedPromo, setAppliedPromo] = useState<PromoCode | null>(null);
+  const [promoError, setPromoError] = useState<string | null>(null);
+  const [promoApplying, setPromoApplying] = useState(false);
+
   const total = cart.reduce((sum, item) => sum + (item.discount_price || item.price) * item.quantity, 0);
-  const shippingCost = total >= 10000 ? 0 : 400;
-  const grandTotal = total + shippingCost;
+
+  // Calculate promo discount amount
+  let promoDiscount = 0;
+  if (appliedPromo) {
+    if (appliedPromo.Category_id === null || appliedPromo.Category_id === undefined) {
+      promoDiscount = Math.round((total * Number(appliedPromo.amount_of_discount_in_percent)) / 100);
+    } else {
+      const eligibleSum = cart.reduce((sum, item) => {
+        const itemCat = item.category_id || (item.category as any)?.id || (item.category as any)?.Id;
+        if (Number(itemCat) === Number(appliedPromo.Category_id)) {
+          return sum + (item.discount_price || item.price) * item.quantity;
+        }
+        return sum;
+      }, 0);
+      promoDiscount = Math.round((eligibleSum * Number(appliedPromo.amount_of_discount_in_percent)) / 100);
+    }
+  }
+
+  const subtotalAfterPromo = Math.max(0, total - promoDiscount);
+  const shippingCost = subtotalAfterPromo >= 10000 ? 0 : 400;
+  const grandTotal = subtotalAfterPromo + shippingCost;
+
+  // Apply promo code handler
+  const handleApplyPromo = async () => {
+    const cleanCode = promoCodeInput.trim().toUpperCase();
+    if (!cleanCode) return;
+    setPromoApplying(true);
+    setPromoError(null);
+
+    try {
+      const { data, error } = await supabase
+        .from('promo_codes')
+        .select('*')
+        .ilike('promo_code', cleanCode)
+        .eq('status', true)
+        .limit(1);
+
+      if (error || !data || data.length === 0) {
+        setPromoError(
+          currentLang === 'en' ? 'Promo code is invalid or expired.' :
+          currentLang === 'ru' ? 'Промокод недействителен или истек.' :
+          'Promo kod nije važeći ili je istekao.'
+        );
+        return;
+      }
+
+      const promo = data[0] as PromoCode;
+
+      // Check category limitation if Category_id is specified
+      if (promo.Category_id !== null && promo.Category_id !== undefined) {
+        const hasMatchingCategory = cart.some(item => {
+          const itemCat = item.category_id || (item.category as any)?.id || (item.category as any)?.Id;
+          return Number(itemCat) === Number(promo.Category_id);
+        });
+
+        if (!hasMatchingCategory) {
+          setPromoError(
+            currentLang === 'en' ? 'This promo code applies only to selected product categories.' :
+            currentLang === 'ru' ? 'Этот промокод действует только для определенных категорий товаров.' :
+            'Ovaj promo kod važi samo za određenu kategoriju proizvoda koja se ne nalazi u vašoj korpi.'
+          );
+          return;
+        }
+      }
+
+      setAppliedPromo(promo);
+      setPromoCodeInput('');
+      setPromoError(null);
+    } catch (err: any) {
+      console.error('Promo code error:', err);
+      setPromoError(
+        currentLang === 'en' ? 'Error applying promo code.' :
+        currentLang === 'ru' ? 'Ошибка при применении промокода.' :
+        'Greška pri proveri koda.'
+      );
+    } finally {
+      setPromoApplying(false);
+    }
+  };
+
+  const handleRemovePromo = () => {
+    setAppliedPromo(null);
+    setPromoError(null);
+  };
 
   const sendOrderNotificationEmail = async (orderCode: string) => {
     const sentKey = `order_email_sent_${orderCode}`;
@@ -674,6 +780,11 @@ export default function Checkout({ cart, clearCart }: CheckoutProps) {
       try {
         const orderCode = `DD-${Date.now().toString().slice(-6)}-${Math.floor(1000 + Math.random() * 9000)}`;
         
+        const promoNote = appliedPromo 
+          ? `[Promo kod: ${appliedPromo.promo_code} (-${appliedPromo.amount_of_discount_in_percent}% / -${formatCurrency(promoDiscount)})]`
+          : '';
+        const finalNotes = [notes.trim(), promoNote].filter(Boolean).join(' ');
+
         // 1. Snimi porudžbinu u tabelu orders
         let orderPayload: any = {
           order_number: orderCode,
@@ -687,7 +798,7 @@ export default function Checkout({ cart, clearCart }: CheckoutProps) {
           payment_method: formData.paymentMethod,
           payment_status: 'pending',
           order_status: 'pending',
-          notes: notes.trim()
+          notes: finalNotes
         };
 
         let { data: orderData, error: orderError } = await supabase
@@ -784,13 +895,24 @@ export default function Checkout({ cart, clearCart }: CheckoutProps) {
             invoice: {
               amount: grandTotal,
               currency: "RSD",
-              description: `Porudzbina ${orderCode}`,
+              description: `Porudzbina ${orderCode}${appliedPromo ? ` (Kod: ${appliedPromo.promo_code})` : ''}`,
               items: [
-                ...cart.map(item => ({
-                  description: `${item.name}${item.selectedSize ? ` - Vel: ${item.selectedSize}` : ""}${item.selectedColor ? `, Boja: ${item.selectedColor}` : ""}`,
-                  numberOfItems: item.quantity,
-                  price: item.discount_price || item.price
-                })),
+                ...cart.map(item => {
+                  let unitPrice = item.discount_price || item.price;
+                  if (promoDiscount > 0) {
+                    const isEligible = appliedPromo?.Category_id === null || 
+                                       appliedPromo?.Category_id === undefined || 
+                                       Number(item.category_id || (item.category as any)?.id || (item.category as any)?.Id) === Number(appliedPromo?.Category_id);
+                    if (isEligible && appliedPromo) {
+                      unitPrice = Math.max(1, Math.round(unitPrice * (1 - appliedPromo.amount_of_discount_in_percent / 100)));
+                    }
+                  }
+                  return {
+                    description: `${item.name}${item.selectedSize ? ` - Vel: ${item.selectedSize}` : ""}${item.selectedColor ? `, Boja: ${item.selectedColor}` : ""}`,
+                    numberOfItems: item.quantity,
+                    price: unitPrice
+                  };
+                }),
                 ...(shippingCost > 0 ? [{
                   description: "Dostava",
                   numberOfItems: 1,
@@ -1654,11 +1776,98 @@ export default function Checkout({ cart, clearCart }: CheckoutProps) {
                 })}
               </div>
 
-              <div className={`pt-8 border-t space-y-3 ${theme === 'dark' ? 'border-zinc-900' : 'border-gray-200'}`}>
+              {/* Promo Code Input & Display in Order Summary */}
+              <div className={`p-4 rounded-2xl border space-y-2.5 ${
+                theme === 'dark' ? 'bg-zinc-900/60 border-zinc-800' : 'bg-white border-gray-200'
+              }`}>
+                <div className="flex items-center justify-between">
+                  <span className={`text-xs font-bold uppercase tracking-wider flex items-center gap-1.5 ${
+                    theme === 'dark' ? 'text-zinc-300' : 'text-gray-700'
+                  }`}>
+                    <Tag className={`w-3.5 h-3.5 ${theme === 'dark' ? 'text-zinc-400' : 'text-zinc-500'}`} />
+                    <span>{ct('promoTitle')}</span>
+                  </span>
+                </div>
+
+                {appliedPromo ? (
+                  <div className={`flex items-center justify-between p-2.5 rounded-xl border ${
+                    theme === 'dark' ? 'bg-emerald-950/40 border-emerald-900/60 text-emerald-300' : 'bg-emerald-50 border-emerald-200 text-emerald-800'
+                  }`}>
+                    <div className="flex items-center gap-2">
+                      <span className="font-mono font-bold text-xs px-2 py-0.5 rounded bg-emerald-500/20 border border-emerald-500/30">
+                        {appliedPromo.promo_code}
+                      </span>
+                      <span className="text-xs font-semibold">
+                        -{appliedPromo.amount_of_discount_in_percent}% {ct('promoDiscount')}
+                      </span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={handleRemovePromo}
+                      className="p-1 hover:bg-emerald-500/20 rounded-lg transition-colors cursor-pointer text-xs flex items-center gap-1 font-bold"
+                      title={ct('promoRemove')}
+                    >
+                      <X className="w-3.5 h-3.5" />
+                      <span>{ct('promoRemove')}</span>
+                    </button>
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    <div className="flex gap-2">
+                      <input
+                        type="text"
+                        placeholder={ct('promoPlaceholder')}
+                        value={promoCodeInput}
+                        onChange={e => setPromoCodeInput(e.target.value.toUpperCase())}
+                        onKeyDown={e => {
+                          if (e.key === 'Enter') {
+                            e.preventDefault();
+                            handleApplyPromo();
+                          }
+                        }}
+                        className={`flex-1 px-3 py-2 text-xs rounded-xl border font-mono tracking-wider uppercase focus:outline-none focus:ring-1 focus:ring-black dark:focus:ring-white focus:border-black dark:focus:border-white ${
+                          theme === 'dark'
+                            ? 'bg-zinc-950 border-zinc-800 text-white placeholder-zinc-500'
+                            : 'bg-gray-50 border-gray-300 text-black placeholder-gray-400'
+                        }`}
+                      />
+                      <button
+                        type="button"
+                        disabled={promoApplying || !promoCodeInput.trim()}
+                        onClick={handleApplyPromo}
+                        className={`px-4 py-2 text-xs font-bold rounded-xl transition-all shadow-sm cursor-pointer disabled:cursor-not-allowed shrink-0 ${
+                          theme === 'dark'
+                            ? 'bg-white text-black hover:bg-zinc-200 disabled:bg-zinc-800 disabled:text-zinc-500'
+                            : 'bg-black text-white hover:bg-zinc-800 disabled:bg-gray-200 disabled:text-gray-400'
+                        }`}
+                      >
+                        {promoApplying ? '...' : ct('promoApply')}
+                      </button>
+                    </div>
+                    {promoError && (
+                      <p className="text-[11px] text-rose-500 flex items-center gap-1">
+                        <AlertTriangle className="w-3 h-3 inline shrink-0" />
+                        <span>{promoError}</span>
+                      </p>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              <div className={`pt-6 border-t space-y-3 ${theme === 'dark' ? 'border-zinc-900' : 'border-gray-200'}`}>
                 <div className={`flex justify-between text-sm ${theme === 'dark' ? 'text-zinc-500' : 'text-gray-500'}`}>
                   <span>{ct('subtotal')}</span>
                   <span className={theme === 'dark' ? 'text-zinc-300' : 'text-gray-900'}>{formatCurrency(total)}</span>
                 </div>
+                {promoDiscount > 0 && (
+                  <div className="flex justify-between text-sm text-emerald-500 font-semibold">
+                    <span className="flex items-center gap-1">
+                      <Tag className="w-3.5 h-3.5" />
+                      <span>{ct('promoDiscount')} ({appliedPromo?.promo_code} -{appliedPromo?.amount_of_discount_in_percent}%)</span>
+                    </span>
+                    <span>-{formatCurrency(promoDiscount)}</span>
+                  </div>
+                )}
                 <div className={`flex justify-between text-sm ${theme === 'dark' ? 'text-zinc-500' : 'text-gray-500'}`}>
                   <span>{ct('shipping')}</span>
                   {shippingCost === 0 ? (

@@ -54,8 +54,8 @@ export default function NewCollection({ products, loading, onAddToCart }: NewCol
           </div>
         ) : newProducts.length > 0 ? (
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8">
-            {newProducts.map((product) => (
-              <ProductCard key={product.id} product={product} onAddToCart={onAddToCart} />
+            {newProducts.map((product, idx) => (
+              <ProductCard key={product.id ? `${product.id}-${idx}` : idx} product={product} onAddToCart={onAddToCart} />
             ))}
           </div>
         ) : (

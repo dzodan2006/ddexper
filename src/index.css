@@ -39,3 +39,84 @@
   }
 }
 
+/* Scoped typography overrides for the owner portal (baza) to ensure dashboard numbers, tables, and inputs are crisp */
+.baza-portal h1,
+.baza-portal h2,
+.baza-portal h3,
+.baza-portal h4,
+.baza-portal h5,
+.baza-portal h6,
+.baza-portal .font-bold,
+.baza-portal .font-semibold,
+.baza-portal .font-extrabold {
+  font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
+  letter-spacing: normal !important;
+}
+
+.baza-portal .font-bold {
+  font-weight: 700 !important;
+}
+
+.baza-portal .font-semibold {
+  font-weight: 600 !important;
+}
+
+.baza-portal .font-medium {
+  font-weight: 500 !important;
+}
+
+/* Custom slider thumb styles for high visibility and luxury feel */
+input[type="range"].price-slider {
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+input[type="range"].price-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.45);
+  transition: transform 0.15s ease, background-color 0.15s ease;
+}
+
+input[type="range"].price-slider::-moz-range-thumb {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.45);
+  border: none;
+  transition: transform 0.15s ease, background-color 0.15s ease;
+}
+
+html.dark input[type="range"].price-slider::-webkit-slider-thumb {
+  background-color: #ffffff;
+  border: 2px solid #27272a;
+}
+
+html.dark input[type="range"].price-slider::-moz-range-thumb {
+  background-color: #ffffff;
+  border: 2px solid #27272a;
+}
+
+html:not(.dark) input[type="range"].price-slider::-webkit-slider-thumb {
+  background-color: #18181b;
+  border: 2px solid #ffffff;
+}
+
+html:not(.dark) input[type="range"].price-slider::-moz-range-thumb {
+  background-color: #18181b;
+  border: 2px solid #ffffff;
+}
+
+input[type="range"].price-slider::-webkit-slider-thumb:hover {
+  transform: scale(1.15);
+}
+
+input[type="range"].price-slider::-moz-range-thumb:hover {
+  transform: scale(1.15);
+}
+

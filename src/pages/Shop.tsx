@@ -199,7 +199,14 @@ export default function Shop({ products, categories, loading, onAddToCart }: Sho
         const tA = a.created_at ? new Date(a.created_at).getTime() : 0;
         const tB = b.created_at ? new Date(b.created_at).getTime() : 0;
         if (tB !== tA) return tB - tA;
-        return String(b.id).localeCompare(String(a.id));
+        return (Number(b.id) || 0) - (Number(a.id) || 0);
+      });
+    } else if (sortType === 'oldest') {
+      return [...filtered].sort((a, b) => {
+        const tA = a.created_at ? new Date(a.created_at).getTime() : 0;
+        const tB = b.created_at ? new Date(b.created_at).getTime() : 0;
+        if (tA !== tB) return tA - tB;
+        return (Number(a.id) || 0) - (Number(b.id) || 0);
       });
     } else if (sortType === 'alphabetical') {
       return [...filtered].sort((a, b) => a.name.localeCompare(b.name, 'sr'));
@@ -321,11 +328,11 @@ export default function Shop({ products, categories, loading, onAddToCart }: Sho
                 <div className={`absolute top-full left-0 mt-3 p-8 rounded-[2rem] border shadow-2xl z-20 animate-in fade-in zoom-in-95 duration-200 w-80 ${
                   theme === 'dark' ? 'bg-[#000000] border-zinc-800' : 'bg-white border-gray-100'
                 }`}>
-                  <div className="space-y-10">
-                    <div className="space-y-4">
-                      <div className="flex justify-between items-center mb-2">
-                        <span className={`text-[10px] font-light italic uppercase tracking-widest ${theme === 'dark' ? 'text-zinc-500' : 'text-gray-400'}`}>Od</span>
-                        <span className={`text-xs font-light italic ${theme === 'dark' ? 'text-white' : 'text-black'}`}>{formatCurrency(minPrice)}</span>
+                  <div className="space-y-8">
+                    <div className="space-y-3">
+                      <div className="flex justify-between items-center mb-1.5">
+                        <span className={`text-[10px] font-medium uppercase tracking-widest ${theme === 'dark' ? 'text-zinc-400' : 'text-gray-500'}`}>Od (najmanja cena)</span>
+                        <span className={`text-xs font-semibold ${theme === 'dark' ? 'text-white' : 'text-black'}`}>{formatCurrency(minPrice)}</span>
                       </div>
                       <input 
                         type="range" 
@@ -333,14 +340,14 @@ export default function Shop({ products, categories, loading, onAddToCart }: Sho
                         max={priceLimit} 
                         value={minPrice} 
                         onChange={(e) => handleMinPriceChange(Number(e.target.value))}
-                        className="w-full accent-black dark:accent-zinc-650 h-1 bg-gray-200 dark:bg-zinc-800 rounded-lg appearance-none cursor-pointer"
+                        className="price-slider w-full accent-black dark:accent-white h-2 bg-zinc-200 dark:bg-zinc-700 rounded-lg cursor-pointer transition-colors"
                       />
                     </div>
 
-                    <div className="space-y-4">
-                      <div className="flex justify-between items-center mb-2">
-                        <span className={`text-[10px] font-light italic uppercase tracking-widest ${theme === 'dark' ? 'text-zinc-500' : 'text-gray-400'}`}>Do</span>
-                        <span className={`text-xs font-light italic ${theme === 'dark' ? 'text-white' : 'text-black'}`}>{formatCurrency(maxPrice)}</span>
+                    <div className="space-y-3">
+                      <div className="flex justify-between items-center mb-1.5">
+                        <span className={`text-[10px] font-medium uppercase tracking-widest ${theme === 'dark' ? 'text-zinc-400' : 'text-gray-500'}`}>Do (najveća cena)</span>
+                        <span className={`text-xs font-semibold ${theme === 'dark' ? 'text-white' : 'text-black'}`}>{formatCurrency(maxPrice)}</span>
                       </div>
                       <input 
                         type="range" 
@@ -348,14 +355,31 @@ export default function Shop({ products, categories, loading, onAddToCart }: Sho
                         max={priceLimit} 
                         value={maxPrice} 
                         onChange={(e) => handleMaxPriceChange(Number(e.target.value))}
-                        className="w-full accent-black dark:accent-white h-1 bg-gray-200 dark:bg-zinc-800 rounded-lg appearance-none cursor-pointer"
+                        className="price-slider w-full accent-black dark:accent-white h-2 bg-zinc-200 dark:bg-zinc-700 rounded-lg cursor-pointer transition-colors"
                       />
                     </div>
 
-                    <div className="flex justify-between text-[10px] uppercase font-light italic tracking-tight text-zinc-500 pt-4 border-t border-zinc-800/10 dark:border-zinc-800">
-                      <span>{formatCurrency(minPrice)}</span>
-                      <span>{formatCurrency(maxPrice)}</span>
+                    <div className="flex justify-between items-center text-[10px] uppercase font-mono tracking-tight text-zinc-400 pt-3 border-t border-zinc-800/10 dark:border-zinc-800">
+                      <span>0 RSD</span>
+                      <span>{formatCurrency(priceLimit)}</span>
                     </div>
+
+                    {(minPrice > 0 || maxPrice < priceLimit) && (
+                      <button
+                        onClick={() => {
+                          setMinPrice(0);
+                          setMaxPrice(priceLimit);
+                          const newParams: { [key: string]: string } = {};
+                          if (searchQuery) newParams.search = searchQuery;
+                          if (selectedCategoryId !== 'Sve') newParams.category = selectedCategoryId;
+                          if (sortType !== 'default') newParams.sort = sortType;
+                          setSearchParams(newParams);
+                        }}
+                        className="w-full text-center py-2 text-[10px] uppercase tracking-widest text-zinc-400 hover:text-white transition-colors underline cursor-pointer"
+                      >
+                        Poništi filter cene
+                      </button>
+                    )}
                   </div>
                 </div>
               )}
@@ -379,7 +403,8 @@ export default function Shop({ products, categories, loading, onAddToCart }: Sho
                 <span>{t('shop.sortLabel')}: {
                   sortType === 'price-asc' ? t('shop.sortPriceLow') :
                   sortType === 'price-desc' ? t('shop.sortPriceHigh') :
-                  sortType === 'newest' ? t('shop.sortNewest') :
+                  sortType === 'newest' ? 'Poslednji dodati' :
+                  sortType === 'oldest' ? 'Prvi dodati' :
                   sortType === 'alphabetical' ? 'Naziv: A-Z' :
                   'Podrazumevano'
                 }</span>
@@ -393,9 +418,10 @@ export default function Shop({ products, categories, loading, onAddToCart }: Sho
                   <div className="flex flex-col space-y-1">
                     {[
                       { value: 'default', label: 'Podrazumevano' },
+                      { value: 'newest', label: 'Poslednji dodati (najnoviji)' },
+                      { value: 'oldest', label: 'Prvi dodati (najstariji)' },
                       { value: 'price-asc', label: t('shop.sortPriceLow') },
                       { value: 'price-desc', label: t('shop.sortPriceHigh') },
-                      { value: 'newest', label: t('shop.sortNewest') },
                       { value: 'alphabetical', label: 'Naziv: A-Z' }
                     ].map((opt) => (
                       <button
@@ -435,7 +461,7 @@ export default function Shop({ products, categories, loading, onAddToCart }: Sho
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-x-8 gap-y-12 animate-in fade-in duration-1000">
           {filteredProducts.map((product, index) => (
             <ProductCard 
-              key={product.id || `prod-${index}`} 
+              key={product.id ? `${product.id}-${index}` : `prod-${index}`} 
               product={product} 
               onAddToCart={onAddToCart} 
             />

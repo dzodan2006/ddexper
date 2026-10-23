@@ -5,7 +5,7 @@
 
 import { useEffect, useState, lazy, Suspense, FormEvent } from 'react';
 import { BrowserRouter, Routes, Route, Link, useLocation } from 'react-router-dom';
-import { Instagram, Facebook } from 'lucide-react';
+import { Instagram, Facebook, Database } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { supabase } from './lib/supabase';
 import { Product, CartItem, Category } from './types';
@@ -15,7 +15,7 @@ import Navbar from './components/Navbar';
 import CartDrawer from './components/CartDrawer';
 import CookieConsent from './components/CookieConsent';
 import ScrollToTop from './components/ScrollToTop';
-import { sortCategories } from './lib/categories';
+import { sortCategories, sortProductsByCustomOrder } from './lib/categories';
 
 const Home = lazy(() => import('./pages/Home'));
 const Shop = lazy(() => import('./pages/Shop'));
@@ -43,6 +43,7 @@ const DajanaSvraka = lazy(() => import('./pages/collaborations/DajanaSvraka'));
 const DanijelaPantic = lazy(() => import('./pages/collaborations/DanijelaPantic'));
 const BelgradeFashionWeek = lazy(() => import('./pages/collaborations/BelgradeFashionWeek'));
 const Admin = lazy(() => import('./pages/Admin'));
+const OwnerPortal = lazy(() => import('./pages/OwnerPortal'));
 
 
 function FadingBackground() {
@@ -247,6 +248,8 @@ export default function App() {
 
 function AppContent() {
   const { theme } = useTheme();
+  const location = useLocation();
+  const isOwnerPage = location.pathname.startsWith('/vlasnici') || location.pathname.startsWith('/baza') || location.pathname.startsWith('/portal-za-vlasnike');
   useSEO(); // Run dynamic SEO optimization on route change
 
   // Newsletter subscription state
@@ -291,10 +294,41 @@ function AppContent() {
   };
 
   
-  // Inicijalizacija stanja iz localStorage (keša) ako postoji
+  // Inicijalizacija stanja iz localStorage (keša) ako postoji sa deduplikacijom
   const [products, setProducts] = useState<Product[]>(() => {
+    const cachedV5 = localStorage.getItem('dd_products_cache_v5');
+    if (cachedV5) {
+      try {
+        const parsed = JSON.parse(cachedV5);
+        return Array.from(new Map(parsed.map((p: Product) => [
+          p.id,
+          {
+            ...p,
+            sizes: Array.from(new Map((p.sizes || []).map((s: any) => [s.id, s])).values()),
+            colors: Array.from(new Map((p.colors || []).map((c: any) => [c.id, c])).values())
+          }
+        ])).values());
+      } catch {
+        // ignore
+      }
+    }
     const cached = localStorage.getItem('dd_products_cache_v4');
-    return cached ? JSON.parse(cached) : [];
+    if (cached) {
+      try {
+        const parsed = JSON.parse(cached);
+        return Array.from(new Map(parsed.map((p: Product) => [
+          p.id,
+          {
+            ...p,
+            sizes: Array.from(new Map((p.sizes || []).map((s: any) => [s.id, s])).values()),
+            colors: Array.from(new Map((p.colors || []).map((c: any) => [c.id, c])).values())
+          }
+        ])).values());
+      } catch {
+        // ignore
+      }
+    }
+    return [];
   });
   
   const [categories, setCategories] = useState<Category[]>(() => {
@@ -334,6 +368,24 @@ function AppContent() {
     async function fetchData() {
       try {
         console.log("Osvežavam podatke iz baze...");
+
+        // Preuzmi server-side sačuvani redosled ako postoji
+        try {
+          const ordRes = await fetch("/api/ordering");
+          if (ordRes.ok) {
+            const ordData = await ordRes.json();
+            if (ordData.success) {
+              if (Array.isArray(ordData.categoryOrder) && ordData.categoryOrder.length > 0) {
+                localStorage.setItem("dd_category_order", JSON.stringify(ordData.categoryOrder));
+              }
+              if (Array.isArray(ordData.productOrder) && ordData.productOrder.length > 0) {
+                localStorage.setItem("dd_product_order", JSON.stringify(ordData.productOrder));
+              }
+            }
+          }
+        } catch {
+          // ignore
+        }
 
         // Dohvati kategorije
         const { data: catData, error: catError } = await supabase
@@ -548,12 +600,13 @@ function AppContent() {
         }
 
         if (data && !error) {
-          const mappedProducts: Product[] = data.map((product: any) => {
+          const mappedProductsRaw: Product[] = data.map((product: any) => {
             const categoryName = product.categories?.name || 'Ostalo';
-            const sizes = product.product_sizes?.map((ps: any) => ps.sizes).filter(Boolean) || [];
+            const rawSizes = product.product_sizes?.map((ps: any) => ps.sizes).filter(Boolean) || [];
+            const uniqueSizes = Array.from(new Map(rawSizes.map((s: any) => [String(s.id), s])).values());
             
             const rawColors = product.product_colors || product.Product_colors || [];
-            const colors = rawColors.map((pc: any) => {
+            const mappedColors = rawColors.map((pc: any) => {
               const colorObj = pc.colors || pc.Colors;
               if (!colorObj) return null;
               return {
@@ -561,6 +614,7 @@ function AppContent() {
                 name: colorObj.Color || colorObj.color || colorObj.name || ''
               };
             }).filter(Boolean) || [];
+            const uniqueColors = Array.from(new Map(mappedColors.map((c: any) => [String(c.id), c])).values());
             
             const allImages: string[] = [];
             if (product.product_images && product.product_images.length > 0) {
@@ -588,8 +642,8 @@ function AppContent() {
               category_id: product.category_id,
               category: categoryName,
               new_collection: product.new_collection,
-              sizes: sizes,
-              colors: colors,
+              sizes: uniqueSizes,
+              colors: uniqueColors,
               all_images: uniqueImages,
               image_url:
                 product.product_images?.find(
@@ -600,9 +654,15 @@ function AppContent() {
             };
           }).filter((p: Product) => p.is_active !== false); // Ne prikazuj proizvode ako im je vrednost is_active false
 
+          // Garantovano jedinstveni proizvodi po ID, poređani po sačuvanom redosledu
+          const mappedProducts = sortProductsByCustomOrder(
+            Array.from(new Map(mappedProductsRaw.map(p => [p.id, p])).values())
+          );
+
           setProducts(mappedProducts);
           // Sačuvaj osvežene proizvode u keš
-          localStorage.setItem('dd_products_cache_v4', JSON.stringify(mappedProducts));
+          localStorage.setItem('dd_products_cache_v5', JSON.stringify(mappedProducts));
+          localStorage.removeItem('dd_products_cache_v4');
         }
       } catch (err) {
         console.error("Greška pri dohvatanju:", err);
@@ -640,6 +700,25 @@ function AppContent() {
   const clearCart = () => setCart([]);
 
   const cartCount = cart.reduce((sum, item) => sum + item.quantity, 0);
+
+  if (isOwnerPage) {
+    return (
+      <div className="min-h-screen bg-slate-950 text-white">
+        <ScrollToTop />
+        <Suspense fallback={
+          <div className="flex h-screen items-center justify-center bg-slate-950">
+            <div className="w-8 h-8 border-2 border-indigo-500 border-t-transparent animate-spin rounded-full" />
+          </div>
+        }>
+          <Routes>
+            <Route path="/vlasnici" element={<OwnerPortal />} />
+            <Route path="/baza" element={<OwnerPortal />} />
+            <Route path="/portal-za-vlasnike" element={<OwnerPortal />} />
+          </Routes>
+        </Suspense>
+      </div>
+    );
+  }
 
   return (
     <>
@@ -687,6 +766,9 @@ function AppContent() {
               <Route path="/saradnje/danijela-pantic" element={<DanijelaPantic />} />
               <Route path="/saradnje/belgrade-fashion-week" element={<BelgradeFashionWeek />} />
               <Route path="/admin" element={<Admin />} />
+              <Route path="/vlasnici" element={<OwnerPortal />} />
+              <Route path="/baza" element={<OwnerPortal />} />
+              <Route path="/portal-za-vlasnike" element={<OwnerPortal />} />
             </Routes>
           </Suspense>
         </main>
@@ -736,6 +818,12 @@ function AppContent() {
                   <li><Link to="/reklamacije" className="hover:text-current transition-colors">Reklamacije i prigovori</Link></li>
                   <li><Link to="/politika-privatnosti" className="hover:text-current transition-colors">Politika privatnosti</Link></li>
                   <li><Link to="/uslovi-koriscenja" className="hover:text-current transition-colors">Uslovi korišćenja</Link></li>
+                  <li>
+                    <Link to="/vlasnici" className="hover:text-current transition-colors inline-flex items-center gap-1.5 opacity-85 hover:opacity-100 font-medium">
+                      <Database className="w-3.5 h-3.5 text-indigo-400" />
+                      <span>Stranica za vlasnike</span>
+                    </Link>
+                  </li>
                 </ul>
               </div>
 
@@ -879,8 +967,20 @@ function AppContent() {
               </div>
 
               {/* Copyright Row */}
-              <div className="flex flex-col md:flex-row justify-between items-center text-xs pt-4 border-t border-zinc-900/5 dark:border-zinc-900/40">
+              <div className="flex flex-col sm:flex-row justify-between items-center gap-4 text-xs pt-4 border-t border-zinc-900/5 dark:border-zinc-900/40">
                 <p>© 2026 DD DESIGN. Sva prava pridržana.</p>
+                <Link 
+                  to="/vlasnici"
+                  className={`inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-medium tracking-wide transition-all ${
+                    theme === 'dark'
+                      ? 'bg-zinc-900/90 hover:bg-zinc-800 text-zinc-400 hover:text-white border border-zinc-800 hover:border-zinc-700 shadow-xs'
+                      : 'bg-zinc-100 hover:bg-zinc-200 text-zinc-600 hover:text-black border border-zinc-200 hover:border-zinc-300 shadow-xs'
+                  }`}
+                  title="Stranica za vlasnike - DDDesign baza proizvoda i administracija"
+                >
+                  <Database className="w-3.5 h-3.5 text-indigo-400" />
+                  <span>Stranica za vlasnike</span>
+                </Link>
               </div>
             </div>
           </div>

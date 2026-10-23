@@ -54,8 +54,8 @@ export default function Sale({ products, loading, onAddToCart }: SaleProps) {
           </div>
         ) : saleProducts.length > 0 ? (
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8">
-            {saleProducts.map((product) => (
-              <ProductCard key={product.id} product={product} onAddToCart={onAddToCart} />
+            {saleProducts.map((product, idx) => (
+              <ProductCard key={product.id ? `${product.id}-${idx}` : idx} product={product} onAddToCart={onAddToCart} />
             ))}
           </div>
         ) : (

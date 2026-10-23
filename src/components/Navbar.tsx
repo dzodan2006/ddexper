@@ -431,9 +431,9 @@ export default function Navbar({ products, categories = [], cartCount, onCartTog
 
                     {filteredResults.length > 0 ? (
                       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-8">
-                        {filteredResults.map((product) => (
+                        {filteredResults.map((product, idx) => (
                           <Link
-                            key={product.id}
+                            key={product.id ? `${product.id}-${idx}` : idx}
                             to={`/product/${product.id}`}
                             onClick={() => setIsSearchOpen(false)}
                             className="group"

@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { 
   Lock, Calendar, User, Mail, Phone, MapPin, CreditCard, 
   Search, RefreshCw, CheckCircle, AlertTriangle, ChevronRight, 
-  HelpCircle, Archive, ClipboardList, TrendingUp, DollarSign, X
+  HelpCircle, Archive, ClipboardList, TrendingUp, DollarSign, X, Trash2
 } from 'lucide-react';
 import { useTheme } from '../context/ThemeContext';
 import { supabase } from '../lib/supabase';
@@ -52,6 +52,7 @@ export default function Admin() {
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [expandedOrderId, setExpandedOrderId] = useState<number | null>(null);
+  const [deletingOrderId, setDeletingOrderId] = useState<number | null>(null);
 
   // Refund UI State
   const [activeRefundOrder, setActiveRefundOrder] = useState<Order | null>(null);
@@ -126,6 +127,30 @@ export default function Admin() {
       };
     }
     return null;
+  };
+
+  // Delete Order
+  const handleDeleteOrder = async (order: Order) => {
+    if (!window.confirm(`Da li ste sigurni da želite trajno da obrišete porudžbinu ${order.order_number || '#' + order.id}? Ova akcija se ne može poništiti.`)) {
+      return;
+    }
+
+    setDeletingOrderId(order.id);
+    try {
+      const res = await fetch(`/api/admin/orders/${order.id}`, { method: 'DELETE' });
+      if (!res.ok) {
+        await supabase.from('order_items').delete().eq('order_id', order.id);
+        const { error: directError } = await supabase.from('orders').delete().eq('id', order.id);
+        if (directError) throw directError;
+      }
+      setOrders(prev => prev.filter(o => o.id !== order.id));
+      if (expandedOrderId === order.id) setExpandedOrderId(null);
+    } catch (err: any) {
+      console.error('Failed to delete order:', err);
+      alert('Greška pri brisanju porudžbine: ' + (err.message || 'Nepoznata greška'));
+    } finally {
+      setDeletingOrderId(null);
+    }
   };
 
   // Initiate Refund interface
@@ -514,6 +539,23 @@ export default function Admin() {
                           : 'NEPLAĆENO'}
                       </span>
 
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleDeleteOrder(order);
+                        }}
+                        disabled={deletingOrderId === order.id}
+                        className="p-1.5 text-zinc-400 hover:text-red-500 hover:bg-red-500/10 rounded-lg transition-colors cursor-pointer"
+                        title="Obriši porudžbinu"
+                      >
+                        {deletingOrderId === order.id ? (
+                          <RefreshCw className="w-4 h-4 animate-spin text-red-500" />
+                        ) : (
+                          <Trash2 className="w-4 h-4" />
+                        )}
+                      </button>
+
                       <ChevronRight className={`w-5 h-5 transition-transform text-gray-400 ${isExpanded ? 'rotate-90 text-current' : ''}`} />
                     </div>
                   </div>
@@ -568,8 +610,8 @@ export default function Admin() {
                         <div className="space-y-4">
                           <h4 className="font-bold uppercase tracking-wider text-xs text-gray-400 border-b pb-2">Artikli u porudžbini</h4>
                           <div className="space-y-2.5">
-                            {order.order_items?.map((item) => (
-                              <div key={item.id} className="flex justify-between items-center text-sm font-sans">
+                            {order.order_items?.map((item, idx) => (
+                              <div key={item.id ? `${item.id}-${idx}` : idx} className="flex justify-between items-center text-sm font-sans">
                                 <div>
                                   <p className="font-medium">{item.products?.name || 'DD DESIGN Artikal'}</p>
                                   <p className="text-xs text-zinc-500">Količina: {item.quantity} x {item.price.toLocaleString()} RSD</p>

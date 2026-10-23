@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { ArrowRight, BookOpen, Quote, Sparkles, ChevronLeft, ChevronRight, ShoppingBag } from 'lucide-react';
 import { useTheme } from '../context/ThemeContext';
 import { useLanguage } from '../context/LanguageContext';
@@ -8,7 +8,6 @@ import { useLanguage } from '../context/LanguageContext';
 export default function Editorijali() {
   const { theme } = useTheme();
   const { t, language } = useLanguage();
-  const navigate = useNavigate();
   const [activePage, setActivePage] = useState(0);
 
   // High fashion photography selected for ultimate brand feeling
@@ -194,10 +193,9 @@ export default function Editorijali() {
 
               {/* Call to action (Natural bridge to ready-to-buy products) */}
               <div className="pt-6">
-                <motion.button
-                  whileHover={{ scale: 1.01, x: 4 }}
-                  onClick={() => navigate(`/shop?search=${currentSpread.searchKeyword}`)}
-                  className={`flex items-center space-x-4 py-4 px-8 border text-xs uppercase tracking-[0.25em] font-semibold transition-all duration-300 ${
+                <Link
+                  to={`/shop?search=${currentSpread.searchKeyword}`}
+                  className={`inline-flex items-center space-x-4 py-4 px-8 border text-xs uppercase tracking-[0.25em] font-semibold transition-all duration-300 ${
                     theme === 'dark' 
                       ? 'border-zinc-800 bg-white text-black hover:bg-black hover:text-white hover:border-zinc-800 hover:shadow-lg' 
                       : 'border-neutral-250 bg-black text-white hover:bg-white hover:text-black hover:border-black hover:shadow-lg'
@@ -207,7 +205,7 @@ export default function Editorijali() {
                   <ShoppingBag className="w-4 h-4" />
                   <span>{currentSpread.ctaText}</span>
                   <ArrowRight className="w-4 h-4 ml-2" />
-                </motion.button>
+                </Link>
               </div>
 
             </div>

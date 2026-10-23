@@ -1,0 +1,6 @@
+{
+  "name": "DDDesign baza proizvoda",
+  "description": "Admin panel za lakše upravljanje proizvodima, kategorijama, slikama i veličinama u bazi podataka.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
