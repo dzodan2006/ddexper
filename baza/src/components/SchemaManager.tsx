@@ -391,37 +391,38 @@ export default function SchemaManager({ categories, sizes, colors, products, onR
     setColorSuccess('');
 
     try {
-      try {
+      // Delete associations from Product_colors first (capital P as per DB schema)
+      const { error: assocErr1 } = await supabase
+        .from('Product_colors')
+        .delete()
+        .eq('color_id', colorId);
+
+      if (assocErr1) {
         await supabase
           .from('product_colors')
           .delete()
           .eq('color_id', colorId);
-      } catch (assocErr) {
-        try {
-          await supabase
-            .from('Product_colors')
-            .delete()
-            .eq('color_id', colorId);
-        } catch (assocErr2) {
-          console.warn('Could not delete product_colors during color deletion', assocErr2);
-        }
       }
 
+      // Delete from Colors table (capital C as per DB schema)
       let deleted = false;
-      try {
-        const { error } = await supabase
+      const { error: errCap } = await supabase
+        .from('Colors')
+        .delete()
+        .eq('id', colorId);
+
+      if (!errCap) {
+        deleted = true;
+      } else {
+        const { error: errLow } = await supabase
           .from('colors')
           .delete()
           .eq('id', colorId);
-        if (!error) deleted = true;
-      } catch (e) {}
-
-      if (!deleted) {
-        const { error } = await supabase
-          .from('Colors')
-          .delete()
-          .eq('id', colorId);
-        if (error) throw error;
+        if (!errLow) {
+          deleted = true;
+        } else {
+          throw errLow;
+        }
       }
 
       setColorSuccess('Boja uspešno obrisana!');
