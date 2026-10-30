@@ -488,18 +488,28 @@ app.post("/api/ordering", async (req, res) => {
 
 // RaiAccept credentials helper
 const getRaiAcceptCredentials = (isProd: boolean) => {
-  // Ovdje mora biti Cognito App Client ID (npr. kr2gs4117arvbnaperqff5dml), a NE broj računa P-001...
-  const clientId = process.env.RAIACCEPT_CLIENT_ID || "kr2gs4117arvbnaperqff5dml";
+  // UPOZORENJE: 'kr2gs4117arvbnaperqff5dml' je isključivo Sandbox Cognito Client ID!
+  // Za produkciju se koristi RAIACCEPT_PRODUCTION_CLIENT_ID ili RAIACCEPT_CLIENT_ID.
+  const clientId = isProd 
+    ? (process.env.RAIACCEPT_PRODUCTION_CLIENT_ID || process.env.RAIACCEPT_CLIENT_ID || "")
+    : (process.env.RAIACCEPT_SANDBOX_CLIENT_ID || process.env.RAIACCEPT_CLIENT_ID || "kr2gs4117arvbnaperqff5dml");
   
+  // Trgovački račun (Merchant Account ID): npr. P-001-MA-2qVqpYFY za produkciju
+  const merchantAccountId = isProd
+    ? (process.env.RAIACCEPT_PRODUCTION_MERCHANT_ID || process.env.RAIACCEPT_MERCHANT_ID || "P-001-MA-2qVqpYFY")
+    : (process.env.RAIACCEPT_SANDBOX_MERCHANT_ID || "D-001-MA-taoCat8g");
+
+  // API Username (UUID): npr. dc3bbc8b-b417-4fca-ae08-3bfeff51381d za produkciju
   const username = isProd 
     ? (process.env.RAIACCEPT_PRODUCTION_USERNAME || "dc3bbc8b-b417-4fca-ae08-3bfeff51381d")
     : (process.env.RAIACCEPT_SANDBOX_USERNAME || "1eab1b61-525f-45c5-97dc-1a57b01a1c14");
     
+  // API Password generisan u RaiAccept portalu
   const password = isProd 
     ? (process.env.RAIACCEPT_PRODUCTION_PASSWORD || "")
     : (process.env.RAIACCEPT_SANDBOX_PASSWORD || "chMkiMwP%+1_c?Jl(4bg5Xs8WbN3(2-<)kB");
 
-  return { clientId, username, password };
+  return { clientId, merchantAccountId, username, password };
 };
 
 // Standardni hederi za Cloudflare / RaiAccept
@@ -508,6 +518,140 @@ const RAI_HEADERS = {
   "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36 DDDesignApp/1.0"
 };
 
+// Autentifikacija sa RaiAccept-om:
+// 1. Zvanični moderni RaiAccept Auth Service (POST https://auth.raiaccept.com/auth/api/login)
+//    Ovaj servis NE ZAHTEVA ClientId, već direktno prijavljuje i Sandbox i Produkcijskog korisnika.
+// 2. Fallback na AWS Cognito (authenticate.raiaccept.com) ako postoji konfigurisan ClientId.
+async function getRaiAcceptToken(username: string, password: string, clientId?: string, isProd?: boolean): Promise<string> {
+  try {
+    console.log(`[RaiAccept] Pokušaj prijave preko zvaničnog auth.raiaccept.com servisa (bez potrebe za ClientId)...`);
+    const loginRes = await fetch("https://auth.raiaccept.com/auth/api/login", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Accept": "application/json",
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 DDDesignApp/1.0"
+      },
+      body: JSON.stringify({
+        username,
+        password,
+        integrationContext: {
+          type: "CODE",
+          data: {
+            name: "DDDesign",
+            version: "1.0.0",
+            vendor: "DDDesign"
+          }
+        }
+      })
+    });
+
+    if (loginRes.ok) {
+      const loginData = await loginRes.json();
+      const token = loginData.accessToken || loginData.idToken;
+      if (token) {
+        console.log("[RaiAccept] Uspešna prijava na auth.raiaccept.com (dobijen validan Bearer token)!");
+        return token;
+      }
+    } else {
+      const errText = await loginRes.text();
+      console.warn(`[RaiAccept] auth.raiaccept.com vratio status ${loginRes.status}:`, errText);
+    }
+  } catch (authErr) {
+    console.warn("[RaiAccept] Greška pri pozivu auth.raiaccept.com:", authErr);
+  }
+
+  // Fallback na AWS Cognito ako postoji ClientId
+  if (!clientId) {
+    throw new Error(
+      isProd
+        ? "Produkcijski korisnik nije mogao biti prijavljen na RaiAccept. Proverite da li je RAIACCEPT_PRODUCTION_PASSWORD ispravno uneta u Vercel Environment varijablama ili postavite RAIACCEPT_PRODUCTION_CLIENT_ID."
+        : "Sandbox autentifikacija nije uspela. Proverite sandbox kredencijale."
+    );
+  }
+
+  console.log(`[RaiAccept] Fallback prijava preko AWS Cognito sa ClientId: ${clientId}...`);
+  const authPayload = {
+    AuthFlow: "USER_PASSWORD_AUTH",
+    AuthParameters: {
+      USERNAME: username,
+      PASSWORD: password
+    },
+    ClientId: clientId
+  };
+
+  const cognitoRes = await fetch("https://authenticate.raiaccept.com", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/x-amz-json-1.1",
+      "X-Amz-Target": "AWSCognitoIdentityProviderService.InitiateAuth"
+    },
+    body: JSON.stringify(authPayload)
+  });
+
+  if (!cognitoRes.ok) {
+    const errorText = await cognitoRes.text();
+    console.error("[RaiAccept] Cognito prijava neuspešna:", cognitoRes.status, errorText);
+    throw new Error(`Raiffeisen autentifikacija nije uspela (${cognitoRes.status}). Proverite kredencijale: ${errorText}`);
+  }
+
+  const authData = await cognitoRes.json();
+  const idToken = authData.AuthenticationResult?.IdToken || authData.AuthenticationResult?.AccessToken;
+
+  if (!idToken) {
+    throw new Error("IdToken nije vraćen iz autentifikacije.");
+  }
+
+  return idToken;
+}
+
+// Endpoint za brzu proveru konekcije sa RaiAccept-om u Sandbox ili Produkciji
+app.get("/api/payments/test-connection", async (req, res) => {
+  try {
+    const modeParam = String(req.query.mode || process.env.RAIACCEPT_MODE || "production").trim().toLowerCase();
+    const isProdMode = modeParam === "production";
+    const { clientId, merchantAccountId, username, password } = getRaiAcceptCredentials(isProdMode);
+
+    if (!password) {
+      return res.status(400).json({
+        success: false,
+        mode: isProdMode ? "production" : "sandbox",
+        username,
+        merchantAccountId,
+        hasPassword: false,
+        error: isProdMode 
+          ? "RAIACCEPT_PRODUCTION_PASSWORD nije uneta u Vercel Environment varijablama ili .env fajlu." 
+          : "RAIACCEPT_SANDBOX_PASSWORD nije definisana."
+      });
+    }
+
+    const startTime = Date.now();
+    const token = await getRaiAcceptToken(username, password, clientId, isProdMode);
+    const durationMs = Date.now() - startTime;
+
+    return res.json({
+      success: true,
+      mode: isProdMode ? "production" : "sandbox",
+      username,
+      merchantAccountId,
+      hasPassword: true,
+      tokenObtained: true,
+      tokenPreview: `${token.slice(0, 8)}...${token.slice(-6)}`,
+      durationMs,
+      message: isProdMode
+        ? "Uspešno povezano sa Raiffeisen RaiAccept produkcijom! Kredencijali su validni i prihvaćeni od strane banke."
+        : "Uspešno povezano sa Raiffeisen RaiAccept Sandbox okruženjem!"
+    });
+  } catch (err: any) {
+    console.error("[RaiAccept Test] Provera konekcije nije uspela:", err);
+    return res.status(400).json({
+      success: false,
+      error: err.message || "Neuspešna veza sa RaiAccept servisom.",
+      details: err.details || null
+    });
+  }
+});
+
 app.post("/api/payments/create-order", async (req, res) => {
   try {
     const { billingAddress, consumer, invoice, shippingAddress, mode } = req.body;
@@ -515,53 +659,19 @@ app.post("/api/payments/create-order", async (req, res) => {
     const modeConfig = String(mode || process.env.RAIACCEPT_MODE || "production").trim().toLowerCase();
     const isProdMode = modeConfig === "production";
     
-    const { clientId, username, password } = getRaiAcceptCredentials(isProdMode);
-    const ordersUrl = isProdMode ? "https://api.raiaccept.com/orders" : "https://trapi.raiaccept.com/orders";
+    const { clientId, merchantAccountId, username, password } = getRaiAcceptCredentials(isProdMode);
+    // trapi.raiaccept.com je univerzalni javni API gateway za obradu narudžbina (i u Sandbox i u Produkciji)
+    const apiBaseUrl = process.env.RAIACCEPT_API_BASE_URL || "https://trapi.raiaccept.com";
+    const ordersUrl = `${apiBaseUrl}/orders`;
 
-    console.log(`[RaiAccept] Authenticating against Cognito in mode: ${isProdMode ? "PRODUCTION" : "SANDBOX"}`);
+    console.log(`[RaiAccept] Inicijalizacija plaćanja u modu: ${isProdMode ? "PRODUCTION" : "SANDBOX"} ka ${ordersUrl}`);
 
     if (!password) {
-      throw new Error("Lozinka za produkcijski RaiAccept nije definirana u Environment varijablama.");
+      throw new Error("Lozinka za produkcijski RaiAccept nije definirana u Environment varijablama (RAIACCEPT_PRODUCTION_PASSWORD).");
     }
 
-    const authPayload = {
-      AuthFlow: "USER_PASSWORD_AUTH",
-      AuthParameters: {
-        USERNAME: username,
-        PASSWORD: password
-      },
-      ClientId: clientId
-    };
-
-    // 1. Autentifikacija na Cognito (isključivo AWS specifični hederi bez dodatnih polja)
-    const authResponse = await fetch("https://authenticate.raiaccept.com", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/x-amz-json-1.1",
-        "X-Amz-Target": "AWSCognitoIdentityProviderService.InitiateAuth"
-      },
-      body: JSON.stringify(authPayload)
-    });
-
-    if (!authResponse.ok) {
-      const errorText = await authResponse.text();
-      console.error("[RaiAccept] Cognito Authentication failed:", authResponse.status, errorText);
-      return res.status(authResponse.status).json({
-        success: false,
-        error: `Raiffeisen autentifikacija nije uspjela (${authResponse.status}). Provjerite kredencijale.`,
-        details: errorText
-      });
-    }
-
-    const authData = await authResponse.json();
-    const idToken = authData.AuthenticationResult?.IdToken;
-
-    if (!idToken) {
-      return res.status(500).json({
-        success: false,
-        error: "IdToken nije vraćen iz autentifikacije."
-      });
-    }
+    // Pribavljanje validnog tokena (RaiAccept auth servis sa Cognito fallback-om)
+    const idToken = await getRaiAcceptToken(username, password, clientId, isProdMode);
 
     console.log("[RaiAccept] Autentifikacija uspješna, šaljem narudžbu na RaiAccept...");
 
@@ -635,7 +745,9 @@ app.post("/api/payments/create-order", async (req, res) => {
     const formattedInvoice = {
       ...invoice,
       amount: parseFloat(invoice.amount),
-      description: invoice.description ? String(invoice.description).slice(0, 200) : undefined,
+      currency: invoice.currency || "RSD",
+      merchantOrderReference: String(invoice.merchantOrderReference || req.body.merchantOrderReference || req.body.orderCode || `ORD-${Date.now()}`),
+      description: invoice.description ? String(invoice.description).slice(0, 200) : "Online porudzbina",
       items: invoice.items?.map((item: any) => ({
         description: item.description ? String(item.description).slice(0, 100) : "Artikal",
         numberOfItems: parseInt(item.numberOfItems) || 1,
@@ -673,9 +785,7 @@ app.post("/api/payments/create-order", async (req, res) => {
     if (orderResponse.status === 201) {
       const orderData = JSON.parse(responseText);
       
-      const checkoutEndpoint = isProdMode
-        ? `https://api.raiaccept.com/orders/${orderData.orderIdentification}/checkout`
-        : `https://trapi.raiaccept.com/orders/${orderData.orderIdentification}/checkout`;
+      const checkoutEndpoint = `${apiBaseUrl}/orders/${orderData.orderIdentification}/checkout`;
 
       let checkoutUrl = `https://payment.raiaccept.com/?orderId=${orderData.orderIdentification}`;
 
@@ -743,47 +853,9 @@ app.get("/api/payments/transaction-status", async (req, res) => {
 
     console.log(`[RaiAccept] Status check authenticating for mode: ${isProdMode ? "PRODUCTION" : "SANDBOX"}`);
 
-    const authPayload = {
-      AuthFlow: "USER_PASSWORD_AUTH",
-      AuthParameters: {
-        USERNAME: username,
-        PASSWORD: password
-      },
-      ClientId: clientId
-    };
+    const idToken = await getRaiAcceptToken(username, password, clientId, isProdMode);
 
-    // Authenticate with Cognito (isključivo AWS hederi)
-    const authResponse = await fetch("https://authenticate.raiaccept.com", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/x-amz-json-1.1",
-        "X-Amz-Target": "AWSCognitoIdentityProviderService.InitiateAuth"
-      },
-      body: JSON.stringify(authPayload)
-    });
-
-    if (!authResponse.ok) {
-      const errorText = await authResponse.text();
-      console.error("[RaiAccept] Cognito status check Auth failed:", authResponse.status, errorText);
-      return res.status(authResponse.status).json({
-        success: false,
-        error: "Raiffeisen authentication failed.",
-        details: errorText
-      });
-    }
-
-    const authData = await authResponse.json();
-    const idToken = authData.AuthenticationResult?.IdToken;
-
-    if (!idToken) {
-      console.error("[RaiAccept] IdToken missing in status check auth result");
-      return res.status(500).json({
-        success: false,
-        error: "Failed to parse Cognito Authentication result."
-      });
-    }
-
-    const apiBaseUrl = isProdMode ? "https://api.raiaccept.com" : "https://trapi.raiaccept.com";
+    const apiBaseUrl = process.env.RAIACCEPT_API_BASE_URL || "https://trapi.raiaccept.com";
     
     // Sanitize transaction ID (filter out placeholder/stale string representations)
     const txIdClean = (transactionId && 
@@ -875,47 +947,9 @@ app.post("/api/payments/refund", async (req, res) => {
 
     console.log(`[RaiAccept] Refund authenticating for mode: ${isProdMode ? "PRODUCTION" : "SANDBOX"}`);
 
-    const authPayload = {
-      AuthFlow: "USER_PASSWORD_AUTH",
-      AuthParameters: {
-        USERNAME: username,
-        PASSWORD: password
-      },
-      ClientId: clientId
-    };
+    const idToken = await getRaiAcceptToken(username, password, clientId, isProdMode);
 
-    // Authenticate with Cognito (isključivo AWS hederi)
-    const authResponse = await fetch("https://authenticate.raiaccept.com", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/x-amz-json-1.1",
-        "X-Amz-Target": "AWSCognitoIdentityProviderService.InitiateAuth"
-      },
-      body: JSON.stringify(authPayload)
-    });
-
-    if (!authResponse.ok) {
-      const errorText = await authResponse.text();
-      console.error("[RaiAccept] Cognito refund Auth failed:", authResponse.status, errorText);
-      return res.status(authResponse.status).json({
-        success: false,
-        error: "Raiffeisen authentication failed.",
-        details: errorText
-      });
-    }
-
-    const authData = await authResponse.json();
-    const idToken = authData.AuthenticationResult?.IdToken;
-
-    if (!idToken) {
-      console.error("[RaiAccept] IdToken missing in refund auth result");
-      return res.status(500).json({
-        success: false,
-        error: "Failed to parse Cognito Authentication result."
-      });
-    }
-
-    const baseUrl = isProdMode ? "https://api.raiaccept.com" : "https://trapi.raiaccept.com";
+    const baseUrl = process.env.RAIACCEPT_API_BASE_URL || "https://trapi.raiaccept.com";
     const targetUrl = `${baseUrl}/orders/${orderId}/transactions/${transactionId}/refund`;
 
     console.log(`[RaiAccept] Issuing refund POST to: ${targetUrl}`);
