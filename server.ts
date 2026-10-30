@@ -486,18 +486,15 @@ app.post("/api/ordering", async (req, res) => {
   }
 });
 
-// Standardni User-Agent koji sprečava Cloudflare/WAF da blokira vezu sa Vercela
-const COMMON_HEADERS = {
-  "Accept": "application/json",
-  "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36 DDDesignApp/1.0"
-};
-
-// RaiAccept credentials resolution helper
+// RaiAccept credentials helper
 const getRaiAcceptCredentials = (isProd: boolean) => {
-  const clientId = process.env.RAIACCEPT_CLIENT_ID || "P-001-MA-2qVqpYFY";
+  // Ovdje mora biti Cognito App Client ID (npr. kr2gs4117arvbnaperqff5dml), a NE broj računa P-001...
+  const clientId = process.env.RAIACCEPT_CLIENT_ID || "kr2gs4117arvbnaperqff5dml";
+  
   const username = isProd 
     ? (process.env.RAIACCEPT_PRODUCTION_USERNAME || "dc3bbc8b-b417-4fca-ae08-3bfeff51381d")
     : (process.env.RAIACCEPT_SANDBOX_USERNAME || "1eab1b61-525f-45c5-97dc-1a57b01a1c14");
+    
   const password = isProd 
     ? (process.env.RAIACCEPT_PRODUCTION_PASSWORD || "")
     : (process.env.RAIACCEPT_SANDBOX_PASSWORD || "chMkiMwP%+1_c?Jl(4bg5Xs8WbN3(2-<)kB");
@@ -505,7 +502,12 @@ const getRaiAcceptCredentials = (isProd: boolean) => {
   return { clientId, username, password };
 };
 
-// Endpoint to handle credit card payments with RaiAccept
+// Standardni hederi za Cloudflare / RaiAccept
+const RAI_HEADERS = {
+  "Accept": "application/json",
+  "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36 DDDesignApp/1.0"
+};
+
 app.post("/api/payments/create-order", async (req, res) => {
   try {
     const { billingAddress, consumer, invoice, shippingAddress, mode } = req.body;
@@ -518,6 +520,10 @@ app.post("/api/payments/create-order", async (req, res) => {
 
     console.log(`[RaiAccept] Authenticating against Cognito in mode: ${isProdMode ? "PRODUCTION" : "SANDBOX"}`);
 
+    if (!password) {
+      throw new Error("Lozinka za produkcijski RaiAccept nije definirana u Environment varijablama.");
+    }
+
     const authPayload = {
       AuthFlow: "USER_PASSWORD_AUTH",
       AuthParameters: {
@@ -527,11 +533,10 @@ app.post("/api/payments/create-order", async (req, res) => {
       ClientId: clientId
     };
 
-    // 1. Authenticate with Cognito (dodat User-Agent i Accept)
+    // 1. Autentifikacija na Cognito (isključivo AWS specifični hederi bez dodatnih polja)
     const authResponse = await fetch("https://authenticate.raiaccept.com", {
       method: "POST",
       headers: {
-        ...COMMON_HEADERS,
         "Content-Type": "application/x-amz-json-1.1",
         "X-Amz-Target": "AWSCognitoIdentityProviderService.InitiateAuth"
       },
@@ -543,7 +548,7 @@ app.post("/api/payments/create-order", async (req, res) => {
       console.error("[RaiAccept] Cognito Authentication failed:", authResponse.status, errorText);
       return res.status(authResponse.status).json({
         success: false,
-        error: "Raiffeisen authentication failed. Please verify credentials.",
+        error: `Raiffeisen autentifikacija nije uspjela (${authResponse.status}). Provjerite kredencijale.`,
         details: errorText
       });
     }
@@ -552,14 +557,13 @@ app.post("/api/payments/create-order", async (req, res) => {
     const idToken = authData.AuthenticationResult?.IdToken;
 
     if (!idToken) {
-      console.error("[RaiAccept] IdToken was not received in Cognito response");
       return res.status(500).json({
         success: false,
-        error: "Failed to parse Cognito Authentication result."
+        error: "IdToken nije vraćen iz autentifikacije."
       });
     }
 
-    console.log("[RaiAccept] Obtained IdToken successfully. Now placing payment order...");
+    console.log("[RaiAccept] Autentifikacija uspješna, šaljem narudžbu na RaiAccept...");
 
     const cleanName = (val?: string): string => {
       if (!val) return "Kupac";
@@ -653,11 +657,11 @@ app.post("/api/payments/create-order", async (req, res) => {
       }
     };
 
-    // 2. Kreiranje porudžbine (dodat User-Agent i Accept)
+    // 2. Slanje narudžbe na RaiAccept (s User-Agent hederima protiv Cloudflare blokade)
     const orderResponse = await fetch(ordersUrl, {
       method: "POST",
       headers: {
-        ...COMMON_HEADERS,
+        ...RAI_HEADERS,
         "Content-Type": "application/json",
         "Authorization": `Bearer ${idToken}`
       },
@@ -665,7 +669,6 @@ app.post("/api/payments/create-order", async (req, res) => {
     });
 
     const responseText = await orderResponse.text();
-    console.log(`[RaiAccept] Order response received with status ${orderResponse.status}`);
 
     if (orderResponse.status === 201) {
       const orderData = JSON.parse(responseText);
@@ -674,39 +677,30 @@ app.post("/api/payments/create-order", async (req, res) => {
         ? `https://api.raiaccept.com/orders/${orderData.orderIdentification}/checkout`
         : `https://trapi.raiaccept.com/orders/${orderData.orderIdentification}/checkout`;
 
-      console.log(`[RaiAccept] Generating payment session from Step 3: ${checkoutEndpoint}`);
-
       let checkoutUrl = `https://payment.raiaccept.com/?orderId=${orderData.orderIdentification}`;
 
       try {
-        // 3. Checkout sesija (dodat User-Agent i Accept)
+        // 3. Generiranje sesije za plaćanje
         const checkoutSessionResponse = await fetch(checkoutEndpoint, {
           method: "POST",
           headers: {
-            ...COMMON_HEADERS,
+            ...RAI_HEADERS,
             "Content-Type": "application/json",
             "Authorization": `Bearer ${idToken}`
           },
           body: JSON.stringify(orderPayload)
         });
 
-        const checkoutSessionText = await checkoutSessionResponse.text();
-        console.log(`[RaiAccept] Checkout session response status: ${checkoutSessionResponse.status}`);
-        
         if (checkoutSessionResponse.ok) {
-          const checkoutSessionData = JSON.parse(checkoutSessionText);
-          if (checkoutSessionData.paymentRedirectURL) {
-            checkoutUrl = checkoutSessionData.paymentRedirectURL;
-          } else if (checkoutSessionData.paymentRedirectUrl) {
-            checkoutUrl = checkoutSessionData.paymentRedirectUrl;
-          } else if (checkoutSessionData.checkoutUrl) {
-            checkoutUrl = checkoutSessionData.checkoutUrl;
-          } else if (checkoutSessionData.redirectUrl) {
-            checkoutUrl = checkoutSessionData.redirectUrl;
-          }
+          const checkoutSessionData = await checkoutSessionResponse.json();
+          checkoutUrl = checkoutSessionData.paymentRedirectURL || 
+                        checkoutSessionData.paymentRedirectUrl || 
+                        checkoutSessionData.checkoutUrl || 
+                        checkoutSessionData.redirectUrl || 
+                        checkoutUrl;
         }
       } catch (sessionErr) {
-        console.error("[RaiAccept] Error fetching Step 3 checkout session:", sessionErr);
+        console.error("[RaiAccept] Greška pri dohvatu checkout sesije:", sessionErr);
       }
 
       return res.status(201).json({
@@ -718,19 +712,19 @@ app.post("/api/payments/create-order", async (req, res) => {
         checkoutUrl
       });
     } else {
-      console.error("[RaiAccept] Placing payment order failed:", orderResponse.status, responseText);
+      console.error("[RaiAccept] Kreiranje narudžbe nije uspjelo:", orderResponse.status, responseText);
       return res.status(orderResponse.status).json({
         success: false,
-        error: `Order placement failed with status ${orderResponse.status}`,
+        error: `RaiAccept narudžba nije uspjela (${orderResponse.status})`,
         details: responseText
       });
     }
 
   } catch (err: any) {
-    console.error("[RaiAccept] Error processing payment:", err);
+    console.error("[RaiAccept] Greška u obradi:", err);
     return res.status(400).json({
       success: false,
-      error: err.message || "Internal server error"
+      error: err.message || "Interna poslužiteljska greška."
     });
   }
 });
@@ -758,11 +752,10 @@ app.get("/api/payments/transaction-status", async (req, res) => {
       ClientId: clientId
     };
 
-    // Authenticate with Cognito
+    // Authenticate with Cognito (isključivo AWS hederi)
     const authResponse = await fetch("https://authenticate.raiaccept.com", {
       method: "POST",
       headers: {
-        ...COMMON_HEADERS,
         "Content-Type": "application/x-amz-json-1.1",
         "X-Amz-Target": "AWSCognitoIdentityProviderService.InitiateAuth"
       },
@@ -805,7 +798,7 @@ app.get("/api/payments/transaction-status", async (req, res) => {
     const orderResponse = await fetch(orderUrl, {
       method: "GET",
       headers: {
-        ...COMMON_HEADERS,
+        ...RAI_HEADERS,
         "Authorization": `Bearer ${idToken}`,
         "Content-Type": "application/json"
       }
@@ -830,7 +823,7 @@ app.get("/api/payments/transaction-status", async (req, res) => {
     const txResponse = await fetch(txUrl, {
       method: "GET",
       headers: {
-        ...COMMON_HEADERS,
+        ...RAI_HEADERS,
         "Authorization": `Bearer ${idToken}`,
         "Content-Type": "application/json"
       }
@@ -891,11 +884,10 @@ app.post("/api/payments/refund", async (req, res) => {
       ClientId: clientId
     };
 
-    // Authenticate with Cognito
+    // Authenticate with Cognito (isključivo AWS hederi)
     const authResponse = await fetch("https://authenticate.raiaccept.com", {
       method: "POST",
       headers: {
-        ...COMMON_HEADERS,
         "Content-Type": "application/x-amz-json-1.1",
         "X-Amz-Target": "AWSCognitoIdentityProviderService.InitiateAuth"
       },
@@ -936,7 +928,7 @@ app.post("/api/payments/refund", async (req, res) => {
     let refundResponse = await fetch(targetUrl, {
       method: "POST",
       headers: {
-        ...COMMON_HEADERS,
+        ...RAI_HEADERS,
         "Authorization": `Bearer ${idToken}`,
         "Content-Type": "application/json"
       },
@@ -953,7 +945,7 @@ app.post("/api/payments/refund", async (req, res) => {
       refundResponse = await fetch(alternateUrl, {
         method: "POST",
         headers: {
-          ...COMMON_HEADERS,
+          ...RAI_HEADERS,
           "Authorization": `Bearer ${idToken}`,
           "Content-Type": "application/json"
         },
