@@ -486,14 +486,20 @@ app.post("/api/ordering", async (req, res) => {
   }
 });
 
-// RaiAccept credentials resolution helper to guarantee zero hardcoded credentials inside git code
+// Standardni User-Agent koji sprečava Cloudflare/WAF da blokira vezu sa Vercela
+const COMMON_HEADERS = {
+  "Accept": "application/json",
+  "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36 DDDesignApp/1.0"
+};
+
+// RaiAccept credentials resolution helper
 const getRaiAcceptCredentials = (isProd: boolean) => {
-  const clientId = process.env.RAIACCEPT_CLIENT_ID || "kr2gs4117arvbnaperqff5dml";
+  const clientId = process.env.RAIACCEPT_CLIENT_ID || "P-001-MA-2qVqpYFY";
   const username = isProd 
-    ? (process.env.RAIACCEPT_PRODUCTION_USERNAME || "1eab1b61-525f-45c5-97dc-1a57b01a1c14")
+    ? (process.env.RAIACCEPT_PRODUCTION_USERNAME || "dc3bbc8b-b417-4fca-ae08-3bfeff51381d")
     : (process.env.RAIACCEPT_SANDBOX_USERNAME || "1eab1b61-525f-45c5-97dc-1a57b01a1c14");
   const password = isProd 
-    ? (process.env.RAIACCEPT_PRODUCTION_PASSWORD || "chMkiMwP%+1_c?Jl(4bg5Xs8WbN3(2-<)kB")
+    ? (process.env.RAIACCEPT_PRODUCTION_PASSWORD || "")
     : (process.env.RAIACCEPT_SANDBOX_PASSWORD || "chMkiMwP%+1_c?Jl(4bg5Xs8WbN3(2-<)kB");
 
   return { clientId, username, password };
@@ -504,11 +510,9 @@ app.post("/api/payments/create-order", async (req, res) => {
   try {
     const { billingAddress, consumer, invoice, shippingAddress, mode } = req.body;
 
-    // Use mode parameter or default to RAIACCEPT_MODE, fallback to production
     const modeConfig = String(mode || process.env.RAIACCEPT_MODE || "production").trim().toLowerCase();
     const isProdMode = modeConfig === "production";
     
-    // Dynamically retrieve configured credentials from server environment
     const { clientId, username, password } = getRaiAcceptCredentials(isProdMode);
     const ordersUrl = isProdMode ? "https://api.raiaccept.com/orders" : "https://trapi.raiaccept.com/orders";
 
@@ -523,10 +527,11 @@ app.post("/api/payments/create-order", async (req, res) => {
       ClientId: clientId
     };
 
-    // Authenticate with Cognito
+    // 1. Authenticate with Cognito (dodat User-Agent i Accept)
     const authResponse = await fetch("https://authenticate.raiaccept.com", {
       method: "POST",
       headers: {
+        ...COMMON_HEADERS,
         "Content-Type": "application/x-amz-json-1.1",
         "X-Amz-Target": "AWSCognitoIdentityProviderService.InitiateAuth"
       },
@@ -556,24 +561,20 @@ app.post("/api/payments/create-order", async (req, res) => {
 
     console.log("[RaiAccept] Obtained IdToken successfully. Now placing payment order...");
 
-    // Helpers for RaiAccept strict API validation compliance
     const cleanName = (val?: string): string => {
       if (!val) return "Kupac";
-      // Allow Unicode letters, hyphens, apostrophes, periods, and optional spaces
       const cleaned = val.replace(/[^\s\p{L}'-.]/gu, "");
       return cleaned.trim().slice(0, 32) || "Kupac";
     };
 
     const cleanPhone = (val?: string): string => {
       if (!val) return "+381600000000";
-      // Keep only + at start and digits
       const cleaned = val.replace(/(?!^\+)[^\d]/g, "").replace(/[^\d+]/g, "");
       return cleaned.slice(0, 15) || "+381600000000";
     };
 
     const cleanStreet = (val?: string): { addressStreet1: string; addressStreet2?: string; addressStreet3?: string } => {
       if (!val) return { addressStreet1: "Neznata Adresa" };
-      // Allow letters, numbers, spaces, hyphens, apostrophes, periods, slashes, commas
       let cleaned = val.replace(/[^\s\p{L}\p{N}'-.,/]/gu, "").trim();
       if (cleaned.length === 0) cleaned = "Neznata Adresa";
 
@@ -586,19 +587,16 @@ app.post("/api/payments/create-order", async (req, res) => {
 
     const cleanTextAlphanumericSimple = (val?: string, maxLen: number = 50): string => {
       if (!val) return "Grad";
-      // Allow letters, numbers, spaces, hyphens, apostrophes, periods, slashes, commas
       const cleaned = val.replace(/[^\s\p{L}\p{N}'-.,/]/gu, "").trim();
       return cleaned.slice(0, maxLen) || "Grad";
     };
 
     const cleanZip = (val?: string): string => {
       if (!val) return "11000";
-      // Only alphanumeric and hyphens
       const cleaned = val.replace(/[^\s\p{L}\p{N}-]/gu, "").replace(/\s+/g, "");
       return cleaned.slice(0, 15) || "11000";
     };
 
-    // Format billing/shipping address using sanitizers for 100% API compatibility
     const billingStreetInfo = cleanStreet(billingAddress?.addressStreet1);
     const billing = {
       firstName: cleanName(billingAddress?.firstName || consumer?.firstName),
@@ -630,7 +628,6 @@ app.post("/api/payments/create-order", async (req, res) => {
       mobilePhone: cleanPhone(consumer?.mobilePhone)
     };
 
-    // Ensure prices are numbers and items conform to limitations
     const formattedInvoice = {
       ...invoice,
       amount: parseFloat(invoice.amount),
@@ -649,16 +646,18 @@ app.post("/api/payments/create-order", async (req, res) => {
       paymentMethodPreference: "CARD",
       shippingAddress: shipping,
       urls: {
-        cancelUrl: req.body.urls?.cancelUrl || "http://localhost:3000/checkout",
-        failUrl: req.body.urls?.failUrl || "http://localhost:3000/checkout",
-        notificationUrl: req.body.urls?.notificationUrl || "https://webhook.site/cb7f55c6-e7aa-49dd-9d28-a22333cc1551",
-        successUrl: req.body.urls?.successUrl || "http://localhost:3000/checkout"
+        cancelUrl: req.body.urls?.cancelUrl || "https://dddesign.rs/checkout",
+        failUrl: req.body.urls?.failUrl || "https://dddesign.rs/checkout",
+        notificationUrl: req.body.urls?.notificationUrl || "https://dddesign.rs/api/payments/webhook",
+        successUrl: req.body.urls?.successUrl || "https://dddesign.rs/checkout"
       }
     };
 
+    // 2. Kreiranje porudžbine (dodat User-Agent i Accept)
     const orderResponse = await fetch(ordersUrl, {
       method: "POST",
       headers: {
+        ...COMMON_HEADERS,
         "Content-Type": "application/json",
         "Authorization": `Bearer ${idToken}`
       },
@@ -671,20 +670,20 @@ app.post("/api/payments/create-order", async (req, res) => {
     if (orderResponse.status === 201) {
       const orderData = JSON.parse(responseText);
       
-      // Step 3 from documentation: Create payment session (Generate dynamic URL)
       const checkoutEndpoint = isProdMode
         ? `https://api.raiaccept.com/orders/${orderData.orderIdentification}/checkout`
         : `https://trapi.raiaccept.com/orders/${orderData.orderIdentification}/checkout`;
 
       console.log(`[RaiAccept] Generating payment session from Step 3: ${checkoutEndpoint}`);
 
-      // Default fallback URL if dynamic generation has issues
       let checkoutUrl = `https://payment.raiaccept.com/?orderId=${orderData.orderIdentification}`;
 
       try {
+        // 3. Checkout sesija (dodat User-Agent i Accept)
         const checkoutSessionResponse = await fetch(checkoutEndpoint, {
           method: "POST",
           headers: {
+            ...COMMON_HEADERS,
             "Content-Type": "application/json",
             "Authorization": `Bearer ${idToken}`
           },
@@ -696,7 +695,6 @@ app.post("/api/payments/create-order", async (req, res) => {
         
         if (checkoutSessionResponse.ok) {
           const checkoutSessionData = JSON.parse(checkoutSessionText);
-          console.log("[RaiAccept] Checkout session data successfully retrieved:", checkoutSessionData);
           if (checkoutSessionData.paymentRedirectURL) {
             checkoutUrl = checkoutSessionData.paymentRedirectURL;
           } else if (checkoutSessionData.paymentRedirectUrl) {
@@ -706,11 +704,9 @@ app.post("/api/payments/create-order", async (req, res) => {
           } else if (checkoutSessionData.redirectUrl) {
             checkoutUrl = checkoutSessionData.redirectUrl;
           }
-        } else {
-          console.warn("[RaiAccept] Step 3 checkout session response not OK. Falling back to static checkoutUrl.", checkoutSessionResponse.status, checkoutSessionText);
         }
       } catch (sessionErr) {
-        console.error("[RaiAccept] Error fetching Step 3 checkout session, falling back to static checkoutUrl:", sessionErr);
+        console.error("[RaiAccept] Error fetching Step 3 checkout session:", sessionErr);
       }
 
       return res.status(201).json({
@@ -732,16 +728,9 @@ app.post("/api/payments/create-order", async (req, res) => {
 
   } catch (err: any) {
     console.error("[RaiAccept] Error processing payment:", err);
-    let errorMessage = err.message || "Internal server error";
-    
-    // Help users diagnose common production setup issues with RaiAccept (like IP whitelisting or non-activated accounts)
-    if (errorMessage.toLowerCase().includes("fetch failed") || errorMessage.toLowerCase().includes("socket") || errorMessage.toLowerCase().includes("other side closed")) {
-      errorMessage = "Raiffeisen banka je odbila mrežnu vezu sa našim serverom (Socket Connection Closed). Ovo se obično dešava na produkciji ako autorizacija IP adrese servera nije završena u Raiffeisen portalu, ili ako nalog nije potpuno aktiviran. Molimo proverite vaš Raiffeisen trgovački portal ili promenite RAIACCEPT_MODE na 'sandbox' kako biste testirali plaćanje.";
-    }
-    
     return res.status(400).json({
       success: false,
-      error: errorMessage
+      error: err.message || "Internal server error"
     });
   }
 });
@@ -773,6 +762,7 @@ app.get("/api/payments/transaction-status", async (req, res) => {
     const authResponse = await fetch("https://authenticate.raiaccept.com", {
       method: "POST",
       headers: {
+        ...COMMON_HEADERS,
         "Content-Type": "application/x-amz-json-1.1",
         "X-Amz-Target": "AWSCognitoIdentityProviderService.InitiateAuth"
       },
@@ -815,6 +805,7 @@ app.get("/api/payments/transaction-status", async (req, res) => {
     const orderResponse = await fetch(orderUrl, {
       method: "GET",
       headers: {
+        ...COMMON_HEADERS,
         "Authorization": `Bearer ${idToken}`,
         "Content-Type": "application/json"
       }
@@ -839,6 +830,7 @@ app.get("/api/payments/transaction-status", async (req, res) => {
     const txResponse = await fetch(txUrl, {
       method: "GET",
       headers: {
+        ...COMMON_HEADERS,
         "Authorization": `Bearer ${idToken}`,
         "Content-Type": "application/json"
       }
@@ -903,6 +895,7 @@ app.post("/api/payments/refund", async (req, res) => {
     const authResponse = await fetch("https://authenticate.raiaccept.com", {
       method: "POST",
       headers: {
+        ...COMMON_HEADERS,
         "Content-Type": "application/x-amz-json-1.1",
         "X-Amz-Target": "AWSCognitoIdentityProviderService.InitiateAuth"
       },
@@ -943,6 +936,7 @@ app.post("/api/payments/refund", async (req, res) => {
     let refundResponse = await fetch(targetUrl, {
       method: "POST",
       headers: {
+        ...COMMON_HEADERS,
         "Authorization": `Bearer ${idToken}`,
         "Content-Type": "application/json"
       },
@@ -959,6 +953,7 @@ app.post("/api/payments/refund", async (req, res) => {
       refundResponse = await fetch(alternateUrl, {
         method: "POST",
         headers: {
+          ...COMMON_HEADERS,
           "Authorization": `Bearer ${idToken}`,
           "Content-Type": "application/json"
         },

@@ -1,0 +1,248 @@
+// Standardni User-Agent koji sprečava Cloudflare/WAF da blokira vezu sa Vercela
+const COMMON_HEADERS = {
+  "Accept": "application/json",
+  "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36 DDDesignApp/1.0"
+};
+
+// RaiAccept credentials resolution helper
+const getRaiAcceptCredentials = (isProd: boolean) => {
+  const clientId = process.env.RAIACCEPT_CLIENT_ID || "P-001-MA-2qVqpYFY";
+  const username = isProd 
+    ? (process.env.RAIACCEPT_PRODUCTION_USERNAME || "dc3bbc8b-b417-4fca-ae08-3bfeff51381d")
+    : (process.env.RAIACCEPT_SANDBOX_USERNAME || "1eab1b61-525f-45c5-97dc-1a57b01a1c14");
+  const password = isProd 
+    ? (process.env.RAIACCEPT_PRODUCTION_PASSWORD || "")
+    : (process.env.RAIACCEPT_SANDBOX_PASSWORD || "chMkiMwP%+1_c?Jl(4bg5Xs8WbN3(2-<)kB");
+
+  return { clientId, username, password };
+};
+
+// Endpoint to handle credit card payments with RaiAccept
+app.post("/api/payments/create-order", async (req, res) => {
+  try {
+    const { billingAddress, consumer, invoice, shippingAddress, mode } = req.body;
+
+    const modeConfig = String(mode || process.env.RAIACCEPT_MODE || "production").trim().toLowerCase();
+    const isProdMode = modeConfig === "production";
+    
+    const { clientId, username, password } = getRaiAcceptCredentials(isProdMode);
+    const ordersUrl = isProdMode ? "https://api.raiaccept.com/orders" : "https://trapi.raiaccept.com/orders";
+
+    console.log(`[RaiAccept] Authenticating against Cognito in mode: ${isProdMode ? "PRODUCTION" : "SANDBOX"}`);
+
+    const authPayload = {
+      AuthFlow: "USER_PASSWORD_AUTH",
+      AuthParameters: {
+        USERNAME: username,
+        PASSWORD: password
+      },
+      ClientId: clientId
+    };
+
+    // 1. Authenticate with Cognito (dodat User-Agent i Accept)
+    const authResponse = await fetch("https://authenticate.raiaccept.com", {
+      method: "POST",
+      headers: {
+        ...COMMON_HEADERS,
+        "Content-Type": "application/x-amz-json-1.1",
+        "X-Amz-Target": "AWSCognitoIdentityProviderService.InitiateAuth"
+      },
+      body: JSON.stringify(authPayload)
+    });
+
+    if (!authResponse.ok) {
+      const errorText = await authResponse.text();
+      console.error("[RaiAccept] Cognito Authentication failed:", authResponse.status, errorText);
+      return res.status(authResponse.status).json({
+        success: false,
+        error: "Raiffeisen authentication failed. Please verify credentials.",
+        details: errorText
+      });
+    }
+
+    const authData = await authResponse.json();
+    const idToken = authData.AuthenticationResult?.IdToken;
+
+    if (!idToken) {
+      console.error("[RaiAccept] IdToken was not received in Cognito response");
+      return res.status(500).json({
+        success: false,
+        error: "Failed to parse Cognito Authentication result."
+      });
+    }
+
+    console.log("[RaiAccept] Obtained IdToken successfully. Now placing payment order...");
+
+    const cleanName = (val?: string): string => {
+      if (!val) return "Kupac";
+      const cleaned = val.replace(/[^\s\p{L}'-.]/gu, "");
+      return cleaned.trim().slice(0, 32) || "Kupac";
+    };
+
+    const cleanPhone = (val?: string): string => {
+      if (!val) return "+381600000000";
+      const cleaned = val.replace(/(?!^\+)[^\d]/g, "").replace(/[^\d+]/g, "");
+      return cleaned.slice(0, 15) || "+381600000000";
+    };
+
+    const cleanStreet = (val?: string): { addressStreet1: string; addressStreet2?: string; addressStreet3?: string } => {
+      if (!val) return { addressStreet1: "Neznata Adresa" };
+      let cleaned = val.replace(/[^\s\p{L}\p{N}'-.,/]/gu, "").trim();
+      if (cleaned.length === 0) cleaned = "Neznata Adresa";
+
+      return {
+        addressStreet1: cleaned.slice(0, 50),
+        addressStreet2: cleaned.length > 50 ? cleaned.slice(50, 100) : undefined,
+        addressStreet3: cleaned.length > 100 ? cleaned.slice(100, 150) : undefined
+      };
+    };
+
+    const cleanTextAlphanumericSimple = (val?: string, maxLen: number = 50): string => {
+      if (!val) return "Grad";
+      const cleaned = val.replace(/[^\s\p{L}\p{N}'-.,/]/gu, "").trim();
+      return cleaned.slice(0, maxLen) || "Grad";
+    };
+
+    const cleanZip = (val?: string): string => {
+      if (!val) return "11000";
+      const cleaned = val.replace(/[^\s\p{L}\p{N}-]/gu, "").replace(/\s+/g, "");
+      return cleaned.slice(0, 15) || "11000";
+    };
+
+    const billingStreetInfo = cleanStreet(billingAddress?.addressStreet1);
+    const billing = {
+      firstName: cleanName(billingAddress?.firstName || consumer?.firstName),
+      lastName: cleanName(billingAddress?.lastName || consumer?.lastName),
+      addressStreet1: billingStreetInfo.addressStreet1,
+      addressStreet2: billingStreetInfo.addressStreet2,
+      addressStreet3: billingStreetInfo.addressStreet3,
+      city: cleanTextAlphanumericSimple(billingAddress?.city, 50),
+      postalCode: cleanZip(billingAddress?.postalCode),
+      country: billingAddress?.country || "SRB"
+    };
+
+    const shippingStreetInfo = cleanStreet(shippingAddress?.addressStreet1);
+    const shipping = {
+      firstName: cleanName(shippingAddress?.firstName || consumer?.firstName),
+      lastName: cleanName(shippingAddress?.lastName || consumer?.lastName),
+      addressStreet1: shippingStreetInfo.addressStreet1,
+      addressStreet2: shippingStreetInfo.addressStreet2,
+      addressStreet3: shippingStreetInfo.addressStreet3,
+      city: cleanTextAlphanumericSimple(shippingAddress?.city, 50),
+      postalCode: cleanZip(shippingAddress?.postalCode),
+      country: shippingAddress?.country || "SRB"
+    };
+
+    const cleanedConsumer = {
+      firstName: cleanName(consumer?.firstName),
+      lastName: cleanName(consumer?.lastName),
+      email: String(consumer?.email || "").trim().slice(0, 254) || "kupac@gmail.com",
+      mobilePhone: cleanPhone(consumer?.mobilePhone)
+    };
+
+    const formattedInvoice = {
+      ...invoice,
+      amount: parseFloat(invoice.amount),
+      description: invoice.description ? String(invoice.description).slice(0, 200) : undefined,
+      items: invoice.items?.map((item: any) => ({
+        description: item.description ? String(item.description).slice(0, 100) : "Artikal",
+        numberOfItems: parseInt(item.numberOfItems) || 1,
+        price: parseFloat(item.price)
+      }))
+    };
+
+    const orderPayload = {
+      billingAddress: billing,
+      consumer: cleanedConsumer,
+      invoice: formattedInvoice,
+      paymentMethodPreference: "CARD",
+      shippingAddress: shipping,
+      urls: {
+        cancelUrl: req.body.urls?.cancelUrl || "https://dddesign.rs/checkout",
+        failUrl: req.body.urls?.failUrl || "https://dddesign.rs/checkout",
+        notificationUrl: req.body.urls?.notificationUrl || "https://dddesign.rs/api/payments/webhook",
+        successUrl: req.body.urls?.successUrl || "https://dddesign.rs/checkout"
+      }
+    };
+
+    // 2. Kreiranje porudžbine (dodat User-Agent i Accept)
+    const orderResponse = await fetch(ordersUrl, {
+      method: "POST",
+      headers: {
+        ...COMMON_HEADERS,
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${idToken}`
+      },
+      body: JSON.stringify(orderPayload)
+    });
+
+    const responseText = await orderResponse.text();
+    console.log(`[RaiAccept] Order response received with status ${orderResponse.status}`);
+
+    if (orderResponse.status === 201) {
+      const orderData = JSON.parse(responseText);
+      
+      const checkoutEndpoint = isProdMode
+        ? `https://api.raiaccept.com/orders/${orderData.orderIdentification}/checkout`
+        : `https://trapi.raiaccept.com/orders/${orderData.orderIdentification}/checkout`;
+
+      console.log(`[RaiAccept] Generating payment session from Step 3: ${checkoutEndpoint}`);
+
+      let checkoutUrl = `https://payment.raiaccept.com/?orderId=${orderData.orderIdentification}`;
+
+      try {
+        // 3. Checkout sesija (dodat User-Agent i Accept)
+        const checkoutSessionResponse = await fetch(checkoutEndpoint, {
+          method: "POST",
+          headers: {
+            ...COMMON_HEADERS,
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${idToken}`
+          },
+          body: JSON.stringify(orderPayload)
+        });
+
+        const checkoutSessionText = await checkoutSessionResponse.text();
+        console.log(`[RaiAccept] Checkout session response status: ${checkoutSessionResponse.status}`);
+        
+        if (checkoutSessionResponse.ok) {
+          const checkoutSessionData = JSON.parse(checkoutSessionText);
+          if (checkoutSessionData.paymentRedirectURL) {
+            checkoutUrl = checkoutSessionData.paymentRedirectURL;
+          } else if (checkoutSessionData.paymentRedirectUrl) {
+            checkoutUrl = checkoutSessionData.paymentRedirectUrl;
+          } else if (checkoutSessionData.checkoutUrl) {
+            checkoutUrl = checkoutSessionData.checkoutUrl;
+          } else if (checkoutSessionData.redirectUrl) {
+            checkoutUrl = checkoutSessionData.redirectUrl;
+          }
+        }
+      } catch (sessionErr) {
+        console.error("[RaiAccept] Error fetching Step 3 checkout session:", sessionErr);
+      }
+
+      return res.status(201).json({
+        success: true,
+        orderIdentification: orderData.orderIdentification,
+        merchantAccountId: orderData.merchant?.merchantAccountId,
+        isProduction: isProdMode,
+        status: orderData.status,
+        checkoutUrl
+      });
+    } else {
+      console.error("[RaiAccept] Placing payment order failed:", orderResponse.status, responseText);
+      return res.status(orderResponse.status).json({
+        success: false,
+        error: `Order placement failed with status ${orderResponse.status}`,
+        details: responseText
+      });
+    }
+
+  } catch (err: any) {
+    console.error("[RaiAccept] Error processing payment:", err);
+    return res.status(400).json({
+      success: false,
+      error: err.message || "Internal server error"
+    });
+  }
+});
