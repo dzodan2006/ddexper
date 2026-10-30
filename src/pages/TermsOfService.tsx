@@ -126,10 +126,10 @@ export default function TermsOfService() {
                   theme === 'dark' ? 'text-white' : 'text-black'
                 }`}>
                   <div className={`w-1 h-1 rounded-full ${theme === 'dark' ? 'bg-white' : 'bg-black'}`} />
-                  Otkazivanje
+                  Otkazivanje i izrada po meri
                 </h4>
                 <p className="text-sm">
-                  Ukoliko narudžbina nije poslata, otkazivanje je bez troškova. Imate pravo na odustajanje u roku od 14 dana od prijema robe.
+                  Ukoliko narudžbina standardnih artikala nije poslata, otkazivanje je bez troškova. Imate pravo na odustajanje u roku od 14 dana od prijema robe. Modeli izrađeni prema individualnim merama ili po posebnom zahtevu klijenta predstavljaju personalizovane proizvode, gde pravo na odustanak može biti zakonski ograničeno.
                 </p>
               </div>
             </div>

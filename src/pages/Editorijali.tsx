@@ -1,225 +1,554 @@
-import { useState } from 'react';
-import { motion, AnimatePresence } from 'motion/react';
-import { Link } from 'react-router-dom';
-import { ArrowRight, BookOpen, Quote, Sparkles, ChevronLeft, ChevronRight, ShoppingBag } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { motion } from 'motion/react';
+import { Link, useSearchParams } from 'react-router-dom';
+import { 
+  Sparkles, 
+  ShoppingBag, 
+  Scissors, 
+  ShieldCheck, 
+  Ruler, 
+  Check, 
+  Phone, 
+  Mail, 
+  Instagram, 
+  ArrowRight,
+  BookOpen,
+  Feather,
+  Sun,
+  Droplets,
+  Wind
+} from 'lucide-react';
 import { useTheme } from '../context/ThemeContext';
 import { useLanguage } from '../context/LanguageContext';
 
 export default function Editorijali() {
   const { theme } = useTheme();
-  const { t, language } = useLanguage();
-  const [activePage, setActivePage] = useState(0);
+  const { language } = useLanguage();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [activeFilter, setActiveFilter] = useState<'all' | 'taft' | 'santung' | 'grez' | 'po-meri'>('all');
 
-  // High fashion photography selected for ultimate brand feeling
-  const editorialSpreads = [
-    {
-      title: t('ed.taftSilkTitle'),
-      subtitle: language === 'sr' 
-        ? 'Skulpturalne forme i "šuštavi" zvuk čistog luksuza'
-        : language === 'ru'
-        ? 'Скульптурные формы и "шуршащий" шепот чистого люкса'
-        : 'Sculptural Forms & The "Rustle" of Pure Luxury',
-      text: t('ed.taftSilkDesc'),
-      quote: t('ed.taftSilkQuote'),
-      image: "https://images.weserv.nl/?url=64.media.tumblr.com/cb6f36c302200c648bf44670ada2305e/2b7c3e65e62eb0d6-47/s2048x3072/f4675eb55ccda97da38e96bf2cedb7b947b917f0.jpg",
-      styleTips: [
-        t('ed.taftSilkStyle1'),
-        t('ed.taftSilkStyle2'),
-        t('ed.taftSilkStyle3')
-      ],
-      ctaText: t('ed.exploreTaftBtn'),
-      searchKeyword: 'taft'
+  // Sync with search parameter if present (?prica=taft / santung / grez / po-meri)
+  useEffect(() => {
+    const pricaParam = searchParams.get('prica') || searchParams.get('tab');
+    if (pricaParam && ['taft', 'santung', 'grez', 'po-meri'].includes(pricaParam)) {
+      setActiveFilter(pricaParam as any);
+      const element = document.getElementById(pricaParam);
+      if (element) {
+        element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
     }
-  ];
+  }, [searchParams]);
 
-  const handleNextPage = () => {
-    setActivePage((prev) => (prev + 1) % editorialSpreads.length);
+  const handleFilterClick = (filter: 'all' | 'taft' | 'santung' | 'grez' | 'po-meri') => {
+    setActiveFilter(filter);
+    if (filter === 'all') {
+      setSearchParams({});
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    } else {
+      setSearchParams({ prica: filter });
+      const element = document.getElementById(filter);
+      if (element) {
+        element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+    }
   };
 
-  const handlePrevPage = () => {
-    setActivePage((prev) => (prev - 1 + editorialSpreads.length) % editorialSpreads.length);
+  // Structured Data (Schema.org) for search engines to index articles
+  const jsonLdData = {
+    "@context": "https://schema.org",
+    "@type": "CollectionPage",
+    "name": "DD DESIGN Editorijali — Vodič kroz prirodnu svilu i izradu po meri",
+    "description": "Stručni modni vodič kroz luksuzne materijale: taft svila, šantung svila, grež svila i proces izrade modela po meri u ateljeu DD DESIGN.",
+    "publisher": {
+      "@type": "Organization",
+      "name": "DD DESIGN",
+      "url": "https://www.dddesign.rs"
+    },
+    "hasPart": [
+      {
+        "@type": "Article",
+        "headline": "Taft svila – luksuz koji se oseća",
+        "description": "Karakteristike taft svile, arhitektonske forme, prirodna higijenska svojstva i saveti za održavanje."
+      },
+      {
+        "@type": "Article",
+        "headline": "Šantung svila – prirodna elegancija sa karakterom",
+        "description": "Autentične niti različite debljine, tekstura šantung svile, regulacija vlage i bezvremenski kroj."
+      },
+      {
+        "@type": "Article",
+        "headline": "Grež svila – autentična lepota prirodne svile",
+        "description": "Prirodna punoća i blago reljefna tekstura grež svile, regulacija temperature i diskretan luksuz."
+      },
+      {
+        "@type": "Article",
+        "headline": "Izrada po meri – DD DESIGN Atelje",
+        "description": "Personalizovana izrada modela prema individualnim merama, zakonski uslovi i smernice ateljea."
+      }
+    ]
   };
-
-  const currentSpread = editorialSpreads[activePage];
 
   return (
-    <article className="min-h-screen py-10 px-4 md:px-8 max-w-7xl mx-auto flex flex-col justify-between" aria-label="DD Design Atelje Digital Editorial">
-      {/* Dynamic SEO Hook helper info */}
-      <h1 className="sr-only">DD Design Digital Magazine — Taft Svila i Priče iz Ateljea</h1>
+    <div className="min-h-screen py-16 md:py-24 px-4 sm:px-6 lg:px-8 max-w-5xl mx-auto transition-colors duration-500">
+      {/* Inject JSON-LD Schema for Search Engines */}
+      <script 
+        type="application/ld+json" 
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLdData) }} 
+      />
 
-      <header className="flex flex-col md:flex-row items-center justify-between border-b pb-6 mb-10 border-zinc-500/10 dark:border-zinc-100/10">
-        <div className="space-y-1 text-center md:text-left">
-          <p className="text-[10px] uppercase tracking-[0.25em] text-red-500 font-bold flex items-center justify-center md:justify-start gap-1.5">
-            <Sparkles className="w-3 h-3" />
-            {t('ed.tag')}
-          </p>
-          <h2 className={`text-2xl md:text-3xl font-light uppercase tracking-widest ${theme === 'dark' ? 'text-white' : 'text-zinc-900'}`}>
-            {t('ed.title')}
-          </h2>
+      {/* Main SEO Header */}
+      <header className="text-center space-y-4 mb-16 border-b pb-12 border-zinc-500/10 dark:border-zinc-100/10">
+        <h1 className={`text-4xl sm:text-5xl md:text-6xl font-light tracking-tight uppercase ${
+          theme === 'dark' ? 'text-white' : 'text-zinc-900'
+        }`}>
+          Editorijali
+        </h1>
+
+        <p className={`text-base sm:text-lg max-w-2xl mx-auto leading-relaxed font-light ${
+          theme === 'dark' ? 'text-zinc-400' : 'text-gray-600'
+        }`}>
+          Vodič kroz plemenite materijale našeg ateljea — svojstva <strong>taft</strong>, <strong>šantung</strong> i <strong>grež svile</strong>, pravilna nega tkanina i detaljan postupak <strong>izrade po meri</strong>.
+        </p>
+
+        {/* Quick Filter Navigation Bar */}
+        <div className="pt-6 flex flex-wrap items-center justify-center gap-2">
+          {[
+            { id: 'all', label: 'Sve teme' },
+            { id: 'taft', label: '01. Taft svila' },
+            { id: 'santung', label: '02. Šantung svila' },
+            { id: 'grez', label: '03. Grež svila' },
+            { id: 'po-meri', label: '04. Izrada po meri' }
+          ].map(tab => (
+            <button
+              key={tab.id}
+              onClick={() => handleFilterClick(tab.id as any)}
+              className={`px-4 py-2 rounded-xl text-xs font-mono font-bold uppercase tracking-wider transition-all cursor-pointer border ${
+                activeFilter === tab.id
+                  ? theme === 'dark'
+                    ? 'bg-white text-black border-white shadow-md'
+                    : 'bg-black text-white border-black shadow-md'
+                  : theme === 'dark'
+                    ? 'bg-zinc-950/60 text-zinc-400 border-zinc-800 hover:text-white hover:border-zinc-700'
+                    : 'bg-gray-100 text-gray-600 border-gray-200 hover:text-black hover:border-gray-300'
+              }`}
+            >
+              {tab.label}
+            </button>
+          ))}
         </div>
-        
-        {/* Page Switcher Info & Controls */}
-        {editorialSpreads.length > 1 && (
-          <div className="flex items-center space-x-4 mt-4 md:mt-0">
-            <div className="text-right">
-              <p className="text-[10px] uppercase font-mono tracking-widest text-zinc-400">
-                {t('ed.subtitle')}
-              </p>
-              <p className="text-xs font-serif font-semibold italic">
-                {language === 'sr' ? `Priča ${activePage + 1} od ${editorialSpreads.length}` : 
-                 language === 'ru' ? `История ${activePage + 1} из ${editorialSpreads.length}` : 
-                 `Spread ${activePage + 1} of ${editorialSpreads.length}`}
-              </p>
-            </div>
-            <div className="flex bg-zinc-800/5 dark:bg-zinc-100/5 p-1 rounded-sm border border-zinc-500/15">
-              <button 
-                onClick={handlePrevPage} 
-                className="p-1 px-2 hover:opacity-75 transition-opacity"
-                aria-label="Previous editorial spread"
-              >
-                <ChevronLeft className="w-5 h-5 pointer-events-none" />
-              </button>
-              <span className="w-[1px] bg-zinc-500/20 my-1 mx-1" />
-              <button 
-                onClick={handleNextPage} 
-                className="p-1 px-2 hover:opacity-75 transition-opacity"
-                aria-label="Next editorial spread"
-              >
-                <ChevronRight className="w-5 h-5 pointer-events-none" />
-              </button>
-            </div>
-          </div>
-        )}
       </header>
 
-      {/* Brand Identity / Introduction */}
-      <section className="mb-14 max-w-4xl mx-auto text-center" aria-label="Brand Philosophy">
-        <p className={`text-sm md:text-base tracking-wide leading-relaxed font-light italic ${
-          theme === 'dark' ? 'text-zinc-300' : 'text-zinc-750'
-        }`}>
-          {t('ed.brandIdentity')}
-        </p>
-        <div className="flex justify-center mt-6">
-          <BookOpen className="w-4 h-4 text-red-500/70 animate-pulse" />
-        </div>
-      </section>
+      {/* Articles Container - Text-First, Clean, Highly Readable, Search-Optimized */}
+      <main className="space-y-20">
 
-      {/* Main Magazine Layout / Staggered Spread System with Framer-Motion */}
-      <main className="flex-1">
-        <AnimatePresence mode="wait">
-          <motion.div
-            key={activePage}
-            initial={{ opacity: 0, y: 15 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -15 }}
-            transition={{ duration: 0.85, ease: "easeOut" }}
-            className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-start"
+        {/* ============================================================== */}
+        {/* ARTICLE 1: TAFT SVILA */}
+        {/* ============================================================== */}
+        {(activeFilter === 'all' || activeFilter === 'taft') && (
+          <article 
+            id="taft" 
+            className={`p-8 sm:p-12 rounded-3xl border transition-all scroll-mt-24 space-y-8 ${
+              theme === 'dark' ? 'bg-zinc-950/50 border-zinc-800' : 'bg-white border-gray-200 shadow-sm'
+            }`}
           >
-            {/* COLUMN A: Majestic Full-Height Portrait Photography Frame */}
-            <div className="lg:col-span-5 space-y-4">
-              <div className="relative group overflow-hidden max-w-md mx-auto border border-zinc-500/10 shadow-2xl rounded-sm">
-                {/* Premium Aspect Ratio suited for print fashion magazines */}
-                <div className="aspect-[2/3] w-full overflow-hidden bg-neutral-900 relative">
-                  <motion.img
-                    src={currentSpread.image}
-                    alt={currentSpread.title}
-                    className="w-full h-full object-cover saturate-90 group-hover:scale-105 transition-transform duration-1000 object-center"
-                    referrerPolicy="referrer"
-                    initial={{ scale: 1.05 }}
-                    animate={{ scale: 1 }}
-                    transition={{ duration: 1.5 }}
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent pointer-events-none" />
+            <div className="space-y-3 border-b pb-6 border-zinc-500/10 dark:border-zinc-100/10">
+              <div className="flex items-center gap-2 text-amber-500 font-mono text-[11px] font-bold tracking-widest uppercase">
+                <Sparkles className="w-3.5 h-3.5" />
+                <span>Plemeniti materijali • Poglavlje 01</span>
+              </div>
+              <h2 className={`text-2xl sm:text-3xl md:text-4xl font-light tracking-tight uppercase ${
+                theme === 'dark' ? 'text-white' : 'text-black'
+              }`}>
+                Taft svila – luksuz koji se oseća
+              </h2>
+              <p className="text-sm font-serif italic text-amber-500/90">
+                Sofisticirana tekstura, blagi sjaj i postojane arhitektonske linije
+              </p>
+            </div>
+
+            <div className={`space-y-4 text-base leading-relaxed font-light ${
+              theme === 'dark' ? 'text-zinc-300' : 'text-gray-700'
+            }`}>
+              <p className="first-letter:text-5xl first-letter:font-serif first-letter:font-bold first-letter:float-left first-letter:mr-3 first-letter:text-amber-500 leading-relaxed">
+                U DD DESIGN kolekcijama pažljivo biramo materijale koji spajaju eleganciju, kvalitet i dugotrajnost. Taft svila je jedan od najcenjenijih luksuznih materijala, prepoznatljiv po svojoj sofisticiranoj teksturi, blagom sjaju i sposobnosti da zadrži formu, dajući svakom modelu prefinjen i upečatljiv izgled.
+              </p>
+
+              <p>
+                Njena jedinstvena struktura omogućava kreiranje savremenih silueta, arhitektonskih linija i ženstvenih formi koje ostaju postojane tokom nošenja. Upravo zato taft svila predstavlja savršen izbor za ekskluzivne modne komade.
+              </p>
+
+              <p>
+                Prirodna svila, od koje se izrađuje visokokvalitetni taft, poseduje određena prirodna svojstva koja doprinose udobnosti pri nošenju. Zahvaljujući proteinskoj strukturi vlakana i dobroj sposobnosti regulacije vlage, svilena tkanina stvara manje povoljne uslove za razvoj određenih mikroorganizama u poređenju sa mnogim sintetičkim materijalima. Zbog toga se često opisuje kao materijal sa prirodnim higijenskim karakteristikama.
+              </p>
+
+              <p>
+                Pored toga, svila je prijatna za kožu, prozračna i pomaže u održavanju optimalne mikroklime tela. Ne privlači prašinu u istoj meri kao pojedini sintetički materijali, što je čini pogodnim izborom za osobe sa osetljivom kožom.
+              </p>
+            </div>
+
+            {/* Održavanje & Potpis Subsections */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4 border-t border-zinc-500/10 dark:border-zinc-100/10">
+              <section className={`p-6 rounded-2xl border space-y-2 ${
+                theme === 'dark' ? 'bg-zinc-900/40 border-zinc-800' : 'bg-gray-50 border-gray-150'
+              }`}>
+                <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-amber-500">
+                  <ShieldCheck className="w-4 h-4" />
+                  <h3>Održavanje taft svile</h3>
                 </div>
-                {/* Micro photography details for authenticity */}
-                <div className="absolute bottom-4 left-4 right-4 flex justify-between items-end text-white select-none pointer-events-none">
-                  <p className="font-mono text-[9px] tracking-widest uppercase opacity-75">
-                    Location Vol. II / DD Atelier
-                  </p>
-                  <p className="font-serif italic text-xs opacity-90">
-                    Art direction: Danijela G.
-                  </p>
+                <p className={`text-xs sm:text-sm leading-relaxed ${theme === 'dark' ? 'text-zinc-400' : 'text-gray-600'}`}>
+                  Kako bi modeli od taft svile zadržali svoju lepotu i kvalitet, preporučujemo <strong>hemijsko čišćenje</strong>. Materijal treba čuvati na vešalici, dalje od direktnog sunčevog zračenja, a peglanje obavljati na niskoj temperaturi sa unutrašnje strane tkanine.
+                </p>
+              </section>
+
+              <section className={`p-6 rounded-2xl border space-y-2 ${
+                theme === 'dark' ? 'bg-zinc-900/40 border-zinc-800' : 'bg-gray-50 border-gray-150'
+              }`}>
+                <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-amber-500">
+                  <Sparkles className="w-4 h-4" />
+                  <h3>DD DESIGN potpis</h3>
                 </div>
+                <p className={`text-xs sm:text-sm leading-relaxed ${theme === 'dark' ? 'text-zinc-400' : 'text-gray-600'}`}>
+                  Svaki DD DESIGN model od taft svile nastaje kao spoj savremenog dizajna, vrhunske izrade i pažljivo odabranih materijala. Rezultat su komadi koji prate trendove, ali ostaju vanvremenski – kreirani za žene koje cene kvalitet, autentičnost i sofisticiranu eleganciju.
+                </p>
+              </section>
+            </div>
+
+            <div className="pt-2">
+              <Link
+                to="/shop?search=taft"
+                className={`inline-flex items-center gap-2 text-xs font-bold uppercase tracking-widest transition-colors ${
+                  theme === 'dark' ? 'text-amber-400 hover:text-white' : 'text-amber-600 hover:text-black'
+                }`}
+              >
+                <span>Pogledajte modele od taft svile u prodavnici</span>
+                <ArrowRight className="w-3.5 h-3.5" />
+              </Link>
+            </div>
+          </article>
+        )}
+
+        {/* ============================================================== */}
+        {/* ARTICLE 2: ŠANTUNG SVILA */}
+        {/* ============================================================== */}
+        {(activeFilter === 'all' || activeFilter === 'santung') && (
+          <article 
+            id="santung" 
+            className={`p-8 sm:p-12 rounded-3xl border transition-all scroll-mt-24 space-y-8 ${
+              theme === 'dark' ? 'bg-zinc-950/50 border-zinc-800' : 'bg-white border-gray-200 shadow-sm'
+            }`}
+          >
+            <div className="space-y-3 border-b pb-6 border-zinc-500/10 dark:border-zinc-100/10">
+              <div className="flex items-center gap-2 text-amber-500 font-mono text-[11px] font-bold tracking-widest uppercase">
+                <Feather className="w-3.5 h-3.5" />
+                <span>Plemeniti materijali • Poglavlje 02</span>
+              </div>
+              <h2 className={`text-2xl sm:text-3xl md:text-4xl font-light tracking-tight uppercase ${
+                theme === 'dark' ? 'text-white' : 'text-black'
+              }`}>
+                Šantung svila – prirodna elegancija sa karakterom
+              </h2>
+              <p className="text-sm font-serif italic text-amber-500/90">
+                Bogatstvo teksture i suptilne nepravilnosti u tkanju
+              </p>
+            </div>
+
+            <div className={`space-y-4 text-base leading-relaxed font-light ${
+              theme === 'dark' ? 'text-zinc-300' : 'text-gray-700'
+            }`}>
+              <p className="first-letter:text-5xl first-letter:font-serif first-letter:font-bold first-letter:float-left first-letter:mr-3 first-letter:text-amber-500 leading-relaxed">
+                Šantung svila predstavlja jednu od najcenjenijih vrsta prirodne svile, prepoznatljivu po svojoj bogatoj teksturi i suptilnim nepravilnostima u tkanju koje joj daju autentičan i luksuzan izgled. Upravo te prirodne niti različite debljine čine svaki metar šantung svile jedinstvenim.
+              </p>
+
+              <p>
+                U DD DESIGN kolekcijama šantung svila zauzima posebno mesto zahvaljujući svojoj sposobnosti da spoji sofisticiranost, udobnost i modernu estetiku. Njena blago matirana površina i prirodan sjaj stvaraju prefinjen efekat koji nikada ne izlazi iz mode.
+              </p>
+            </div>
+
+            {/* Karakteristike šantung svile */}
+            <div className={`p-6 sm:p-8 rounded-2xl border space-y-4 ${
+              theme === 'dark' ? 'bg-zinc-900/40 border-zinc-800' : 'bg-gray-50 border-gray-150'
+            }`}>
+              <h3 className={`text-base font-bold uppercase tracking-wider ${theme === 'dark' ? 'text-white' : 'text-black'}`}>
+                Karakteristike šantung svile:
+              </h3>
+              <ul className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
+                {[
+                  'Prirodna tekstura sa karakterističnim nepravilnostima u tkanju.',
+                  'Lagana, a istovremeno dovoljno čvrsta da lepo prati formu tela.',
+                  'Prozračna i prijatna za nošenje tokom različitih godišnjih doba.',
+                  'Prirodan, nenametljiv sjaj koji naglašava luksuz materijala.',
+                  'Odličan izbor za elegantne haljine, odela, bluze i ekskluzivne modne komade.'
+                ].map((item, idx) => (
+                  <li key={idx} className="flex items-start gap-2.5">
+                    <Check className="w-4 h-4 text-amber-500 shrink-0 mt-0.5" />
+                    <span>{item}</span>
+                  </li>
+                ))}
+              </ul>
+              <p className={`text-xs sm:text-sm pt-2 leading-relaxed ${theme === 'dark' ? 'text-zinc-400' : 'text-gray-600'}`}>
+                Zahvaljujući prirodnim svilenim vlaknima, šantung svila omogućava koži da diše i pruža izuzetnu udobnost tokom nošenja. Njena struktura doprinosi dobroj regulaciji vlage i prijatnom osećaju na koži, zbog čega je omiljena među ljubiteljima prirodnih materijala.
+              </p>
+            </div>
+
+            {/* Održavanje & Potpis Subsections */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4 border-t border-zinc-500/10 dark:border-zinc-100/10">
+              <section className={`p-6 rounded-2xl border space-y-2 ${
+                theme === 'dark' ? 'bg-zinc-900/40 border-zinc-800' : 'bg-gray-50 border-gray-150'
+              }`}>
+                <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-amber-500">
+                  <ShieldCheck className="w-4 h-4" />
+                  <h3>Održavanje šantung svile</h3>
+                </div>
+                <p className={`text-xs sm:text-sm leading-relaxed ${theme === 'dark' ? 'text-zinc-400' : 'text-gray-600'}`}>
+                  Kako bi šantung svila sačuvala svoju lepotu i kvalitet, preporučuje se <strong>profesionalno hemijsko čišćenje</strong>. Materijal treba čuvati zaštićen od direktne sunčeve svetlosti, a peglati sa unutrašnje strane na niskoj temperaturi.
+                </p>
+              </section>
+
+              <section className={`p-6 rounded-2xl border space-y-2 ${
+                theme === 'dark' ? 'bg-zinc-900/40 border-zinc-800' : 'bg-gray-50 border-gray-150'
+              }`}>
+                <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-amber-500">
+                  <Sparkles className="w-4 h-4" />
+                  <h3>DD DESIGN potpis</h3>
+                </div>
+                <p className={`text-xs sm:text-sm leading-relaxed ${theme === 'dark' ? 'text-zinc-400' : 'text-gray-600'}`}>
+                  Šantung svila savršeno oslikava filozofiju DD DESIGN brenda – spoj prirodne lepote, vrhunskog kvaliteta i bezvremenske elegancije. Njena autentična tekstura i luksuzan izgled omogućavaju kreiranje modela koji istovremeno deluju moderno, sofisticirano i jedinstveno, ostavljajući snažan utisak u svakoj prilici.
+                </p>
+              </section>
+            </div>
+
+            <div className="pt-2">
+              <Link
+                to="/shop?search=santung"
+                className={`inline-flex items-center gap-2 text-xs font-bold uppercase tracking-widest transition-colors ${
+                  theme === 'dark' ? 'text-amber-400 hover:text-white' : 'text-amber-600 hover:text-black'
+                }`}
+              >
+                <span>Pogledajte modele od šantung svile</span>
+                <ArrowRight className="w-3.5 h-3.5" />
+              </Link>
+            </div>
+          </article>
+        )}
+
+        {/* ============================================================== */}
+        {/* ARTICLE 3: GREŽ SVILA */}
+        {/* ============================================================== */}
+        {(activeFilter === 'all' || activeFilter === 'grez') && (
+          <article 
+            id="grez" 
+            className={`p-8 sm:p-12 rounded-3xl border transition-all scroll-mt-24 space-y-8 ${
+              theme === 'dark' ? 'bg-zinc-950/50 border-zinc-800' : 'bg-white border-gray-200 shadow-sm'
+            }`}
+          >
+            <div className="space-y-3 border-b pb-6 border-zinc-500/10 dark:border-zinc-100/10">
+              <div className="flex items-center gap-2 text-amber-500 font-mono text-[11px] font-bold tracking-widest uppercase">
+                <Sun className="w-3.5 h-3.5" />
+                <span>Plemeniti materijali • Poglavlje 03</span>
+              </div>
+              <h2 className={`text-2xl sm:text-3xl md:text-4xl font-light tracking-tight uppercase ${
+                theme === 'dark' ? 'text-white' : 'text-black'
+              }`}>
+                Grež svila – autentična lepota prirodne svile
+              </h2>
+              <p className="text-sm font-serif italic text-amber-500/90">
+                Prirodna punoća i diskretan luksuz bez suvišne raskoši
+              </p>
+            </div>
+
+            <div className={`space-y-4 text-base leading-relaxed font-light ${
+              theme === 'dark' ? 'text-zinc-300' : 'text-gray-700'
+            }`}>
+              <p className="first-letter:text-5xl first-letter:font-serif first-letter:font-bold first-letter:float-left first-letter:mr-3 first-letter:text-amber-500 leading-relaxed">
+                Grež svila predstavlja jedan od najprirodnijih i najautentičnijih oblika svile. Karakteriše je blago hrapava tekstura, prirodna punoća i nenametljiv luksuz koji je čini izuzetno cenjenom u savremenoj modi. Za razliku od potpuno obrađene svile, grež svila zadržava deo svoje prirodne strukture, što joj daje poseban karakter i prepoznatljivu eleganciju.
+              </p>
+
+              <p>
+                U DD DESIGN kolekcijama grež svila je izbor za žene koje cene prirodne materijale, vrhunski kvalitet i sofisticiran stil bez suvišne raskoši. Njena jedinstvena tekstura donosi osećaj luksuza koji se ne nameće, već se prepoznaje u svakom detalju.
+              </p>
+            </div>
+
+            {/* Karakteristike grež svile */}
+            <div className={`p-6 sm:p-8 rounded-2xl border space-y-4 ${
+              theme === 'dark' ? 'bg-zinc-900/40 border-zinc-800' : 'bg-gray-50 border-gray-150'
+            }`}>
+              <h3 className={`text-base font-bold uppercase tracking-wider ${theme === 'dark' ? 'text-white' : 'text-black'}`}>
+                Karakteristike grež svile:
+              </h3>
+              <ul className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
+                {[
+                  'Prirodna, blago reljefna tekstura sa autentičnim izgledom.',
+                  'Izuzetna prozračnost i udobnost tokom nošenja.',
+                  'Prijatan osećaj na koži zahvaljujući prirodnim svilenim vlaknima.',
+                  'Suptilan, elegantan sjaj koji naglašava kvalitet materijala.',
+                  'Dobra sposobnost regulacije temperature, pružajući udobnost tokom različitih godišnjih doba.',
+                  'Prirodna otpornost na zadržavanje neprijatnih mirisa u poređenju sa mnogim sintetičkim tkaninama.'
+                ].map((item, idx) => (
+                  <li key={idx} className="flex items-start gap-2.5">
+                    <Check className="w-4 h-4 text-amber-500 shrink-0 mt-0.5" />
+                    <span>{item}</span>
+                  </li>
+                ))}
+              </ul>
+              <p className={`text-xs sm:text-sm pt-2 leading-relaxed ${theme === 'dark' ? 'text-zinc-400' : 'text-gray-600'}`}>
+                Grež svila omogućava koži da diše i pruža osećaj lakoće, dok njena prirodna struktura doprinosi posebnoj estetici i ekskluzivnosti svakog modela.
+              </p>
+            </div>
+
+            {/* Održavanje & Potpis Subsections */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4 border-t border-zinc-500/10 dark:border-zinc-100/10">
+              <section className={`p-6 rounded-2xl border space-y-2 ${
+                theme === 'dark' ? 'bg-zinc-900/40 border-zinc-800' : 'bg-gray-50 border-gray-150'
+              }`}>
+                <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-amber-500">
+                  <ShieldCheck className="w-4 h-4" />
+                  <h3>Održavanje grež svile</h3>
+                </div>
+                <p className={`text-xs sm:text-sm leading-relaxed ${theme === 'dark' ? 'text-zinc-400' : 'text-gray-600'}`}>
+                  Kako bi se sačuvala lepota i kvalitet grež svile, preporučuje se <strong>profesionalno hemijsko čišćenje</strong>. Tkaninu treba čuvati zaštićenu od direktnog sunčevog zračenja, a peglati pažljivo, sa unutrašnje strane i na nižoj temperaturi.
+                </p>
+              </section>
+
+              <section className={`p-6 rounded-2xl border space-y-2 ${
+                theme === 'dark' ? 'bg-zinc-900/40 border-zinc-800' : 'bg-gray-50 border-gray-150'
+              }`}>
+                <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-amber-500">
+                  <Sparkles className="w-4 h-4" />
+                  <h3>DD DESIGN potpis</h3>
+                </div>
+                <p className={`text-xs sm:text-sm leading-relaxed ${theme === 'dark' ? 'text-zinc-400' : 'text-gray-600'}`}>
+                  Grež svila savršeno predstavlja vrednosti DD DESIGN brenda – prirodnu eleganciju, kvalitet izrade i bezvremenski dizajn. Njena autentičnost i prefinjen izgled omogućavaju stvaranje modela koji odišu diskretnim luksuzom, namenjenih ženama koje biraju kvalitet bez kompromisa.
+                </p>
+              </section>
+            </div>
+
+            <div className="pt-2">
+              <Link
+                to="/shop?search=grez"
+                className={`inline-flex items-center gap-2 text-xs font-bold uppercase tracking-widest transition-colors ${
+                  theme === 'dark' ? 'text-amber-400 hover:text-white' : 'text-amber-600 hover:text-black'
+                }`}
+              >
+                <span>Pogledajte modele od grež svile</span>
+                <ArrowRight className="w-3.5 h-3.5" />
+              </Link>
+            </div>
+          </article>
+        )}
+
+        {/* ============================================================== */}
+        {/* ARTICLE 4: IZRADA PO MERI (BESPOKE ATELIER) */}
+        {/* ============================================================== */}
+        {(activeFilter === 'all' || activeFilter === 'po-meri') && (
+          <article 
+            id="po-meri" 
+            className={`p-8 sm:p-12 rounded-3xl border transition-all scroll-mt-24 space-y-8 ${
+              theme === 'dark' ? 'bg-zinc-950/50 border-amber-500/20' : 'bg-white border-amber-200/70 shadow-sm'
+            }`}
+          >
+            <div className="space-y-3 border-b pb-6 border-zinc-500/10 dark:border-zinc-100/10">
+              <div className="flex items-center gap-2 text-amber-500 font-mono text-[11px] font-bold tracking-widest uppercase">
+                <Scissors className="w-3.5 h-3.5" />
+                <span>Atelje Usluge • Bespoke Krojenje</span>
+              </div>
+              <h2 className={`text-2xl sm:text-3xl md:text-4xl font-light tracking-tight uppercase ${
+                theme === 'dark' ? 'text-white' : 'text-black'
+              }`}>
+                Izrada po meri
+              </h2>
+              <p className="text-sm font-serif italic text-amber-500/90">
+                Svaki model pažljivo prilagođen vašoj figuri, željama i prilici
+              </p>
+            </div>
+
+            <div className={`space-y-4 text-base leading-relaxed font-light ${
+              theme === 'dark' ? 'text-zinc-300' : 'text-gray-700'
+            }`}>
+              <p className="first-letter:text-5xl first-letter:font-serif first-letter:font-bold first-letter:float-left first-letter:mr-3 first-letter:text-amber-500 leading-relaxed">
+                Svi modeli iz <strong>DD DESIGN</strong> kolekcije mogu se izraditi prema individualnim merama klijenta i, po dogovoru, prilagoditi specifičnostima određene prilike. Naš cilj je da svaki model bude pažljivo prilagođen vašoj figuri, željama i potrebama, uz zadržavanje prepoznatljivog dizajna i estetike DD DESIGN brenda.
+              </p>
+
+              <div className={`p-5 rounded-2xl border flex items-start gap-3.5 ${
+                theme === 'dark' ? 'bg-zinc-900/60 border-zinc-800' : 'bg-gray-50 border-gray-200'
+              }`}>
+                <Ruler className="w-5 h-5 text-amber-500 shrink-0 mt-0.5" />
+                <p className="text-sm font-medium">
+                  Prilikom poručivanja modela, sve mere, izmene i posebni zahtevi definišu se unapred i potvrđuju sa klijentom.
+                </p>
               </div>
             </div>
 
-            {/* COLUMN B: Premium Print Editorial Typography Flow */}
-            <div className="lg:col-span-7 space-y-8 md:pl-6">
-              <div className="space-y-3">
-                <span className="text-red-500 font-serif italic text-xs tracking-wider uppercase">
-                  {currentSpread.subtitle}
-                </span>
-                <h3 className={`text-3xl md:text-4xl font-extralight tracking-widest uppercase leading-tight ${
-                  theme === 'dark' ? 'text-white' : 'text-zinc-900'
-                }`}>
-                  {currentSpread.title}
-                </h3>
-                <div className="w-16 h-[1px] bg-red-550/40" />
-              </div>
-
-              {/* Story Description with Dropped Cap for Elegant Look & Feel */}
-              <div className={`text-sm md:text-base leading-relaxed tracking-wide font-light space-y-4 ${
-                theme === 'dark' ? 'text-zinc-400' : 'text-neutral-750'
-              }`}>
-                <p className="first-letter:text-4xl first-letter:font-serif first-letter:font-bold first-letter:float-left first-letter:mr-3 first-letter:text-red-500">
-                  {currentSpread.text}
+            {/* Važne informacije o poručenim modelima */}
+            <div className={`p-6 sm:p-8 rounded-3xl border space-y-4 ${
+              theme === 'dark' ? 'bg-zinc-900/60 border-amber-500/30' : 'bg-amber-50/50 border-amber-300/60'
+            }`}>
+              <h3 className={`text-base font-bold uppercase tracking-wider ${theme === 'dark' ? 'text-white' : 'text-black'}`}>
+                Važne informacije o poručenim modelima:
+              </h3>
+              <div className="space-y-3 text-sm leading-relaxed">
+                <p className="font-semibold text-amber-500">
+                  Modeli izrađeni prema individualnim merama, kao i modeli izrađeni po posebnom zahtevu klijenta, predstavljaju personalizovane proizvode. Za takve proizvode pravo na odustanak i povraćaj novca može biti ograničeno u skladu sa važećim Zakonom o zaštiti potrošača.
+                </p>
+                <p>
+                  <strong>Zato je važno da se pre izrade precizno definišu sve željene mere, izmene i detalji modela.</strong>
+                </p>
+                <p>
+                  Korekcije ili dodatne izmene koje nisu bile deo prvobitnog dogovora i potvrđenih zahteva klijenta mogu biti dodatno naplaćene, u skladu sa obimom i zahtevnošću intervencije. O eventualnim dodatnim troškovima klijent će biti obavešten pre izvršenja izmene.
+                </p>
+                <p className={`pt-2 font-medium ${theme === 'dark' ? 'text-zinc-200' : 'text-black'}`}>
+                  U DD DESIGN-u posebnu pažnju posvećujemo svakom detalju kako bismo obezbedili da finalni model odgovara dogovorenim merama, zahtevima i očekivanjima klijenta.
                 </p>
               </div>
-
-              {/* Majestic Aesthetic Quote section with luxury styling */}
-              <div className={`p-6 border-l-2 border-red-500/40 bg-zinc-800/5 dark:bg-zinc-100/5 rounded-r-md ${
-                theme === 'dark' ? 'text-zinc-300' : 'text-neutral-800'
-              }`}>
-                <Quote className="w-6 h-6 text-red-500/40 mb-3" />
-                <p className="font-serif italic text-base leading-relaxed tracking-wide">
-                  {currentSpread.quote}
-                </p>
-              </div>
-
-              {/* Style Guide & Creative Suggestions ("Stilski Predlozi") */}
-              <div className="space-y-4 pt-4 border-t border-zinc-500/10 dark:border-zinc-100/10">
-                <h4 className="text-xs font-bold uppercase tracking-widest text-zinc-500">
-                  {t('ed.taftSilkStyleTitle')}
-                </h4>
-                <ul className="space-y-3 pl-1">
-                  {currentSpread.styleTips.map((tip, idx) => (
-                    <li key={idx} className="flex items-start space-x-3 text-xs leading-relaxed tracking-wide">
-                      <span className="inline-block w-1.5 h-1.5 rounded-full bg-red-400 mt-1.5 flex-shrink-0" />
-                      <span className={theme === 'dark' ? 'text-zinc-400' : 'text-neutral-700'}>{tip}</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-
-              {/* Call to action (Natural bridge to ready-to-buy products) */}
-              <div className="pt-6">
-                <Link
-                  to={`/shop?search=${currentSpread.searchKeyword}`}
-                  className={`inline-flex items-center space-x-4 py-4 px-8 border text-xs uppercase tracking-[0.25em] font-semibold transition-all duration-300 ${
-                    theme === 'dark' 
-                      ? 'border-zinc-800 bg-white text-black hover:bg-black hover:text-white hover:border-zinc-800 hover:shadow-lg' 
-                      : 'border-neutral-250 bg-black text-white hover:bg-white hover:text-black hover:border-black hover:shadow-lg'
-                  }`}
-                  aria-label={`Buy items related to ${currentSpread.title}`}
-                >
-                  <ShoppingBag className="w-4 h-4" />
-                  <span>{currentSpread.ctaText}</span>
-                  <ArrowRight className="w-4 h-4 ml-2" />
-                </Link>
-              </div>
-
             </div>
-          </motion.div>
-        </AnimatePresence>
+
+            {/* Direktni kontakt za izradu po meri */}
+            <div className="pt-2 flex flex-wrap items-center gap-4">
+              <a
+                href="tel:+381641605032"
+                className={`inline-flex items-center gap-2 py-4 px-8 rounded-2xl text-xs uppercase tracking-[0.2em] font-bold transition-all shadow-md ${
+                  theme === 'dark' ? 'bg-white text-black hover:bg-zinc-200' : 'bg-black text-white hover:bg-zinc-800'
+                }`}
+              >
+                <Phone className="w-4 h-4" />
+                <span>Pozovite atelje: +381 64 1605032</span>
+              </a>
+
+              <a
+                href="mailto:office@dddesign.rs?subject=Upit%20za%20izradu%20po%20meri"
+                className={`inline-flex items-center gap-2 py-4 px-6 rounded-2xl text-xs uppercase tracking-[0.2em] font-semibold border transition-all ${
+                  theme === 'dark' ? 'border-zinc-800 hover:bg-zinc-900 text-zinc-300' : 'border-gray-200 hover:bg-gray-100 text-gray-700'
+                }`}
+              >
+                <Mail className="w-4 h-4" />
+                <span>office@dddesign.rs</span>
+              </a>
+
+              <a
+                href="https://www.instagram.com/dddesign.rs"
+                target="_blank"
+                rel="noopener noreferrer"
+                className={`inline-flex items-center gap-2 py-4 px-6 rounded-2xl text-xs uppercase tracking-[0.2em] font-semibold border transition-all ${
+                  theme === 'dark' ? 'border-zinc-800 hover:bg-zinc-900 text-zinc-300' : 'border-gray-200 hover:bg-gray-100 text-gray-700'
+                }`}
+              >
+                <Instagram className="w-4 h-4" />
+                <span>@dddesign.rs</span>
+              </a>
+            </div>
+          </article>
+        )}
+
       </main>
 
-      {/* Footer Navigation */}
-      <footer className="mt-14 pt-6 border-t border-zinc-500/10 dark:border-zinc-100/10 flex flex-col md:flex-row justify-between items-center text-[10px] uppercase font-mono tracking-widest text-zinc-500">
+
+
+      {/* Editorial Footer */}
+      <footer className="pt-8 border-t border-zinc-500/10 dark:border-zinc-100/10 flex flex-col md:flex-row justify-between items-center text-[10px] uppercase font-mono tracking-widest text-zinc-500 gap-4">
         <p>DD DESIGN DIGITAL MAGAZINE — ISSUE 01 / 2026</p>
-        <Link to="/shop" className="hover:text-red-500 transition-colors mt-2 md:mt-0">
-          ← {t('ed.backToShop')}
+        <Link to="/shop" className="hover:text-amber-500 transition-colors inline-flex items-center gap-1.5">
+          <span>← Nazad na sve proizvode</span>
         </Link>
       </footer>
-    </article>
+    </div>
   );
 }

@@ -44,6 +44,8 @@ const DanijelaPantic = lazy(() => import('./pages/collaborations/DanijelaPantic'
 const BelgradeFashionWeek = lazy(() => import('./pages/collaborations/BelgradeFashionWeek'));
 const Admin = lazy(() => import('./pages/Admin'));
 const OwnerPortal = lazy(() => import('./pages/OwnerPortal'));
+const CustomTailoring = lazy(() => import('./pages/CustomTailoring'));
+const SilkGuide = lazy(() => import('./pages/SilkGuide'));
 
 
 function FadingBackground() {
@@ -765,6 +767,8 @@ function AppContent() {
               <Route path="/saradnje/dajana-svraka" element={<DajanaSvraka />} />
               <Route path="/saradnje/danijela-pantic" element={<DanijelaPantic />} />
               <Route path="/saradnje/belgrade-fashion-week" element={<BelgradeFashionWeek />} />
+              <Route path="/izrada-po-meri" element={<CustomTailoring />} />
+              <Route path="/o-svili" element={<SilkGuide />} />
               <Route path="/admin" element={<Admin />} />
               <Route path="/vlasnici" element={<OwnerPortal />} />
               <Route path="/baza" element={<OwnerPortal />} />
@@ -813,6 +817,7 @@ function AppContent() {
                   theme === 'dark' ? 'text-white' : 'text-black'
                 }`}>Informacije</h4>
                 <ul className={`space-y-4 text-sm ${theme === 'dark' ? 'text-zinc-400' : 'text-gray-600'}`}>
+                  <li><Link to="/editorijali?prica=taft" className="hover:text-current transition-colors font-medium">O svili i materijalima</Link></li>
                   <li><Link to="/saradnje/dd-modna-prica" className="hover:text-current transition-colors">O nama</Link></li>
                   <li><Link to="/kontakt" className="hover:text-current transition-colors">Kontakt</Link></li>
                   <li><Link to="/reklamacije" className="hover:text-current transition-colors">Reklamacije i prigovori</Link></li>

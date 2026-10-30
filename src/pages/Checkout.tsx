@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'motion/react';
-import { ArrowLeft, CreditCard, Truck, CheckCircle, Package, User, MapPin, Mail, Phone, ShoppingBag, ShieldCheck, XCircle, AlertTriangle, Tag, Percent, X } from 'lucide-react';
+import { ArrowLeft, CreditCard, Truck, CheckCircle, Package, User, MapPin, Mail, Phone, ShoppingBag, ShieldCheck, XCircle, AlertTriangle, Tag, Percent, X, Instagram } from 'lucide-react';
 import { CartItem, PromoCode } from '../types';
 import { useTheme } from '../context/ThemeContext';
 import { supabase } from '../lib/supabase';
@@ -1569,9 +1569,67 @@ export default function Checkout({ cart, clearCart }: CheckoutProps) {
                 <p className="text-gray-500 max-w-md mx-auto">
                   {ct('successDesc')}
                 </p>
+
+                {/* Kartica zahvalnosti (Official DD DESIGN Gratitude Card) */}
+                <div className={`mt-8 max-w-lg mx-auto p-8 rounded-3xl border relative overflow-hidden text-center space-y-5 transition-all shadow-xl ${
+                  theme === 'dark'
+                    ? 'bg-gradient-to-b from-zinc-900 via-zinc-950 to-black border-amber-500/30 text-zinc-300 shadow-amber-500/5'
+                    : 'bg-gradient-to-b from-amber-50/50 via-white to-amber-50/30 border-amber-500/30 text-gray-800 shadow-amber-500/10'
+                }`}>
+                  <div className="inline-block px-3 py-1 rounded-full text-[10px] font-mono font-bold uppercase tracking-[0.25em] bg-amber-500/10 text-amber-500 border border-amber-500/20">
+                    KARTICA ZAHVALNOSTI
+                  </div>
+
+                  <div className="space-y-3">
+                    <h3 className={`text-xl sm:text-2xl font-light tracking-tight uppercase ${
+                      theme === 'dark' ? 'text-white' : 'text-black'
+                    }`}>
+                      Hvala što ste odabrali DD DESIGN i podržali domaći brend!
+                    </h3>
+
+                    <p className="text-sm leading-relaxed font-light">
+                      Vaša kupovina nas je obradovala, i nadamo se da ćete uživati noseći naš dizajn.
+                    </p>
+                  </div>
+
+                  <div className={`p-4 rounded-2xl border text-xs leading-relaxed space-y-2 ${
+                    theme === 'dark' ? 'bg-zinc-950/70 border-zinc-800' : 'bg-white border-gray-200'
+                  }`}>
+                    <p className="font-medium">
+                      Podelite svoj stil s nama – označite nas na društvenim mrežama i postanite deo naše zajednice!
+                    </p>
+                    <p className={`${theme === 'dark' ? 'text-zinc-400' : 'text-gray-500'}`}>
+                      Za sve utiske i sugestije, pišite nam na{' '}
+                      <a href="mailto:office@dddesign.rs" className="font-semibold underline hover:text-amber-500 transition-colors">
+                        office@dddesign.rs
+                      </a>
+                    </p>
+                  </div>
+
+                  <div className="pt-1 flex flex-col sm:flex-row items-center justify-center gap-3 text-xs">
+                    <a
+                      href="https://www.instagram.com/dddesign.rs"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className={`px-4 py-2 rounded-xl border flex items-center gap-2 font-mono font-bold transition-all ${
+                        theme === 'dark' ? 'border-zinc-800 hover:bg-zinc-900 text-amber-400' : 'border-amber-200 hover:bg-amber-100/50 text-amber-700'
+                      }`}
+                    >
+                      <Instagram className="w-3.5 h-3.5" />
+                      <span>@dddesign.rs</span>
+                    </a>
+                    <span className="text-xs text-zinc-500 hidden sm:inline">•</span>
+                    <span className="text-xs font-mono font-semibold opacity-70">www.dddesign.rs</span>
+                  </div>
+
+                  <div className="pt-3 border-t border-amber-500/20 text-xs font-serif italic text-amber-500/90 tracking-wider">
+                    Vaš DD DESIGN TIM
+                  </div>
+                </div>
+
                 <button 
                   onClick={() => navigate('/')}
-                  className="bg-black text-white px-10 py-5 rounded-full font-bold hover:bg-gray-900 transition-all shadow-xl mt-8"
+                  className="bg-black text-white dark:bg-white dark:text-black px-10 py-5 rounded-full font-bold hover:opacity-90 transition-all shadow-xl mt-6 cursor-pointer"
                 >
                   {ct('backHome')}
                 </button>

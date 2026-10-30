@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, RefObject, useMemo } from 'react';
 import { motion, useMotionValue } from 'motion/react';
-import { ArrowRight, ShoppingBag, Truck, ShieldCheck, Package, CreditCard, ChevronLeft, ChevronRight } from 'lucide-react';
+import { ArrowRight, ShoppingBag, Truck, ShieldCheck, Package, CreditCard, ChevronLeft, ChevronRight, Scissors, Sparkles } from 'lucide-react';
 import { Product, Category } from '../types';
 import ProductCard from '../components/ProductCard';
 import { useNavigate, Link } from 'react-router-dom';
@@ -418,7 +418,110 @@ export default function Home({ products, categories, loading, onAddToCart }: Hom
         )}
       </div>
     </section>
- 
+
+      {/* Atelier & Plemeniti materijali (Izrada po meri & O svili) */}
+      <section className={`py-24 transition-colors duration-500 border-t ${
+        theme === 'dark' ? 'bg-black border-zinc-900' : 'bg-white border-gray-150'
+      }`}>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 md:gap-12">
+            {/* Box 1: Izrada po meri */}
+            <div className={`p-8 sm:p-12 rounded-[2.5rem] border relative overflow-hidden flex flex-col justify-between transition-all duration-500 group ${
+              theme === 'dark'
+                ? 'bg-gradient-to-br from-zinc-950 via-zinc-900 to-black border-zinc-800 hover:border-amber-500/40 text-zinc-300'
+                : 'bg-gradient-to-br from-white via-amber-50/20 to-white border-gray-200 hover:border-amber-300 text-gray-800 shadow-lg hover:shadow-xl'
+            }`}>
+              <div className="space-y-6">
+                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-[10px] font-bold tracking-[0.2em] uppercase font-mono bg-amber-500/10 text-amber-500 border border-amber-500/20">
+                  <Scissors className="w-3.5 h-3.5" />
+                  <span>DD DESIGN ATELIER</span>
+                </div>
+
+                <div className="space-y-3">
+                  <h3 className={`text-3xl sm:text-4xl font-light tracking-tight uppercase ${theme === 'dark' ? 'text-white' : 'text-black'}`}>
+                    Izrada po meri
+                  </h3>
+                  <p className="text-sm sm:text-base leading-relaxed font-light">
+                    Svi modeli iz DD DESIGN kolekcije mogu se izraditi prema vašim individualnim merama i, po dogovoru, prilagoditi specifičnostima određene prilike. Svaki model je pažljivo prilagođen vašoj figuri, željama i potrebama.
+                  </p>
+                </div>
+
+                <div className={`p-4 rounded-2xl border text-xs leading-relaxed font-medium ${
+                  theme === 'dark' ? 'bg-zinc-900/60 border-zinc-800' : 'bg-white/80 border-gray-200'
+                }`}>
+                  Unapred definišemo sve mere, izmene i posebne zahteve kako bi finalni komad savršeno odgovarao vašim očekivanjima.
+                </div>
+              </div>
+
+              <div className="pt-8">
+                <Link
+                  to="/editorijali?prica=po-meri"
+                  className={`inline-flex items-center gap-2 px-6 py-3.5 rounded-2xl text-xs font-bold uppercase tracking-widest transition-all ${
+                    theme === 'dark' ? 'bg-white text-black hover:bg-zinc-200' : 'bg-black text-white hover:bg-zinc-800'
+                  }`}
+                >
+                  <span>Saznajte više o izradi po meri</span>
+                  <ArrowRight className="w-4 h-4 transform group-hover:translate-x-1 transition-transform" />
+                </Link>
+              </div>
+            </div>
+
+            {/* Box 2: O svili (Taft, Šantung, Grež) */}
+            <div className={`p-8 sm:p-12 rounded-[2.5rem] border relative overflow-hidden flex flex-col justify-between transition-all duration-500 group ${
+              theme === 'dark'
+                ? 'bg-gradient-to-br from-zinc-950 via-zinc-900 to-black border-zinc-800 hover:border-amber-500/40 text-zinc-300'
+                : 'bg-gradient-to-br from-white via-zinc-50 to-white border-gray-200 hover:border-zinc-400 text-gray-800 shadow-lg hover:shadow-xl'
+            }`}>
+              <div className="space-y-6">
+                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-[10px] font-bold tracking-[0.2em] uppercase font-mono bg-zinc-800/60 text-zinc-300 border border-zinc-700/60">
+                  <Sparkles className="w-3.5 h-3.5" />
+                  <span>PLEMENITI MATERIJALI</span>
+                </div>
+
+                <div className="space-y-3">
+                  <h3 className={`text-3xl sm:text-4xl font-light tracking-tight uppercase ${theme === 'dark' ? 'text-white' : 'text-black'}`}>
+                    Taft, Šantung i Grež svila
+                  </h3>
+                  <p className="text-sm sm:text-base leading-relaxed font-light">
+                    Prirodna svila vrhunskog kvaliteta koja omogućava koži da diše, reguliše vlagu i stvara optimalnu mikroklimu. Upoznajte karakteristike naših luksuznih materijala i smernice za negu.
+                  </p>
+                </div>
+
+                <div className="grid grid-cols-3 gap-2 text-center pt-1">
+                  {[
+                    { name: 'Taft svila', tag: 'Arhitektonska forma' },
+                    { name: 'Šantung svila', tag: 'Prirodna tekstura' },
+                    { name: 'Grež svila', tag: 'Autentična punoća' }
+                  ].map((s, idx) => (
+                    <div 
+                      key={idx}
+                      className={`p-3 rounded-2xl border ${
+                        theme === 'dark' ? 'bg-zinc-900/60 border-zinc-800' : 'bg-white/80 border-gray-200'
+                      }`}
+                    >
+                      <span className={`block text-xs font-bold ${theme === 'dark' ? 'text-white' : 'text-black'}`}>{s.name}</span>
+                      <span className="text-[10px] opacity-65 leading-tight block mt-0.5">{s.tag}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="pt-8">
+                <Link
+                  to="/editorijali?prica=taft"
+                  className={`inline-flex items-center gap-2 px-6 py-3.5 rounded-2xl text-xs font-bold uppercase tracking-widest border transition-all ${
+                    theme === 'dark' ? 'border-zinc-700 hover:bg-zinc-800 text-white' : 'border-gray-300 hover:bg-gray-100 text-black'
+                  }`}
+                >
+                  <span>Istražite vodič o svili</span>
+                  <ArrowRight className="w-4 h-4 transform group-hover:translate-x-1 transition-transform" />
+                </Link>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* Collaborations Section */}
       <section className={`py-32 transition-colors duration-500 border-y ${
         theme === 'dark' ? 'bg-zinc-950/40 border-zinc-900/60' : 'bg-zinc-50/40 border-gray-100'

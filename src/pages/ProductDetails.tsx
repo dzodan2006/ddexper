@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, Link } from 'react-router-dom';
 import { Product } from '../types';
 import { 
   ShoppingCart, 
@@ -9,7 +9,9 @@ import {
   CornerUpLeft, 
   Ruler,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  Scissors,
+  Sparkles
 } from 'lucide-react';
 import { motion } from 'motion/react';
 import SizeChart from '../components/SizeChart';
@@ -284,6 +286,66 @@ export default function ProductDetails({ products, onAddToCart }: ProductDetails
             <p className={`text-xs text-center transition-colors ${
               theme === 'dark' ? 'text-zinc-600' : 'text-gray-400'
             }`}>{t('product.paymentTagline')}</p>
+
+            {/* Bespoke / Izrada po meri Notice */}
+            <div className={`p-4 rounded-2xl border transition-all ${
+              theme === 'dark'
+                ? 'bg-zinc-950/60 border-amber-500/20 text-zinc-300'
+                : 'bg-amber-50/40 border-amber-200/60 text-gray-800'
+            }`}>
+              <div className="flex items-start gap-3">
+                <div className="p-2 rounded-xl bg-amber-500/10 text-amber-500 shrink-0 mt-0.5">
+                  <Scissors className="w-4 h-4" />
+                </div>
+                <div className="flex-1 space-y-1">
+                  <div className="flex items-center justify-between">
+                    <h5 className={`text-xs font-bold uppercase tracking-wider ${theme === 'dark' ? 'text-amber-400' : 'text-amber-800'}`}>
+                      Izrada po meri
+                    </h5>
+                    <Link
+                      to="/editorijali?prica=po-meri"
+                      className="text-[11px] font-semibold text-amber-500 hover:underline inline-flex items-center gap-0.5"
+                    >
+                      <span>Detaljnije</span>
+                      <span>→</span>
+                    </Link>
+                  </div>
+                  <p className="text-[11px] leading-relaxed text-zinc-400 dark:text-zinc-400">
+                    Ovaj model se može izraditi prema vašim individualnim merama i prilagoditi specifičnostima prilike.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Natural Silk & Fabric Guide Link */}
+            <div className={`p-4 rounded-2xl border transition-all ${
+              theme === 'dark'
+                ? 'bg-zinc-950/60 border-zinc-800 text-zinc-300'
+                : 'bg-gray-50/60 border-gray-200 text-gray-800'
+            }`}>
+              <div className="flex items-start gap-3">
+                <div className="p-2 rounded-xl bg-zinc-800/60 text-zinc-300 dark:text-zinc-300 shrink-0 mt-0.5">
+                  <Sparkles className="w-4 h-4" />
+                </div>
+                <div className="flex-1 space-y-1">
+                  <div className="flex items-center justify-between">
+                    <h5 className={`text-xs font-bold uppercase tracking-wider ${theme === 'dark' ? 'text-white' : 'text-black'}`}>
+                      Plemeniti materijali & Nega
+                    </h5>
+                    <Link
+                      to="/editorijali?prica=taft"
+                      className={`text-[11px] font-semibold hover:underline inline-flex items-center gap-0.5 ${theme === 'dark' ? 'text-zinc-300' : 'text-black'}`}
+                    >
+                      <span>Vodič o svili</span>
+                      <span>→</span>
+                    </Link>
+                  </div>
+                  <p className="text-[11px] leading-relaxed text-zinc-400">
+                    Saznajte više o taft, šantung i grež svili, prirodnim higijenskim svojstvima i načinu održavanja.
+                  </p>
+                </div>
+              </div>
+            </div>
           </div>
 
           <div className={`grid grid-cols-1 sm:grid-cols-3 gap-6 pt-12 border-t transition-colors ${

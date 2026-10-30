@@ -97,6 +97,14 @@ export default function Complaints() {
             <p>
               U skladu s našim uslovima zamene proizvoda, proizvod se u zakonskom roku može zameniti za drugi pod uslovom da nije oštećen i korišćen, a troškove vraćanja snosi kupac. Zamena se mora izvršiti u zakonskom roku.
             </p>
+            <div className={`p-4 rounded-2xl border text-xs leading-relaxed space-y-1.5 ${
+              theme === 'dark' ? 'bg-amber-500/5 border-amber-500/20 text-zinc-300' : 'bg-amber-50/50 border-amber-200 text-gray-700'
+            }`}>
+              <strong className="text-amber-500 font-bold uppercase tracking-wider block">Važna napomena za izradu po meri i personalizovane proizvode:</strong>
+              <p>
+                Modeli izrađeni prema individualnim merama, kao i modeli izrađeni po posebnom zahtevu klijenta, predstavljaju personalizovane proizvode. Za takve proizvode pravo na odustanak i povraćaj novca može biti ograničeno u skladu sa važećim Zakonom o zaštiti potrošača. Zato je važno da se pre izrade precizno definišu sve željene mere, izmene i detalji modela. Korekcije ili dodatne izmene koje nisu bile deo prvobitnog dogovora mogu biti dodatno naplaćene.
+              </p>
+            </div>
           </section>
 
           <section className={`p-8 rounded-3xl space-y-4 border ${
