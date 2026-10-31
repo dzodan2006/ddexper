@@ -1,2 +1,14 @@
 User-agent: *
 Allow: /
+Disallow: /admin
+Disallow: /vlasnici
+Disallow: /baza
+Disallow: /portal-za-vlasnike
+
+User-agent: Googlebot
+Allow: /
+
+User-agent: Googlebot-Image
+Allow: /
+
+Sitemap: https://dddesign.rs/sitemap.xml

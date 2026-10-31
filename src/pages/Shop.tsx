@@ -180,7 +180,15 @@ export default function Shop({ products, categories, loading, onAddToCart }: Sho
     const filtered = products.filter(product => {
       const matchesSearch = product.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
                            (product.description?.toLowerCase().includes(searchQuery.toLowerCase()) ?? false);
-      const matchesCategory = selectedCategoryId === 'Sve' || String(product.category_id) === String(selectedCategoryId);
+      const matchesCategory = selectedCategoryId === 'Sve' || 
+        String(product.category_id) === String(selectedCategoryId) ||
+        String((product as any).categories?.Id) === String(selectedCategoryId) ||
+        (selectedCategoryId === '2' && (product.category?.toLowerCase().includes('odel') || product.category?.toLowerCase().includes('komplet'))) ||
+        (selectedCategoryId === '3' && product.category?.toLowerCase().includes('haljin')) ||
+        (selectedCategoryId === '1' && (product.category?.toLowerCase().includes('kaput') || product.category?.toLowerCase().includes('mantil'))) ||
+        (selectedCategoryId === '4' && product.category?.toLowerCase().includes('kombinezon')) ||
+        (selectedCategoryId === '5' && (product.category?.toLowerCase().includes('košulj') || product.category?.toLowerCase().includes('kosulj') || product.category?.toLowerCase().includes('majic'))) ||
+        (selectedCategoryId === '6' && (product.category?.toLowerCase().includes('pantalon') || product.category?.toLowerCase().includes('suknj')));
       const matchesPrice = product.price >= minPrice && product.price <= maxPrice;
       return matchesSearch && matchesCategory && matchesPrice;
     });

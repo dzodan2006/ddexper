@@ -14,6 +14,7 @@ import { LanguageProvider, useLanguage } from './context/LanguageContext';
 import Navbar from './components/Navbar';
 import CartDrawer from './components/CartDrawer';
 import CookieConsent from './components/CookieConsent';
+import NewsletterPopup from './components/NewsletterPopup';
 import ScrollToTop from './components/ScrollToTop';
 import { sortCategories, sortProductsByCustomOrder } from './lib/categories';
 
@@ -109,106 +110,414 @@ function FadingBackground() {
   );
 }
 
-// Custom SEO and JSON-LD schema builder to MAX SEO & Best practices
+// Custom SEO and JSON-LD schema builder to MAX SEO & Best Google ranking practices
 function useSEO() {
   const location = useLocation();
   const { language } = useLanguage();
 
   useEffect(() => {
-    const seoData: Record<string, Record<string, { title: string; desc: string; keywords: string }>> = {
+    // Check if there are query parameters for faceted SEO (categories or editorial stories)
+    const searchParams = new URLSearchParams(location.search);
+    const categoryParam = searchParams.get('category');
+    const pricaParam = searchParams.get('prica') || searchParams.get('tab');
+
+    const baseTitle = 'DD DESIGN';
+    const slogan = 'Umetnost utkana u svilu';
+
+    const seoData: Record<string, Record<string, { title: string; desc: string; keywords: string; type?: string }>> = {
       'sr': {
         '/': {
-          title: 'DD Design | Unikatne Kreacije & Luksuzna Moda',
-          desc: 'Unikatni modni komadi, kaputi, luksuzna odela i ekskluzivne haljine od najfinije taft svile. Dizajn Danijele Gojković koji slavi autentičnost.',
-          keywords: 'dd design, danijela gojkovic, taft svila, modni kutak, unikatne haljine, kaputi srbija'
+          title: 'DD DESIGN | Umetnost utkana u svilu | Unikatna & Luksuzna Moda',
+          desc: 'Atelje DD DESIGN Danijele Gojković. Umetnost utkana u svilu — unikatne haljine od luksuzne taft, šantung i grež svile, kaputi, ženska odela i kreacije po meri.',
+          keywords: 'umetnost utkana u svilu, dd design, danijela gojkovic, taft svila, santung svila, grez svila, unikatne haljine beograd, luksuzna odela, srpska moda',
+          type: 'ClothingStore'
         },
         '/shop': {
-          title: 'Prodavnica | Luksuzni Modni Komadi | DD Design',
-          desc: 'Istražite našu kolekciju unikatnih haljina, luksuznih odela, brendiranih sakoa i ručno šivenih kaputa. Sigurna kupovina online.',
-          keywords: 'kupovina haljina, zenska odela, taft svilene suknje, mantili unikatni, rucni rad'
+          title: 'Prodavnica | Luksuzni Modni Komadi | DD DESIGN',
+          desc: 'Istražite našu kolekciju unikatnih haljina, luksuznih odela, brendiranih sakoa i ručno šivenih kaputa od najplemenitije prirodne svile. Sigurna kupovina online.',
+          keywords: 'kupovina haljina beograd, svilene haljine srbija, zenska odela od svile, taft svilene suknje, mantili unikatni, rucni rad',
+          type: 'CollectionPage'
+        },
+        '/nova-kolekcija': {
+          title: 'Nova Kolekcija | Ekskluzivni Svileni Modeli | DD DESIGN',
+          desc: 'Nova modna kolekcija ateljea DD DESIGN. Limitirane serije, najfinija taft i šantung svila, bezvremenska silueta i arhitektonski krojevi za posebne prilike.',
+          keywords: 'nova kolekcija dd design, luksuzne svilene haljine, nova modna sezona, unikatni dizajnerski komadi, visoka moda srbija',
+          type: 'CollectionPage'
+        },
+        '/snizenja': {
+          title: 'Sniženja & Posebne Pogodnosti | DD DESIGN',
+          desc: 'Ekskluzivna ponuda odabranih dizajnerskih modela po sniženim cenama. Iskoristite priliku za unikatne kapute, odela i haljine vrhunskog kvaliteta.',
+          keywords: 'snizenja odeca beograd, popusti haljine, modna snizenja, svila akcija, dd design outlet',
+          type: 'CollectionPage'
+        },
+        '/kategorije': {
+          title: 'Kategorije Kolekcije | Haljine, Odela, Kaputi, Sakoi | DD DESIGN',
+          desc: 'Pregledajte kompletan asortiman DD DESIGN po kategorijama: ekskluzivne haljine, svečana ženska odela, skulpturalni sakoi, kaputi i svilene suknje.',
+          keywords: 'modne kategorije, svilene haljine, kaputi rucni rad, sakoi od svile, unikatna odela zenska',
+          type: 'CollectionPage'
+        },
+        '/o-svili': {
+          title: 'O Svili | Vodič kroz Taft, Šantung i Grež Svilu | DD DESIGN',
+          desc: 'Kompletan vodič kroz plemenite materijale DD DESIGN kolekcija: Taft svila (kraljevska tekstura i šuštavi zvuk), Šantung svila i prirodna Grež svila. Održavanje i karakteristike.',
+          keywords: 'o svili, taft svila, santung svila, grez svila, odrzavanje svile, prirodna svila beograd, luksuzni materijali',
+          type: 'Article'
+        },
+        '/izrada-po-meri': {
+          title: 'Izrada po Meri | Bespoke Krojenje za Vašu Figuru | DD DESIGN',
+          desc: 'Personalizovana izrada modela po meri u ateljeu DD DESIGN. Savršeno prilagođavanje vašoj silueti, odabir najfinije svile i posvećenost detaljima.',
+          keywords: 'izrada po meri beograd, sivenje po meri, unikatne haljine po meri, maturske i svecane haljine po meri, bespoke zenska odela',
+          type: 'Service'
         },
         '/editorijali': {
-          title: 'Umetnički Digitalni Editorijal | Taft Svila | DD Design',
-          desc: 'Zavirite u digitalni časopis brenda DD Design. Ekskluzivne priče o luksuznoj teksturi taft svile, stilski predlozi, estetične rečenice i storytelling.',
-          keywords: 'taft svila, luksuzna svila, šušti haljina, modni editorijal, haljine od taft svile, srbija sako svila'
+          title: 'Digitalni Editorijali & Modne Priče | Umetnost utkana u svilu | DD DESIGN',
+          desc: 'Interaktivni modni magazin i vizuelne priče brenda DD DESIGN. Estetika svile u pokretu, umetničke fotografije, priče o taft svili i saveti za stilizovanje.',
+          keywords: 'modni editorijal, price o svili, digitalni modni casopis, stilski saveti svila, dd design editorial',
+          type: 'Article'
         },
         '/saradnje': {
-          title: 'Press & Saradnje | Danijela Gojković u Medijima',
-          desc: 'Zabeleženi trenuci rada brenda DD Design. Pogledajte prikaze u vodećim magazinima, intervjue i priče sa naslovnih strana.',
-          keywords: 'lepa i srecna dddesign, milos nadazdin, andjelka stevic haljina'
+          title: 'Press & Saradnje | DD DESIGN u Medijima | Danijela Gojković',
+          desc: 'Pregled medijskih nastupa, naslovnih strana, televizijskih gostovanja i saradnji ateljea DD DESIGN i dizajnerke Danijele Gojković.',
+          keywords: 'press dd design, danijela gojkovic mediji, javne licnosti moda, modne saradnje',
+          type: 'CollectionPage'
+        },
+        '/saradnje/lepaisrecna': {
+          title: 'Lepa & Srećna Editorijal | Miloš Nadaždin & DD DESIGN',
+          desc: 'Ekskluzivni modni editorijal brenda DD DESIGN objavljen u prestižnom magazinu Lepa & Srećna, snimljen pod budnim okom Miloša Nadaždina.',
+          keywords: 'lepa i srecna dd design, milos nadazdin modna fotografija, editorijal zenska moda',
+          type: 'Article'
+        },
+        '/saradnje/dd-modna-prica': {
+          title: 'Naša Modna Priča | O Ateljeu DD DESIGN & Danijeli Gojković',
+          desc: 'Upoznajte viziju i put Danijele Gojković: od prvih skica do prepoznatljivog modnog ateljea koji stvara umetnost utkanu u svilu.',
+          keywords: 'dd modna prica, o ateljeu dd design, danijela gojkovic dizajner, srpski modni atelje',
+          type: 'Article'
+        },
+        '/saradnje/andjelka-stevic': {
+          title: 'Anđelka Stević Žugić u DD DESIGN Kreacijama | Press',
+          desc: 'Poznata glumica Anđelka Stević Žugić zablistala je u unikatnim odevnim komadima i haljinama ateljea DD DESIGN.',
+          keywords: 'andjelka stevic haljina, andjelka stevic dd design, glumica moda srbija',
+          type: 'Article'
+        },
+        '/saradnje/dragana-kosjerina': {
+          title: 'Dragana Kosjerina u DD DESIGN Kreacijama | Press',
+          desc: 'Televizijska voditeljka Dragana Kosjerina u sofisticiranim kreacijama i haljinama ateljea DD DESIGN.',
+          keywords: 'dragana kosjerina dd design, rts voditeljka haljina, sofisticirana zenska moda',
+          type: 'Article'
+        },
+        '/saradnje/ljubica-karadjordjevic': {
+          title: 'Princeza Ljubica Karađorđević | Kraljevska Elegancija DD DESIGN',
+          desc: 'Saradnja sa princezom Ljubicom Karađorđević: bezvremenska kraljevska elegancija i plemenite svilene siluete.',
+          keywords: 'ljubica karadjordjevic haljina, kraljevska elegancija, dd design svecane kreacije',
+          type: 'Article'
+        },
+        '/saradnje/aleksandra-perisic': {
+          title: 'Aleksandra Perišić | Olimpijska Vicešampionka u DD DESIGNU',
+          desc: 'Olimpijska vicešampionka Aleksandra Perišić u modernim i upečatljivim kreacijama našeg ateljea.',
+          keywords: 'aleksandra perisic tekvondo dd design, olimpijka haljina moda',
+          type: 'Article'
+        },
+        '/saradnje/dragana-radakovic': {
+          title: 'Dragana Radaković | Operska Primadona u DD DESIGN Kreacijama',
+          desc: 'Svetski priznata operska primadona Dragana Radaković nosi dramatične i skulpturalne haljine ateljea DD DESIGN na svetskim scenama.',
+          keywords: 'dragana radakovic sopran, operske haljine, svecane toalete od svile',
+          type: 'Article'
+        },
+        '/saradnje/dragana-micalovic': {
+          title: 'Dragana Mićalović u DD DESIGN Modelima | Press & Glamur',
+          desc: 'Glumica Dragana Mićalović nosi unikatne modele i sofisticirana odela iz ateljea DD DESIGN.',
+          keywords: 'dragana micalovic odelo, glumica stil dd design',
+          type: 'Article'
+        },
+        '/saradnje/tamara-misirlic': {
+          title: 'Tamara Misirlić | Humanitarna Snaga & Elegancija | DD DESIGN',
+          desc: 'Humanitarka Tamara Misirlić u nežnim i moćnim komadima kreiranim u ateljeu DD DESIGN.',
+          keywords: 'tamara misirlic humanitarka, dd design saradnja',
+          type: 'Article'
+        },
+        '/saradnje/dajana-svraka': {
+          title: 'Dajana Švraka Milutinović | Autentičan Stil | DD DESIGN',
+          desc: 'Medijska ličnost i novinarka Dajana Švraka Milutinović u elegantnim kreacijama brenda DD DESIGN.',
+          keywords: 'dajana svraka novinarka haljina, rts dddesign',
+          type: 'Article'
+        },
+        '/saradnje/danijela-pantic': {
+          title: 'Danijela Pantić Conić | TV Ličnost u DD DESIGNU',
+          desc: 'Poznato TV lice Danijela Pantić Conić u prepoznatljivim sakoima i svilenim komadima DD DESIGN.',
+          keywords: 'danijela pantic slagalica tv haljina, dd design',
+          type: 'Article'
+        },
+        '/saradnje/belgrade-fashion-week': {
+          title: 'Belgrade Fashion Week | DD DESIGN na Nedelji Mode',
+          desc: 'Predstavljanje kolekcija DD DESIGN na Belgrade Fashion Week-u: visoke ocene kritičara za skulpturalnu svilu i formu.',
+          keywords: 'belgrade fashion week dd design, bfw beograd, nedelja mode revija',
+          type: 'Article'
+        },
+        '/kontakt': {
+          title: 'Kontakt & Atelje | DD DESIGN Beograd',
+          desc: 'Stupite u kontakt sa ateljeom DD DESIGN. Poručivanje, konsultacije, zakazivanje termina za probu modela u Beogradu. Telefon: +381 64 160 5032.',
+          keywords: 'kontakt dd design, atelje beograd telefon, zakazivanje probe haljine, porucivanje svile',
+          type: 'ContactPage'
+        },
+        '/reklamacije': {
+          title: 'Reklamacije i Prigovori | Sigurna Kupovina | DD DESIGN',
+          desc: 'Informacije o postupku reklamacije, zamene i odustanka od kupovine u skladu sa Zakonom o zaštiti potrošača Republike Srbije.',
+          keywords: 'reklamacije dd design, povrat robe, zamena velicine, prava kupaca',
+          type: 'WebPage'
+        },
+        '/politika-privatnosti': {
+          title: 'Politika Privatnosti | Zaštita Vaših Podataka | DD DESIGN',
+          desc: 'Pravila privatnosti ateljea DD DESIGN. Sigurno čuvanje vaših ličnih podataka u skladu sa GDPR i propisima Republike Srbije.',
+          keywords: 'politika privatnosti dd design, zastita podataka, sigurnost kupovine',
+          type: 'WebPage'
+        },
+        '/uslovi-koriscenja': {
+          title: 'Uslovi Korišćenja | Pravilnik Online Kupovine | DD DESIGN',
+          desc: 'Opšti uslovi korišćenja i kupovine u online prodavnici ateljea DD DESIGN. Isporuka, cene, prava i obaveze kupaca i prodavca.',
+          keywords: 'uslovi koriscenja prodavnice, isporuka robe srbija, nacin placanja, raiffeisen placanje',
+          type: 'WebPage'
         }
       },
       'en': {
         '/': {
-          title: 'DD Design | Unique Handcrafted Creations & Luxury Fashion',
-          desc: 'Unique designer pieces, coats, luxury suits, and exclusive dresses crafted from pure taffeta silk. Experience high-end fashion design by Danijela Gojković.',
-          keywords: 'dd design wardrobe, danijela gojkovic, taffeta silk gown, unique fashion brand'
+          title: 'DD DESIGN | Art Woven into Silk | Unique Luxury Fashion',
+          desc: 'DD DESIGN Atelier by Danijela Gojković. Art woven into silk — unique handcrafted dresses made of pure taffeta, shantung and grege silk, tailored coats and bespoke suits.',
+          keywords: 'art woven into silk, dd design, danijela gojkovic, taffeta silk gown, unique fashion brand, serbian couture',
+          type: 'ClothingStore'
         },
         '/shop': {
-          title: 'Boutique Shop | Luxury Collection | DD Design',
-          desc: 'Explore or buy handcrafted designer coats, tailored suits, evening gowns, and limited silk pieces. Premium packaging and fast worldwide delivery.',
-          keywords: 'exclusive online boutique, buy hand-stitched coat, designer evening dresses'
+          title: 'Boutique Shop | Luxury Silk Collection | DD DESIGN',
+          desc: 'Explore or buy handcrafted designer coats, tailored suits, evening gowns, and limited silk pieces. Premium packaging and secure online checkout.',
+          keywords: 'exclusive online boutique, buy hand-stitched coat, designer evening dresses, silk fashion',
+          type: 'CollectionPage'
+        },
+        '/nova-kolekcija': {
+          title: 'New Collection | Signature Silk Pieces | DD DESIGN',
+          desc: 'Discover our newest luxury capsule of pure silk creations, structured silhouettes and timeless elegance.',
+          keywords: 'new silk collection, designer dresses, haute couture europe',
+          type: 'CollectionPage'
+        },
+        '/o-svili': {
+          title: 'Silk Guide | Taffeta, Shantung & Grege Silk | DD DESIGN',
+          desc: 'A masterclass on pure luxury silk materials: Taffeta silk with its iconic rustle and structure, slubbed Shantung, and authentic Grege silk.',
+          keywords: 'silk guide, taffeta silk properties, shantung silk, luxury fabric guide',
+          type: 'Article'
+        },
+        '/izrada-po-meri': {
+          title: 'Custom Tailoring & Bespoke Atelier | DD DESIGN',
+          desc: 'Bespoke tailoring and personalized sizing for your exact silhouette in pure natural silk at the DD DESIGN atelier.',
+          keywords: 'bespoke tailoring belgrade, custom silk dress, haute couture made to measure',
+          type: 'Service'
         },
         '/editorijali': {
-          title: 'Digital Editorials | Art of Taffeta Silk | DD Design',
-          desc: 'The official digital fashion magazine of DD Design. Immersive visual storytelling, styling guides, and premium thoughts on taffeta silk texture.',
-          keywords: 'taffeta silk texture, luxury editorials, high couture europe'
+          title: 'Digital Editorials | Art of Taffeta Silk | DD DESIGN',
+          desc: 'The official digital fashion magazine of DD DESIGN. Immersive visual storytelling, styling guides, and premium thoughts on silk texture.',
+          keywords: 'taffeta silk texture, luxury editorials, high couture europe',
+          type: 'Article'
         },
         '/saradnje': {
-          title: 'Press & Collaborations | DD Design in the Spotlight',
+          title: 'Press & Collaborations | DD DESIGN in the Spotlight',
           desc: 'Official featured publications, covers, and editorials with top celebrities and premium magazines highlighting our artistic range.',
-          keywords: 'fashion brand tv appearances, design portfolio'
+          keywords: 'fashion brand tv appearances, design portfolio, celebrity fashion',
+          type: 'CollectionPage'
+        },
+        '/kontakt': {
+          title: 'Contact Atelier | DD DESIGN Belgrade',
+          desc: 'Get in touch with DD DESIGN Atelier for consultations, styling appointments, and bespoke fittings.',
+          keywords: 'contact dd design, belgrade fashion atelier, appointments',
+          type: 'ContactPage'
         }
       },
       'ru': {
         '/': {
-          title: 'DD Design | Лимитированные Дизайнерские Вещи и Эксклюзивный Шелк',
-          desc: 'Авторские пальто, роскошные костюмы и платья из благородной шелковой тафты от дизайнера Даниелы Гойкович. Высокий уровень женственности.',
-          keywords: 'дизайнерская одежда сербия, Даниела Гойкович, шелковая тафта, купить пальто белград'
+          title: 'DD DESIGN | Искусство, сотканное из шелка | Высокая Мода',
+          desc: 'Ателье DD DESIGN Даниелы Гойкович. Искусство, сотканное из шелка — эксклюзивные платья из шелковой тафты, шантунга и грежа, костюмы и пальто ручной работы.',
+          keywords: 'dd design, Даниела Гойкович, шелковая тафта, купить пальто белград, дизайнерские платья шелк',
+          type: 'ClothingStore'
         },
         '/shop': {
-          title: 'Магазин | Премиум Коллекция Одежды | DD Design',
+          title: 'Магазин | Премиум Коллекция Одежды | DD DESIGN',
           desc: 'Купить уникальные вечерние платья, элегантные костюмы и пальто ручной работы. Быстрая доставка, превосходное качество пошива.',
-          keywords: 'купить платье у дизайнера, шелк тафта юбка, брендовые пиджаки'
+          keywords: 'купить платье у дизайнера, шелк тафта юбка, брендовые пиджаки',
+          type: 'CollectionPage'
+        },
+        '/o-svili': {
+          title: 'Гид по Шелку | Тафта, Шантунг и Греж | DD DESIGN',
+          desc: 'Полное руководство по благородным натуральным шелкам: шелковая тафта, шантунг и аутентичный греж. Особенности и уход.',
+          keywords: 'шелковая тафта, шантунг шелк, уход за шелком, премиальные ткани',
+          type: 'Article'
+        },
+        '/izrada-po-meri': {
+          title: 'Индивидуальный Пошив по Меркам | DD DESIGN',
+          desc: 'Персонализированный пошив эксклюзивных моделей под вашу фигуру в ателье DD DESIGN.',
+          keywords: 'пошив платья на заказ, индивидуальный пошив белград, шелк на заказ',
+          type: 'Service'
         },
         '/editorijali': {
-          title: 'Модный Редакция | Искусство и Шелковая Тафта | DD Design',
-          desc: 'Официальный интерактивный журнал DD Design. Художественные съемки в замках, истории создания коллекций из тафты и гиды по стилю.',
-          keywords: 'шелковая тафта, обзоры моды, эксклюзивные платья кокон'
+          title: 'Модный Редакция | Искусство и Шелковая Тафта | DD DESIGN',
+          desc: 'Официальный интерактивный журнал DD DESIGN. Съемки в замках, истории создания коллекций из тафты и гиды по стилю.',
+          keywords: 'шелковая тафта, обзоры моды, эксклюзивные платья кокон',
+          type: 'Article'
         },
         '/saradnje': {
-          title: 'Пресса и Сотрудничество | Бренд DD Design в Медиа',
+          title: 'Пресса и Сотрудничество | Бренд DD DESIGN в Медиа',
           desc: 'Сюжеты из ведущих глянцевых изданий, обложки журналов и репортажи о наших показах с известными медиа-персонами.',
-          keywords: 'коллаборации брендов, пресса мода'
+          keywords: 'коллаборации брендов, пресса мода',
+          type: 'CollectionPage'
+        },
+        '/kontakt': {
+          title: 'Контакты & Ателье | DD DESIGN Белград',
+          desc: 'Свяжитесь с ателье DD DESIGN для заказа, консультаций и записи на примерку в Белграде.',
+          keywords: 'контакты ателье белград, запись на примерку платья',
+          type: 'ContactPage'
         }
       }
     };
 
     const currentLangData = seoData[language] || seoData['sr'];
-    const currentRouteData = currentLangData[location.pathname] || {
-      title: 'DD Design | Haute Couture',
-      desc: 'Unikatni krojeni modeli visokog kvaliteta koji spajaju bezvremensku klasiku i savremenost.',
-      keywords: 'dd design, haute couture, srpski dizajneri'
+    let currentRouteData = currentLangData[location.pathname];
+
+    // Handle faceted URLs (categories or editorial stories)
+    if (!currentRouteData) {
+      if (location.pathname.startsWith('/saradnje/')) {
+        currentRouteData = currentLangData['/saradnje'] || {
+          title: `Press Saradnja | ${baseTitle}`,
+          desc: `Ekskluzivna modna saradnja i medijska objava ateljea DD DESIGN.`,
+          keywords: `press, dd design, moda`,
+          type: 'Article'
+        };
+      } else if (location.pathname.startsWith('/product/')) {
+        currentRouteData = {
+          title: `Ekskluzivan Model | ${slogan} | ${baseTitle}`,
+          desc: `Unikatni model ručne izrade od najplemenitije prirodne svile. Atelje DD DESIGN Danijele Gojković.`,
+          keywords: `svilena odeca, unikatna haljina, luksuzni komad, rucni rad`,
+          type: 'Product'
+        };
+      } else {
+        currentRouteData = {
+          title: `${baseTitle} | ${slogan}`,
+          desc: `Unikatni krojeni modeli visokog kvaliteta koji spajaju bezvremensku klasiku, skulpturalnu formu i prirodnu svilu.`,
+          keywords: `dd design, haute couture, srpski dizajneri, umetnost utkana u svilu`,
+          type: 'WebPage'
+        };
+      }
+    }
+
+    // Faceted adjustments for Category or Editorial query params
+    let effectiveTitle = currentRouteData.title;
+    let effectiveDesc = currentRouteData.desc;
+
+    if (location.pathname === '/shop' && categoryParam) {
+      const CATEGORY_MAP: Record<string, { titleSr: string; descSr: string; titleEn: string; descEn: string }> = {
+        '1': {
+          titleSr: 'Kaputi i Mantili',
+          descSr: 'Istražite kolekciju unikatnih, ručno šivenih kaputa i mantila od najplemenitijih materijala u ateljeu DD DESIGN.',
+          titleEn: 'Coats & Outerwear',
+          descEn: 'Explore handcrafted luxury coats and tailored outerwear at DD DESIGN Atelier.'
+        },
+        '2': {
+          titleSr: 'Odela i Kompleti',
+          descSr: 'Istražite kolekciju ekskluzivnih ženskih odela i kompleta od prirodne svile u ateljeu DD DESIGN. Skulpturalni krojevi i elegancija.',
+          titleEn: 'Suits & Tailored Sets',
+          descEn: 'Discover exclusive luxury suits and tailored silk sets at DD DESIGN Atelier.'
+        },
+        '3': {
+          titleSr: 'Haljine',
+          descSr: 'Istražite kolekciju unikatnih svilenih haljina od taft i šantung svile u ateljeu DD DESIGN. Bezvremenski glamur i savršena linija.',
+          titleEn: 'Silk Dresses',
+          descEn: 'Explore our exclusive collection of luxury pure silk gowns and evening dresses at DD DESIGN.'
+        },
+        '4': {
+          titleSr: 'Kombinezoni',
+          descSr: 'Istražite kolekciju sofisticiranih ženskih kombinezona od prirodne svile u ateljeu DD DESIGN.',
+          titleEn: 'Silk Jumpsuits',
+          descEn: 'Discover structured and fluid silk jumpsuits at DD DESIGN Atelier.'
+        },
+        '5': {
+          titleSr: 'Košulje i Majice',
+          descSr: 'Istražite kolekciju svilenih košulja i prefinjenih topova u ateljeu DD DESIGN.',
+          titleEn: 'Silk Shirts & Tops',
+          descEn: 'Shop elegant handcrafted silk shirts and tops at DD DESIGN.'
+        },
+        '6': {
+          titleSr: 'Pantalone i Suknje',
+          descSr: 'Istražite kolekciju svilenih suknji i elegantnih pantalona u ateljeu DD DESIGN.',
+          titleEn: 'Trousers & Skirts',
+          descEn: 'Explore tailored silk trousers and sculptural skirts at DD DESIGN Atelier.'
+        }
+      };
+
+      const mapped = CATEGORY_MAP[categoryParam];
+      const catName = mapped ? (language === 'en' ? mapped.titleEn : mapped.titleSr) : categoryParam;
+      const catDesc = mapped ? (language === 'en' ? mapped.descEn : mapped.descSr) : `Istražite kolekciju kategorije ${categoryParam} u ateljeu DD DESIGN. Vrhunski krojevi od najfinije svile.`;
+
+      effectiveTitle = `${catName} | Svileni Modeli | ${baseTitle}`;
+      effectiveDesc = catDesc;
+    } else if (location.pathname === '/editorijali' && pricaParam) {
+      if (pricaParam === 'taft') {
+        effectiveTitle = `Taft Svila | Kraljevska Tekstura & Zvuk u Pokretu | ${baseTitle}`;
+        effectiveDesc = `Sve o taft svili u DD DESIGN kolekcijama: skulpturalna forma, šuštavi zvuk i bezvremenski kraljevski sjaj.`;
+      } else if (pricaParam === 'santung') {
+        effectiveTitle = `Šantung Svila | Prirodna Tekstura & Suptilna Mat Elegancija | ${baseTitle}`;
+        effectiveDesc = `Saznajte zašto je šantung svila sinonim za organski luksuz i diskretnu sofisticiranost u ateljeu DD DESIGN.`;
+      } else if (pricaParam === 'grez') {
+        effectiveTitle = `Grež Svila | Sirova Autentičnost & Hipoalergena Svojstva | ${baseTitle}`;
+        effectiveDesc = `Otkrijte grež svilu: neobrađena prirodna vlakna bogata sericinom za savršen komfor tokom celog dana.`;
+      } else if (pricaParam === 'po-meri') {
+        effectiveTitle = `Izrada po Meri | Personalizovano Krojenje za Vašu Siluetu | ${baseTitle}`;
+        effectiveDesc = `Kako funkcioniše bespoke izrada po meri u našem ateljeu: od uzimanja mera do unikatne kreacije.`;
+      }
+    }
+
+    document.title = effectiveTitle;
+
+    // Helper functions for meta tag manipulation
+    const setMetaName = (name: string, content: string) => {
+      let el = document.querySelector(`meta[name="${name}"]`);
+      if (!el) {
+        el = document.createElement('meta');
+        el.setAttribute('name', name);
+        document.head.appendChild(el);
+      }
+      el.setAttribute('content', content);
     };
 
-    document.title = currentRouteData.title;
+    const setMetaProperty = (prop: string, content: string) => {
+      let el = document.querySelector(`meta[property="${prop}"]`);
+      if (!el) {
+        el = document.createElement('meta');
+        el.setAttribute('property', prop);
+        document.head.appendChild(el);
+      }
+      el.setAttribute('content', content);
+    };
 
-    let metaDesc = document.querySelector('meta[name="description"]');
-    if (!metaDesc) {
-      metaDesc = document.createElement('meta');
-      metaDesc.setAttribute('name', 'description');
-      document.head.appendChild(metaDesc);
+    setMetaName('description', effectiveDesc);
+    setMetaName('keywords', currentRouteData.keywords);
+
+    const canonicalUrl = `https://dddesign.rs${location.pathname}${location.search || ''}`;
+    
+    // Canonical link
+    let canonicalLink = document.querySelector('link[rel="canonical"]');
+    if (!canonicalLink) {
+      canonicalLink = document.createElement('link');
+      canonicalLink.setAttribute('rel', 'canonical');
+      document.head.appendChild(canonicalLink);
     }
-    metaDesc.setAttribute('content', currentRouteData.desc);
+    canonicalLink.setAttribute('href', canonicalUrl);
 
-    let metaKeywords = document.querySelector('meta[name="keywords"]');
-    if (!metaKeywords) {
-      metaKeywords = document.createElement('meta');
-      metaKeywords.setAttribute('name', 'keywords');
-      document.head.appendChild(metaKeywords);
-    }
-    metaKeywords.setAttribute('content', currentRouteData.keywords);
+    // Open Graph
+    setMetaProperty('og:title', effectiveTitle);
+    setMetaProperty('og:description', effectiveDesc);
+    setMetaProperty('og:url', canonicalUrl);
+    setMetaProperty('og:site_name', 'DD DESIGN');
+    setMetaProperty('og:locale', language === 'sr' ? 'sr_RS' : language === 'ru' ? 'ru_RU' : 'en_US');
 
+    // Twitter
+    setMetaName('twitter:title', effectiveTitle);
+    setMetaName('twitter:description', effectiveDesc);
+    setMetaName('twitter:url', canonicalUrl);
+
+    // Dynamic JSON-LD Structured Data
     let schemaScript = document.getElementById('jsonld-schema');
     if (schemaScript) {
       schemaScript.remove();
@@ -217,23 +526,41 @@ function useSEO() {
     schemaScript.id = 'jsonld-schema';
     schemaScript.setAttribute('type', 'application/ld+json');
 
-    const schemaOrg = {
+    const schemaOrg: any = {
       "@context": "https://schema.org",
-      "@type": "ClothingStore",
-      "name": "DD Design Atelier",
-      "url": window.location.origin,
+      "@type": currentRouteData.type || "ClothingStore",
+      "name": "DD DESIGN",
+      "url": canonicalUrl,
       "image": "https://images.weserv.nl/?url=64.media.tumblr.com/85a2897f98a2b096033b5b7b2baa4305/941158d434c8785d-07/s1280x1920/1770317d73e6ae1e7a6940ed7119efd4f78c57ce.jpg",
-      "description": currentRouteData.desc,
+      "description": effectiveDesc,
+      "slogan": "Umetnost utkana u svilu",
       "brand": {
         "@type": "Brand",
-        "name": "DD Design",
-        "slogan": "Unikatni i bezvremeni dizajn koji slavi snažan karakter i suptilnu ženstvenost"
+        "name": "DD DESIGN",
+        "slogan": "Umetnost utkana u svilu"
       }
     };
+
+    if (currentRouteData.type === 'Article') {
+      schemaOrg.headline = effectiveTitle;
+      schemaOrg.author = {
+        "@type": "Person",
+        "name": "Danijela Gojković"
+      };
+      schemaOrg.publisher = {
+        "@type": "Organization",
+        "name": "DD DESIGN",
+        "logo": {
+          "@type": "ImageObject",
+          "url": "https://images.weserv.nl/?url=64.media.tumblr.com/85a2897f98a2b096033b5b7b2baa4305/941158d434c8785d-07/s1280x1920/1770317d73e6ae1e7a6940ed7119efd4f78c57ce.jpg"
+        }
+      };
+    }
+
     schemaScript.innerHTML = JSON.stringify(schemaOrg);
     document.head.appendChild(schemaScript);
 
-  }, [location.pathname, language]);
+  }, [location.pathname, location.search, language]);
 }
 
 export default function App() {
@@ -781,12 +1108,15 @@ function AppContent() {
         }`}>
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="grid grid-cols-1 md:grid-cols-4 gap-12 mb-20">
-              <div className="space-y-6">
+              <div className="space-y-4">
                 <span className={`text-2xl font-bold tracking-tighter uppercase transition-colors ${
                   theme === 'dark' ? 'text-white' : 'text-black'
                 }`}>DD DESIGN</span>
+                <p className={`text-xs uppercase tracking-[0.24em] font-serif ${theme === 'dark' ? 'text-zinc-400' : 'text-gray-500'}`}>
+                  Umetnost utkana u svilu
+                </p>
                 <p className={`${theme === 'dark' ? 'text-zinc-400' : 'text-gray-600'} text-sm leading-relaxed`}>
-                  DD DESIGN je vaš izvor za moderan dizajn i vrhunski kvalitet. Svaki proizvod je pažljivo odabran.
+                  Unikatni odevni komadi i bezvremenski modni dizajn Danijele Gojković. Prirodna taft, šantung i grež svila kreirani za vaš autentičan stil.
                 </p>
                 <div className="flex space-x-4">
                   <a href="https://www.instagram.com/dddesign.rs" target="_blank" rel="noopener noreferrer" className={`${theme === 'dark' ? 'text-zinc-500 hover:text-white' : 'text-gray-400 hover:text-black'} transition-colors`}>
@@ -987,6 +1317,7 @@ function AppContent() {
           onRemove={removeFromCart}
         />
         <CookieConsent />
+        <NewsletterPopup />
       </div>
     </>
   );

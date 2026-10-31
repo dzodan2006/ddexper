@@ -51,6 +51,9 @@ const translations: Record<Language, Record<string, string>> = {
     'cart.note': 'Napomena:',
     'cart.noteDesc': 'Svi modeli su ručno izrađeni. Isporuka za modele koji nisu na stanju je 5-10 radnih dana.',
 
+    // Brand Slogan
+    'brand.slogan': 'Umetnost utkana u svilu',
+
     // Footer
     'footer.brandDesc': 'Unikatne kreacije i bezvremeni dizajn koji slavi snažan karakter i suptilnu ženstvenost.',
     'footer.links': 'Meni',
@@ -208,6 +211,9 @@ const translations: Record<Language, Record<string, string>> = {
     'cart.note': 'Note:',
     'cart.noteDesc': 'All designs are handcrafted. Production and delivery for made-to-order items takes 5-10 business days.',
 
+    // Brand Slogan
+    'brand.slogan': 'Art woven into silk',
+
     // Footer
     'footer.brandDesc': 'Unique creations and timeless design celebrating strong character and subtle femininity.',
     'footer.links': 'Menu',
@@ -364,6 +370,9 @@ const translations: Record<Language, Record<string, string>> = {
     'cart.total': 'Итого',
     'cart.note': 'Примечание:',
     'cart.noteDesc': 'Все наши модели создаются вручную. Пошив моделей под заказ занимает от 5 до 10 рабочих дней.',
+
+    // Brand Slogan
+    'brand.slogan': 'Искусство, сотканное из шелка',
 
     // Footer
     'footer.brandDesc': 'Уникальные творения и неподвластный времени дизайн, воспевающий сильный характер и утонченную женственность.',

@@ -20,11 +20,6 @@ export default function SilkGuide() {
       >
         {/* Editorial Header */}
         <div className="text-center space-y-5">
-          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-[11px] font-bold tracking-[0.25em] uppercase font-mono border transition-colors bg-amber-500/10 text-amber-500 border-amber-500/20">
-            <Sparkles className="w-3.5 h-3.5" />
-            <span>VODIČ KROZ MATERIJALE • DD DESIGN</span>
-          </div>
-
           <h1 className={`text-4xl sm:text-5xl md:text-6xl font-light tracking-tight uppercase transition-colors ${
             theme === 'dark' ? 'text-white' : 'text-black'
           }`}>

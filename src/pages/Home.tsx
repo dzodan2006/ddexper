@@ -142,7 +142,7 @@ export default function Home({ products, categories, loading, onAddToCart }: Hom
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.8 }}
               >
-                <h1 className={`text-4xl sm:text-6xl md:text-7xl xl:text-8xl font-extralight tracking-wide leading-[1.1] uppercase mb-8 transition-colors ${
+                <h1 className={`text-4xl sm:text-6xl md:text-7xl xl:text-8xl font-hero-italiana font-normal tracking-wide leading-[1.1] uppercase mb-8 transition-colors ${
                   theme === 'dark' ? 'text-white' : 'text-black'
                 }`}>
                   {t('home.heroTitle')}
