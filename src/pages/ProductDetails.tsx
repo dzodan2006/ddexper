@@ -67,7 +67,8 @@ export default function ProductDetails({ products, onAddToCart }: ProductDetails
   };
 
   return (
-    <div className="py-24 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
+    <div className="py-24 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto" itemScope itemType="https://schema.org/Product">
+      <meta itemProp="brand" content="DD DESIGN" />
       <button 
         onClick={() => navigate(-1)}
         className={`flex items-center space-x-2 text-sm transition-colors mb-12 ${
@@ -93,7 +94,8 @@ export default function ProductDetails({ products, onAddToCart }: ProductDetails
             >
               <img 
                 src={images[activeImage]} 
-                alt={product.name} 
+                alt={`${product.name} — Atelje DD DESIGN unikatni model od prirodne svile`}
+                itemProp="image"
                 className="w-full h-full object-cover"
               />
             </motion.div>
@@ -158,10 +160,19 @@ export default function ProductDetails({ products, onAddToCart }: ProductDetails
                 </span>
               )}
             </div>
-            <h1 className={`text-4xl md:text-5xl font-extralight tracking-wide mb-4 transition-colors ${
-              theme === 'dark' ? 'text-white' : 'text-black'
-            }`}>{product.name}</h1>
-            <div className="flex items-baseline space-x-4">
+            <h1 
+              itemProp="name" 
+              className={`text-4xl md:text-5xl font-extralight tracking-wide mb-4 transition-colors ${
+                theme === 'dark' ? 'text-white' : 'text-black'
+              }`}
+            >
+              {product.name}
+            </h1>
+            <div itemProp="offers" itemScope itemType="https://schema.org/Offer" className="flex items-baseline space-x-4">
+              <meta itemProp="priceCurrency" content="RSD" />
+              <meta itemProp="price" content={String(product.discount_price || product.price)} />
+              <link itemProp="availability" href={product.stock !== false ? "https://schema.org/InStock" : "https://schema.org/PreOrder"} />
+              <link itemProp="itemCondition" href="https://schema.org/NewCondition" />
               {product.discount_price ? (
                 <>
                   <p className="text-3xl font-light italic text-red-600">{formatCurrency(product.discount_price)}</p>
@@ -177,9 +188,12 @@ export default function ProductDetails({ products, onAddToCart }: ProductDetails
             </div>
           </div>
 
-          <div className={`prose prose-sm leading-relaxed max-w-none transition-colors ${
-            theme === 'dark' ? 'text-zinc-400' : 'text-gray-650'
-          }`}>
+          <div 
+            itemProp="description"
+            className={`prose prose-sm leading-relaxed max-w-none transition-colors ${
+              theme === 'dark' ? 'text-zinc-400' : 'text-gray-650'
+            }`}
+          >
             {product.description?.includes('\n') ? (
               <ul className="space-y-2 list-none p-0">
                 {product.description.split('\n').filter(line => line.trim() !== '').map((line, index) => (

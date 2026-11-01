@@ -1,5 +1,6 @@
 import express from "express";
 import path from "path";
+import fs from "fs";
 import dotenv from "dotenv";
 import crypto from "crypto";
 import { createClient } from "@supabase/supabase-js";
@@ -68,7 +69,175 @@ app.use(express.json());
 // Explicit route to serve robots.txt as plain text and prevent HTML catch-all fallback
 app.get("/robots.txt", (req, res) => {
   res.type("text/plain");
-  res.send("User-agent: *\nAllow: /\n");
+  res.send(
+`User-agent: *
+Allow: /
+Disallow: /admin
+Disallow: /vlasnici
+Disallow: /baza
+Disallow: /portal-za-vlasnike
+
+User-agent: Googlebot
+Allow: /
+
+User-agent: Googlebot-Image
+Allow: /
+
+Sitemap: https://dddesign.rs/sitemap.xml
+`
+  );
+});
+
+// Explicit route to serve XML sitemap for Google and search crawlers
+app.get("/sitemap.xml", async (req, res) => {
+  try {
+    const sitemapPath = path.join(process.cwd(), "public", "sitemap.xml");
+    if (fs.existsSync(sitemapPath)) {
+      res.type("application/xml");
+      return res.sendFile(sitemapPath);
+    }
+    // Fallback if public sitemap doesn't exist
+    res.type("application/xml");
+    return res.send(`<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"><url><loc>https://dddesign.rs/</loc></url></urlset>`);
+  } catch (err) {
+    console.error("[Sitemap] Error serving sitemap:", err);
+    res.status(500).send("Error serving sitemap");
+  }
+});
+
+// Server-Side Pre-rendering for Product pages (for Googlebot, WhatsApp, Facebook, Bing, etc.)
+app.get(["/product/:id", "/proizvod/:id"], async (req, res, next) => {
+  try {
+    const productId = req.params.id;
+    if (!productId) return next();
+
+    // Query product from Supabase
+    let product: any = null;
+    if (supabase) {
+      const { data } = await supabase
+        .from("products")
+        .select(`
+          id,
+          name,
+          description,
+          price,
+          discount_price,
+          stock,
+          is_active,
+          category_id,
+          categories:category_id (name),
+          product_images (image_url, is_main)
+        `)
+        .eq("id", productId)
+        .single();
+      product = data;
+    }
+
+    if (!product || product.is_active === false) {
+      return next();
+    }
+
+    const mainImage = product.product_images?.find((i: any) => i.is_main)?.image_url || 
+                      product.product_images?.[0]?.image_url || 
+                      "https://images.weserv.nl/?url=64.media.tumblr.com/85a2897f98a2b096033b5b7b2baa4305/941158d434c8785d-07/s1280x1920/1770317d73e6ae1e7a6940ed7119efd4f78c57ce.jpg";
+    
+    const cleanDesc = (product.description || "Unikatni model ručne izrade od najplemenitije prirodne svile u ateljeu DD DESIGN Danijele Gojković.")
+      .replace(/\r?\n+/g, " ")
+      .trim();
+    const shortDesc = cleanDesc.slice(0, 160);
+    const categoryName = (product.categories as any)?.name || "Haljine i odela";
+    const finalPrice = product.discount_price || product.price;
+
+    const htmlPath = process.env.NODE_ENV === "production"
+      ? path.join(process.cwd(), "dist", "index.html")
+      : path.join(process.cwd(), "index.html");
+
+    if (!fs.existsSync(htmlPath)) {
+      return next();
+    }
+
+    let html = fs.readFileSync(htmlPath, "utf-8");
+
+    // Product Schema JSON-LD
+    const productSchema = {
+      "@context": "https://schema.org/",
+      "@type": "Product",
+      "name": product.name,
+      "image": [mainImage],
+      "description": cleanDesc,
+      "sku": `DD-${product.id}`,
+      "mpn": `DD-${product.id}`,
+      "brand": {
+        "@type": "Brand",
+        "name": "DD DESIGN",
+        "slogan": "Umetnost utkana u svilu"
+      },
+      "category": categoryName,
+      "offers": {
+        "@type": "Offer",
+        "url": `https://dddesign.rs/product/${product.id}`,
+        "priceCurrency": "RSD",
+        "price": finalPrice,
+        "priceValidUntil": "2027-12-31",
+        "availability": product.stock !== false ? "https://schema.org/InStock" : "https://schema.org/PreOrder",
+        "itemCondition": "https://schema.org/NewCondition",
+        "seller": {
+          "@type": "Organization",
+          "name": "DD DESIGN"
+        }
+      }
+    };
+
+    const productTitle = `${product.name} | Svileni Model Ručne Izrade | DD DESIGN`;
+    const canonicalUrl = `https://dddesign.rs/product/${product.id}`;
+
+    // Replace title
+    html = html.replace(/<title>.*?<\/title>/i, `<title>${productTitle}</title>`);
+
+    // Inject meta tags
+    const metaTags = `
+    <!-- Google & Social SEO for Product -->
+    <meta name="description" content="${shortDesc.replace(/"/g, '&quot;')}" />
+    <meta name="keywords" content="${product.name}, ${categoryName}, svila, taft svila, santung svila, dd design, rucna izrada beograd, umetnost utkana u svilu" />
+    <link rel="canonical" href="${canonicalUrl}" />
+    <meta property="og:title" content="${productTitle.replace(/"/g, '&quot;')}" />
+    <meta property="og:description" content="${shortDesc.replace(/"/g, '&quot;')}" />
+    <meta property="og:image" content="${mainImage}" />
+    <meta property="og:url" content="${canonicalUrl}" />
+    <meta property="og:type" content="product" />
+    <meta property="product:price:amount" content="${finalPrice}" />
+    <meta property="product:price:currency" content="RSD" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="${productTitle.replace(/"/g, '&quot;')}" />
+    <meta name="twitter:description" content="${shortDesc.replace(/"/g, '&quot;')}" />
+    <meta name="twitter:image" content="${mainImage}" />
+    <script type="application/ld+json">${JSON.stringify(productSchema)}</script>
+    `;
+
+    html = html.replace("</head>", `${metaTags}\n</head>`);
+
+    // In addition, inject noscript rich content for crawlers inside body
+    const noscriptContent = `
+    <noscript>
+      <article style="max-width: 800px; margin: 40px auto; padding: 20px; font-family: serif;">
+        <h1>${product.name} — Atelje DD DESIGN</h1>
+        <p><strong>Kategorija:</strong> ${categoryName}</p>
+        <p><strong>Cena:</strong> ${finalPrice} RSD</p>
+        <p><strong>Opis:</strong> ${cleanDesc}</p>
+        <img src="${mainImage}" alt="${product.name} - luksuzni svileni model DD DESIGN" style="max-width: 100%; height: auto;" />
+        <p><em>DD DESIGN • Umetnost utkana u svilu • Beograd</em></p>
+      </article>
+    </noscript>
+    `;
+
+    html = html.replace("<body>", `<body>\n${noscriptContent}`);
+
+    res.setHeader("Content-Type", "text/html; charset=utf-8");
+    return res.send(html);
+  } catch (err) {
+    console.error("[Product SEO SSR] Error:", err);
+    return next();
+  }
 });
 
 // Owner Authentication Session Helpers

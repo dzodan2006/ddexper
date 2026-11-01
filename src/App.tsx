@@ -111,7 +111,7 @@ function FadingBackground() {
 }
 
 // Custom SEO and JSON-LD schema builder to MAX SEO & Best Google ranking practices
-function useSEO() {
+function useSEO(products: Product[] = []) {
   const location = useLocation();
   const { language } = useLanguage();
 
@@ -377,15 +377,41 @@ function useSEO() {
     let currentRouteData = currentLangData[location.pathname];
 
     // Handle faceted URLs (categories or editorial stories)
+    // Check if this is a single product page (/product/:id or /proizvod/:id)
+    let currentProduct: Product | undefined;
+    if (location.pathname.startsWith('/product/') || location.pathname.startsWith('/proizvod/')) {
+      const pId = location.pathname.split('/')[2];
+      currentProduct = products.find(p => String(p.id) === String(pId));
+      if (!currentProduct) {
+        try {
+          const cached = JSON.parse(localStorage.getItem('dd_products_cache_v5') || '[]');
+          currentProduct = cached.find((p: any) => String(p.id) === String(pId));
+        } catch {}
+      }
+    }
+
     if (!currentRouteData) {
-      if (location.pathname.startsWith('/saradnje/')) {
+      if (currentProduct) {
+        const prodName = currentProduct.name;
+        const prodDesc = currentProduct.description
+          ? currentProduct.description.replace(/\r?\n+/g, ' ').trim().slice(0, 160)
+          : `Unikatni model ${currentProduct.name} ručne izrade od najplemenitije prirodne svile u ateljeu DD DESIGN Danijele Gojković.`;
+        const prodKeywords = `${prodName}, ${currentProduct.category || 'svila'}, taft svila, santung svila, haljina, odelo, kombinezon, kaput, rucni rad beograd, unikatna moda, dd design`;
+
+        currentRouteData = {
+          title: `${prodName} | Svileni Model Ručne Izrade | ${baseTitle}`,
+          desc: prodDesc,
+          keywords: prodKeywords,
+          type: 'Product'
+        };
+      } else if (location.pathname.startsWith('/saradnje/')) {
         currentRouteData = currentLangData['/saradnje'] || {
           title: `Press Saradnja | ${baseTitle}`,
           desc: `Ekskluzivna modna saradnja i medijska objava ateljea DD DESIGN.`,
           keywords: `press, dd design, moda`,
           type: 'Article'
         };
-      } else if (location.pathname.startsWith('/product/')) {
+      } else if (location.pathname.startsWith('/product/') || location.pathname.startsWith('/proizvod/')) {
         currentRouteData = {
           title: `Ekskluzivan Model | ${slogan} | ${baseTitle}`,
           desc: `Unikatni model ručne izrade od najplemenitije prirodne svile. Atelje DD DESIGN Danijele Gojković.`,
@@ -505,16 +531,28 @@ function useSEO() {
     }
     canonicalLink.setAttribute('href', canonicalUrl);
 
+    const effectiveImage = currentProduct?.image_url || 
+      (currentProduct?.all_images && currentProduct.all_images[0]) || 
+      "https://images.weserv.nl/?url=64.media.tumblr.com/85a2897f98a2b096033b5b7b2baa4305/941158d434c8785d-07/s1280x1920/1770317d73e6ae1e7a6940ed7119efd4f78c57ce.jpg";
+
     // Open Graph
     setMetaProperty('og:title', effectiveTitle);
     setMetaProperty('og:description', effectiveDesc);
+    setMetaProperty('og:image', effectiveImage);
     setMetaProperty('og:url', canonicalUrl);
     setMetaProperty('og:site_name', 'DD DESIGN');
     setMetaProperty('og:locale', language === 'sr' ? 'sr_RS' : language === 'ru' ? 'ru_RU' : 'en_US');
+    setMetaProperty('og:type', currentProduct ? 'product' : (currentRouteData.type === 'Article' ? 'article' : 'website'));
+
+    if (currentProduct) {
+      setMetaProperty('product:price:amount', String(currentProduct.discount_price || currentProduct.price));
+      setMetaProperty('product:price:currency', 'RSD');
+    }
 
     // Twitter
     setMetaName('twitter:title', effectiveTitle);
     setMetaName('twitter:description', effectiveDesc);
+    setMetaName('twitter:image', effectiveImage);
     setMetaName('twitter:url', canonicalUrl);
 
     // Dynamic JSON-LD Structured Data
@@ -526,41 +564,77 @@ function useSEO() {
     schemaScript.id = 'jsonld-schema';
     schemaScript.setAttribute('type', 'application/ld+json');
 
-    const schemaOrg: any = {
-      "@context": "https://schema.org",
-      "@type": currentRouteData.type || "ClothingStore",
-      "name": "DD DESIGN",
-      "url": canonicalUrl,
-      "image": "https://images.weserv.nl/?url=64.media.tumblr.com/85a2897f98a2b096033b5b7b2baa4305/941158d434c8785d-07/s1280x1920/1770317d73e6ae1e7a6940ed7119efd4f78c57ce.jpg",
-      "description": effectiveDesc,
-      "slogan": "Umetnost utkana u svilu",
-      "brand": {
-        "@type": "Brand",
-        "name": "DD DESIGN",
-        "slogan": "Umetnost utkana u svilu"
-      }
-    };
+    let schemaOrg: any;
+    if (currentProduct) {
+      const prodImages = (currentProduct.all_images && currentProduct.all_images.length > 0)
+        ? currentProduct.all_images
+        : [currentProduct.image_url || effectiveImage];
 
-    if (currentRouteData.type === 'Article') {
-      schemaOrg.headline = effectiveTitle;
-      schemaOrg.author = {
-        "@type": "Person",
-        "name": "Danijela Gojković"
-      };
-      schemaOrg.publisher = {
-        "@type": "Organization",
-        "name": "DD DESIGN",
-        "logo": {
-          "@type": "ImageObject",
-          "url": "https://images.weserv.nl/?url=64.media.tumblr.com/85a2897f98a2b096033b5b7b2baa4305/941158d434c8785d-07/s1280x1920/1770317d73e6ae1e7a6940ed7119efd4f78c57ce.jpg"
+      schemaOrg = {
+        "@context": "https://schema.org",
+        "@type": "Product",
+        "name": currentProduct.name,
+        "image": prodImages,
+        "description": currentProduct.description ? currentProduct.description.replace(/\r?\n+/g, ' ').trim() : effectiveDesc,
+        "sku": `DD-${currentProduct.id}`,
+        "mpn": `DD-${currentProduct.id}`,
+        "brand": {
+          "@type": "Brand",
+          "name": "DD DESIGN",
+          "slogan": slogan
+        },
+        "category": currentProduct.category || "Ženska odeća od prirodne svile",
+        "offers": {
+          "@type": "Offer",
+          "url": canonicalUrl,
+          "priceCurrency": "RSD",
+          "price": currentProduct.discount_price || currentProduct.price,
+          "priceValidUntil": "2027-12-31",
+          "availability": currentProduct.stock !== false ? "https://schema.org/InStock" : "https://schema.org/PreOrder",
+          "itemCondition": "https://schema.org/NewCondition",
+          "seller": {
+            "@type": "Organization",
+            "name": "DD DESIGN"
+          }
         }
       };
+    } else {
+      schemaOrg = {
+        "@context": "https://schema.org",
+        "@type": currentRouteData.type || "ClothingStore",
+        "name": "DD DESIGN",
+        "url": canonicalUrl,
+        "image": effectiveImage,
+        "description": effectiveDesc,
+        "slogan": slogan,
+        "brand": {
+          "@type": "Brand",
+          "name": "DD DESIGN",
+          "slogan": slogan
+        }
+      };
+
+      if (currentRouteData.type === 'Article') {
+        schemaOrg.headline = effectiveTitle;
+        schemaOrg.author = {
+          "@type": "Person",
+          "name": "Danijela Gojković"
+        };
+        schemaOrg.publisher = {
+          "@type": "Organization",
+          "name": "DD DESIGN",
+          "logo": {
+            "@type": "ImageObject",
+            "url": "https://images.weserv.nl/?url=64.media.tumblr.com/85a2897f98a2b096033b5b7b2baa4305/941158d434c8785d-07/s1280x1920/1770317d73e6ae1e7a6940ed7119efd4f78c57ce.jpg"
+          }
+        };
+      }
     }
 
     schemaScript.innerHTML = JSON.stringify(schemaOrg);
     document.head.appendChild(schemaScript);
 
-  }, [location.pathname, location.search, language]);
+  }, [location.pathname, location.search, language, products]);
 }
 
 export default function App() {
@@ -579,7 +653,6 @@ function AppContent() {
   const { theme } = useTheme();
   const location = useLocation();
   const isOwnerPage = location.pathname.startsWith('/vlasnici') || location.pathname.startsWith('/baza') || location.pathname.startsWith('/portal-za-vlasnike');
-  useSEO(); // Run dynamic SEO optimization on route change
 
   // Newsletter subscription state
   const [newsletterEmail, setNewsletterEmail] = useState('');
@@ -659,6 +732,8 @@ function AppContent() {
     }
     return [];
   });
+  
+  useSEO(products); // Run dynamic SEO optimization with loaded product details
   
   const [categories, setCategories] = useState<Category[]>(() => {
     const cachedV5 = localStorage.getItem('dd_categories_cache_v5');

@@ -1,222 +1,866 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-  <!-- Glavne Stranice -->
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
+        xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">
+
+  <!-- Glavne i Informativne Stranice -->
   <url>
     <loc>https://dddesign.rs/</loc>
-    <lastmod>2026-10-31</lastmod>
+    <lastmod>2026-11-01</lastmod>
     <changefreq>daily</changefreq>
     <priority>1.0</priority>
   </url>
   <url>
     <loc>https://dddesign.rs/shop</loc>
-    <lastmod>2026-10-31</lastmod>
+    <lastmod>2026-11-01</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.95</priority>
   </url>
   <url>
     <loc>https://dddesign.rs/nova-kolekcija</loc>
-    <lastmod>2026-10-31</lastmod>
+    <lastmod>2026-11-01</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.95</priority>
   </url>
   <url>
     <loc>https://dddesign.rs/snizenja</loc>
-    <lastmod>2026-10-31</lastmod>
+    <lastmod>2026-11-01</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.90</priority>
   </url>
   <url>
     <loc>https://dddesign.rs/kategorije</loc>
-    <lastmod>2026-10-31</lastmod>
+    <lastmod>2026-11-01</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.90</priority>
   </url>
-
-  <!-- Kategorije Proizvoda Zasebno (ID 3: Haljine, ID 2: Odela/kompleti, ID 4: Kombinezoni, ID 5: Košulje/majice, ID 6: Pantalone/suknje, ID 1: Kaputi/mantili) -->
-  <url>
-    <loc>https://dddesign.rs/shop?category=3</loc>
-    <lastmod>2026-10-31</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.85</priority>
-  </url>
-  <url>
-    <loc>https://dddesign.rs/shop?category=2</loc>
-    <lastmod>2026-10-31</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.85</priority>
-  </url>
-  <url>
-    <loc>https://dddesign.rs/shop?category=4</loc>
-    <lastmod>2026-10-31</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.85</priority>
-  </url>
-  <url>
-    <loc>https://dddesign.rs/shop?category=5</loc>
-    <lastmod>2026-10-31</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.85</priority>
-  </url>
-  <url>
-    <loc>https://dddesign.rs/shop?category=6</loc>
-    <lastmod>2026-10-31</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.85</priority>
-  </url>
-  <url>
-    <loc>https://dddesign.rs/shop?category=1</loc>
-    <lastmod>2026-10-31</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.85</priority>
-  </url>
-
-  <!-- Vodič o Svili & Izrada po Meri -->
   <url>
     <loc>https://dddesign.rs/o-svili</loc>
-    <lastmod>2026-10-31</lastmod>
+    <lastmod>2026-11-01</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.95</priority>
   </url>
   <url>
     <loc>https://dddesign.rs/izrada-po-meri</loc>
-    <lastmod>2026-10-31</lastmod>
+    <lastmod>2026-11-01</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.95</priority>
   </url>
   <url>
     <loc>https://dddesign.rs/editorijali</loc>
-    <lastmod>2026-10-31</lastmod>
+    <lastmod>2026-11-01</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.90</priority>
   </url>
   <url>
     <loc>https://dddesign.rs/editorijali?prica=taft</loc>
-    <lastmod>2026-10-31</lastmod>
+    <lastmod>2026-11-01</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.90</priority>
   </url>
   <url>
     <loc>https://dddesign.rs/editorijali?prica=santung</loc>
-    <lastmod>2026-10-31</lastmod>
+    <lastmod>2026-11-01</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.90</priority>
   </url>
   <url>
     <loc>https://dddesign.rs/editorijali?prica=grez</loc>
-    <lastmod>2026-10-31</lastmod>
+    <lastmod>2026-11-01</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.90</priority>
   </url>
   <url>
     <loc>https://dddesign.rs/editorijali?prica=po-meri</loc>
-    <lastmod>2026-10-31</lastmod>
+    <lastmod>2026-11-01</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.90</priority>
   </url>
-
-  <!-- Press & Saradnje Zasebno -->
+  <url>
+    <loc>https://dddesign.rs/shop?category=3</loc>
+    <lastmod>2026-11-01</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.85</priority>
+  </url>
+  <url>
+    <loc>https://dddesign.rs/shop?category=2</loc>
+    <lastmod>2026-11-01</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.85</priority>
+  </url>
+  <url>
+    <loc>https://dddesign.rs/shop?category=4</loc>
+    <lastmod>2026-11-01</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.85</priority>
+  </url>
+  <url>
+    <loc>https://dddesign.rs/shop?category=5</loc>
+    <lastmod>2026-11-01</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.85</priority>
+  </url>
+  <url>
+    <loc>https://dddesign.rs/shop?category=6</loc>
+    <lastmod>2026-11-01</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.85</priority>
+  </url>
+  <url>
+    <loc>https://dddesign.rs/shop?category=1</loc>
+    <lastmod>2026-11-01</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.85</priority>
+  </url>
   <url>
     <loc>https://dddesign.rs/saradnje</loc>
-    <lastmod>2026-10-31</lastmod>
+    <lastmod>2026-11-01</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.85</priority>
   </url>
   <url>
     <loc>https://dddesign.rs/saradnje/lepaisrecna</loc>
-    <lastmod>2026-10-31</lastmod>
+    <lastmod>2026-11-01</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.80</priority>
   </url>
   <url>
     <loc>https://dddesign.rs/saradnje/dd-modna-prica</loc>
-    <lastmod>2026-10-31</lastmod>
+    <lastmod>2026-11-01</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.85</priority>
   </url>
   <url>
     <loc>https://dddesign.rs/saradnje/andjelka-stevic</loc>
-    <lastmod>2026-10-31</lastmod>
+    <lastmod>2026-11-01</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.80</priority>
   </url>
   <url>
     <loc>https://dddesign.rs/saradnje/dragana-kosjerina</loc>
-    <lastmod>2026-10-31</lastmod>
+    <lastmod>2026-11-01</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.80</priority>
   </url>
   <url>
     <loc>https://dddesign.rs/saradnje/ljubica-karadjordjevic</loc>
-    <lastmod>2026-10-31</lastmod>
+    <lastmod>2026-11-01</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.85</priority>
   </url>
   <url>
     <loc>https://dddesign.rs/saradnje/aleksandra-perisic</loc>
-    <lastmod>2026-10-31</lastmod>
+    <lastmod>2026-11-01</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.80</priority>
   </url>
   <url>
     <loc>https://dddesign.rs/saradnje/dragana-radakovic</loc>
-    <lastmod>2026-10-31</lastmod>
+    <lastmod>2026-11-01</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.80</priority>
   </url>
   <url>
     <loc>https://dddesign.rs/saradnje/dragana-micalovic</loc>
-    <lastmod>2026-10-31</lastmod>
+    <lastmod>2026-11-01</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.80</priority>
   </url>
   <url>
     <loc>https://dddesign.rs/saradnje/tamara-misirlic</loc>
-    <lastmod>2026-10-31</lastmod>
+    <lastmod>2026-11-01</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.80</priority>
   </url>
   <url>
     <loc>https://dddesign.rs/saradnje/dajana-svraka</loc>
-    <lastmod>2026-10-31</lastmod>
+    <lastmod>2026-11-01</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.80</priority>
   </url>
   <url>
     <loc>https://dddesign.rs/saradnje/danijela-pantic</loc>
-    <lastmod>2026-10-31</lastmod>
+    <lastmod>2026-11-01</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.80</priority>
   </url>
   <url>
     <loc>https://dddesign.rs/saradnje/belgrade-fashion-week</loc>
-    <lastmod>2026-10-31</lastmod>
+    <lastmod>2026-11-01</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.85</priority>
   </url>
-
-  <!-- Informacije & Kontakt -->
   <url>
     <loc>https://dddesign.rs/kontakt</loc>
-    <lastmod>2026-10-31</lastmod>
+    <lastmod>2026-11-01</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.80</priority>
   </url>
   <url>
     <loc>https://dddesign.rs/reklamacije</loc>
-    <lastmod>2026-10-31</lastmod>
+    <lastmod>2026-11-01</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.70</priority>
   </url>
   <url>
     <loc>https://dddesign.rs/politika-privatnosti</loc>
-    <lastmod>2026-10-31</lastmod>
+    <lastmod>2026-11-01</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.70</priority>
   </url>
   <url>
     <loc>https://dddesign.rs/uslovi-koriscenja</loc>
-    <lastmod>2026-10-31</lastmod>
+    <lastmod>2026-11-01</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.70</priority>
+  </url>
+
+  <!-- Zasebne Stranice Svakog Proizvoda sa Google Image podacima i tekstom -->
+  <url>
+    <loc>https://dddesign.rs/product/1</loc>
+    <lastmod>2026-04-24</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.85</priority>
+    <image:image>
+      <image:loc>https://64.media.tumblr.com/b79cac46b039effd9590daf02cce60e9/27922fdf50b9ff60-9f/s2048x3072/ec7ebe158e3ae2b8862c620f2ba8511e203bf476.jpg</image:loc>
+      <image:title>Aurelia odelo | DD DESIGN</image:title>
+      <image:caption>Odelo Aurelia kreirano je za ženu koja voli svedenu formu sa dozom drame. Sastoji se od cigaret pantalona i minimalističkog sakoa čistih linija, savršenog kroja</image:caption>
+    </image:image>
+  </url>
+  <url>
+    <loc>https://dddesign.rs/product/2</loc>
+    <lastmod>2026-04-24</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.85</priority>
+    <image:image>
+      <image:loc>https://64.media.tumblr.com/3bd58e18b11191bddbf4247c79891363/89896652f1e80709-76/s2048x3072/0d616ffc563f4baf30bbc1eefc99ba197303c763.jpg</image:loc>
+      <image:title>Celeste haljina | DD DESIGN</image:title>
+      <image:caption>Haljina golih ramena u biserno beloj boji, izrađena od sateniziranog pamuka sa dodatkom elastina. Asimetričan gornji deo i šlic na levoj nozi pružaju elegantan </image:caption>
+    </image:image>
+  </url>
+  <url>
+    <loc>https://dddesign.rs/product/3</loc>
+    <lastmod>2026-04-24</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.85</priority>
+    <image:image>
+      <image:loc>https://64.media.tumblr.com/f8566808acdf713b1c8a40cd68ddbeb1/f8db91c88d98b273-e8/s2048x3072/672d41666a08e54d623965f507eb5b0bafcd2282.jpg</image:loc>
+      <image:title>CLARA | DD DESIGN</image:title>
+      <image:caption>Suknja CLARA je dostupna u crnoj, izrađena od eko kože. Efektni srebrni zip duž suknje ističe besprekorni liniju. Ovu elegantnu eko kožu odlikuje intenzivan sja</image:caption>
+    </image:image>
+  </url>
+  <url>
+    <loc>https://dddesign.rs/product/4</loc>
+    <lastmod>2026-04-24</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.85</priority>
+    <image:image>
+      <image:loc>https://64.media.tumblr.com/a5246aa9a76ebb1984bb2a42461a08a0/3f0a44277213c8f9-11/s1280x1920/d14c411b2f70117bdfee1edc447a633329926908.jpg</image:loc>
+      <image:title>CLAUDINE | DD DESIGN</image:title>
+      <image:caption>Kombinezon Claudine je inspirisan našim najtraženijim modelom haljine u potpuno novom izdanju, porupčići, petljice i ležeran kroj, pruža savršen balans između u</image:caption>
+    </image:image>
+  </url>
+  <url>
+    <loc>https://dddesign.rs/product/5</loc>
+    <lastmod>2026-04-24</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.85</priority>
+    <image:image>
+      <image:loc>https://64.media.tumblr.com/2decc35e6b13f634088caa64fc9e7f36/29b0842cfa38a5e3-c1/s1280x1920/5efbd037933af3803e9bb0244bc3235af62e3d41.jpg</image:loc>
+      <image:title>CRISTAL haljina | DD DESIGN</image:title>
+      <image:caption>Haljina Cristal sofisticiranog dizajna i vrhunskog materijala, izrađena od šantug svile, pruža elegantan sjaj i izuzetnu udobnost.Gornji deo haljine je ukrašen </image:caption>
+    </image:image>
+  </url>
+  <url>
+    <loc>https://dddesign.rs/product/6</loc>
+    <lastmod>2026-04-24</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.85</priority>
+    <image:image>
+      <image:loc>https://64.media.tumblr.com/d4640481e06e0333e429a1140744686e/aca4a26bdee95a16-32/s1280x1920/a2066d0435562e89b429dee1789866876bc90c3f.jpg</image:loc>
+      <image:title>DUO | DD DESIGN</image:title>
+      <image:caption>Top-Majica je dostupna u crnoj I beloj boji, izrađena od duo mrežice. Ovaj materijal je izuzetno kvalitetan i lagan za nošenje. Sirovinski sastav 94% poliester,</image:caption>
+    </image:image>
+  </url>
+  <url>
+    <loc>https://dddesign.rs/product/7</loc>
+    <lastmod>2026-04-24</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.85</priority>
+    <image:image>
+      <image:loc>https://64.media.tumblr.com/d0ef95b592cbb9242304efbcfff2a06c/43639e44ad82cebf-67/s2048x3072/6793c4ed4b985e9ff4fd2f2da8a81131e1e3f357.jpg</image:loc>
+      <image:title>ELEANOR | DD DESIGN</image:title>
+      <image:caption>Reveri koji elegantno padaju sa ramena daju vam notu glamura i ističu vašu ženstvenost. Donji deo haljine blago zvonastog kroja dodatno doprinosi eleganciji, pr</image:caption>
+    </image:image>
+  </url>
+  <url>
+    <loc>https://dddesign.rs/product/8</loc>
+    <lastmod>2026-04-24</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.85</priority>
+    <image:image>
+      <image:loc>https://64.media.tumblr.com/b5296a87876a1b1fa472a5d060f95ff7/1aa70b4825a9ec2e-be/s2048x3072/00079343080bc1c7bf48d8c69a775bdca2915166.jpg</image:loc>
+      <image:title>ELEANOR CHOCO HALJINA | DD DESIGN</image:title>
+      <image:caption>Izrađena je od šantung svile, pružajući vam ne samo nežan dodir na koži, već i sofisticiranost u svakom koraku. Reveri koji elegantno padaju sa ramena daju vam </image:caption>
+    </image:image>
+  </url>
+  <url>
+    <loc>https://dddesign.rs/product/9</loc>
+    <lastmod>2026-04-24</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.85</priority>
+    <image:image>
+      <image:loc>https://64.media.tumblr.com/5cf7c82221f8a3b5966cc1c26b3d67c6/8c59bb9625878789-41/s1280x1920/bcc04a3ef40266a16b7cf317fa09bc5476decd64.jpg</image:loc>
+      <image:title>ELEANOR haljina | DD DESIGN</image:title>
+      <image:caption>Izrađena je od šantung svile, pružajući vam ne samo nežan dodir na koži, već i sofisticiranost u svakom koraku. Reveri koji elegantno padaju sa ramena daju vam </image:caption>
+    </image:image>
+  </url>
+  <url>
+    <loc>https://dddesign.rs/product/10</loc>
+    <lastmod>2026-04-24</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.85</priority>
+    <image:image>
+      <image:loc>https://64.media.tumblr.com/98156b601704e719c88c34b9b4f9b7af/7e58493f23647f00-e1/s2048x3072/5168d0d7781499eb57b100ecd42c9c558955d0db.jpg</image:loc>
+      <image:title>ELEANOR ZIP | DD DESIGN</image:title>
+      <image:caption>Reveri koji elegantno padaju sa ramena daju vam notu glamura i ističu vašu ženstvenost. Donji deo haljine blago prati liniju tela na vrlo laskav način. Dodatni </image:caption>
+    </image:image>
+  </url>
+  <url>
+    <loc>https://dddesign.rs/product/11</loc>
+    <lastmod>2026-04-24</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.85</priority>
+    <image:image>
+      <image:loc>https://64.media.tumblr.com/70183ca43077e3a7e70f93546fe5ddac/defde1b65b6cc148-5d/s2048x3072/0a1a82909e95e211638949cc66e21ac25768f7a0.jpg</image:loc>
+      <image:title>GABRIELLE | DD DESIGN</image:title>
+      <image:caption>Haljina Gabrielle izrađena je od elegantne crne taft svile, sa pažljivo uklopljenim delovima od kristal tila. Transparentni gornji deo osmišljen je tako da stva</image:caption>
+    </image:image>
+  </url>
+  <url>
+    <loc>https://dddesign.rs/product/12</loc>
+    <lastmod>2026-04-24</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.85</priority>
+    <image:image>
+      <image:loc>https://64.media.tumblr.com/ceb7ea067d5a57434cd65d29f14faf97/0411b8e7a430453a-0e/s1280x1920/b1abe1662837a6fbc636cfac4c57053fd28b682a.jpg</image:loc>
+      <image:title>Haljina Amelie | DD DESIGN</image:title>
+      <image:caption>Dostupne boje: Crna / Bela Haljina Amelie osmišljena je za ženu koja ceni suptilnu eleganciju i besprekoran kroj. Silueta haljine prati liniju tela, dok pažljiv</image:caption>
+    </image:image>
+  </url>
+  <url>
+    <loc>https://dddesign.rs/product/13</loc>
+    <lastmod>2026-04-24</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.85</priority>
+    <image:image>
+      <image:loc>https://64.media.tumblr.com/b59efaa5a4093f8909f572ca2611ef06/1d79dec578074323-92/s2048x3072/533e3383a835d9fb361733eef9a7170a894c71ea.jpg</image:loc>
+      <image:title>HALJINA ANGIE | DD DESIGN</image:title>
+      <image:caption>Haljina ANGIE je sofisticiran model izrađen od šantug i taft svile. Bela verzija od šantug svile i crna od taft svile pružaju raskošan sjaj i izuzetnu udobnost.</image:caption>
+    </image:image>
+  </url>
+  <url>
+    <loc>https://dddesign.rs/product/15</loc>
+    <lastmod>2026-04-24</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.85</priority>
+    <image:image>
+      <image:loc>https://64.media.tumblr.com/616828056d4a0581bc44869ec1031011/039a2775de5d267f-21/s2048x3072/b2942ff8cb200169c3b62cea3ba77959c1be7f8c.jpg</image:loc>
+      <image:title>Haljina LAURA | DD DESIGN</image:title>
+      <image:caption>Raskošna, atraktivna i izrađena s posebnom pažnjom na detalje – haljina Laura dolazi u luksuznoj taft ili šantung svili, ukrašena diskretnim detaljima od somota</image:caption>
+    </image:image>
+  </url>
+  <url>
+    <loc>https://dddesign.rs/product/16</loc>
+    <lastmod>2026-04-24</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.85</priority>
+    <image:image>
+      <image:loc>https://64.media.tumblr.com/0148813a07558113583d18508cb8eb30/226ae39f5c0852b8-f1/s2048x3072/27144b529031bf183634674caf6a9e7ed6de4296.jpg</image:loc>
+      <image:title>HALJINA LIVIA | DD DESIGN</image:title>
+      <image:caption>Haljina LIVIA odiše lepršavošću i prilagođava se svim tipovima građe. Prepoznatljiva po mnoštvu dekorativnih petljica, haljina prati vaše pokrete i ističe priro</image:caption>
+    </image:image>
+  </url>
+  <url>
+    <loc>https://dddesign.rs/product/17</loc>
+    <lastmod>2026-04-24</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.85</priority>
+    <image:image>
+      <image:loc>https://64.media.tumblr.com/56e899f3d61af47a55070867936b1e7c/a23481df600612b6-81/s1280x1920/6874c8ac3d9f0b10b152ae744005da755626ebe1.jpg</image:loc>
+      <image:title>HALJINA MARLENA | DD DESIGN</image:title>
+      <image:caption>Različiti tonovi utkanih niti daju efekat prelivanja, što šantung svilu čini još svečanijom. 100% SVILA Različiti tonovi utkanih niti daju efekat prelivanja, št</image:caption>
+    </image:image>
+  </url>
+  <url>
+    <loc>https://dddesign.rs/product/18</loc>
+    <lastmod>2026-04-24</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.85</priority>
+    <image:image>
+      <image:loc>https://64.media.tumblr.com/72839a36c560c40956268e3259b96017/95cd72699516e94e-8e/s2048x3072/14720a254776d0b4d46e4e7e7d1df6f98dd3c136.jpg</image:loc>
+      <image:title>HALJINA PEARL | DD DESIGN</image:title>
+      <image:caption>Haljina PEARL je duga i elegantna, sa krojem koji prati liniju tela i diskretnim otvorom na leđima. Donji deo haljine sa džepovima u šavu dodaje praktičnost i r</image:caption>
+    </image:image>
+  </url>
+  <url>
+    <loc>https://dddesign.rs/product/19</loc>
+    <lastmod>2026-04-24</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.85</priority>
+    <image:image>
+      <image:loc>https://64.media.tumblr.com/82753e30aab2270ce44a43e7a81cc52a/599e292cbd51286c-35/s2048x3072/0694d4c37e92392c0fea4f31044d5bf294e0a6a6.jpg</image:loc>
+      <image:title>Haljina REBBECA | DD DESIGN</image:title>
+      <image:caption>Gornji deo haljine karakteriše čamac izrez sa blago puf rukavima, pružajući vam bezvremenski izgled koji ističe ženstvenost. Donji deo je blago zvonast, sa falt</image:caption>
+    </image:image>
+  </url>
+  <url>
+    <loc>https://dddesign.rs/product/21</loc>
+    <lastmod>2026-04-24</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.85</priority>
+    <image:image>
+      <image:loc>https://64.media.tumblr.com/5a89c87c19e8604bef009a247fec0212/6a4f3e6f494a2d5a-11/s2048x3072/4805d27cc12e0047e098ce2efe1d716b32891377.jpg</image:loc>
+      <image:title>Haljina TAFTY | DD DESIGN</image:title>
+      <image:caption>Gornji deo haljine, izrađen od crne taft svile, kombinovan je sa finom crnom mrežicom i francuskom čipkom. Prozirnost čipke delikatno otkriva senzualnost, dodaj</image:caption>
+    </image:image>
+  </url>
+  <url>
+    <loc>https://dddesign.rs/product/22</loc>
+    <lastmod>2026-04-24</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.85</priority>
+    <image:image>
+      <image:loc>https://64.media.tumblr.com/805cf83d62a2005a00f7fb5488dfe3ce/cc0602dcf6065b79-a2/s2048x3072/19a52f744fe5b681e5464ffe42de64236817a103.jpg</image:loc>
+      <image:title>HALJINA WILLOW | DD DESIGN</image:title>
+      <image:caption>Haljina WILLOW izrađena od fine krem grež svile odiše luksuzom i raskoši. Gornji sloj haljine pruža dodatnu notu elegancije, dok su ručno izrađeni karneri jedin</image:caption>
+    </image:image>
+  </url>
+  <url>
+    <loc>https://dddesign.rs/product/23</loc>
+    <lastmod>2026-04-24</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.85</priority>
+    <image:image>
+      <image:loc>https://64.media.tumblr.com/effc5cece4a2261493cbba2a1309a6bb/a8e225488525c416-20/s1280x1920/1dc9f58f47af0f916991f46fead9ffde404861b7.jpg</image:loc>
+      <image:title>JOLIE HALJINA | DD DESIGN</image:title>
+      <image:caption>Elegantna haljina JOLIE dolazi u crnoj i beloj boji. Gornji deo je ukrašen porupčima sa četvrtastim izrezom i petljicama oko oboda, dok donji deo ima zvonasti k</image:caption>
+    </image:image>
+  </url>
+  <url>
+    <loc>https://dddesign.rs/product/24</loc>
+    <lastmod>2026-04-24</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.85</priority>
+    <image:image>
+      <image:loc>https://64.media.tumblr.com/cb6f36c302200c648bf44670ada2305e/2b7c3e65e62eb0d6-47/s2048x3072/f4675eb55ccda97da38e96bf2cedb7b947b917f0.jpg</image:loc>
+      <image:title>KAPUT CALISTA | DD DESIGN</image:title>
+      <image:caption>Kaput CALISTA izrađen od najkvalitetnijeg kašmira ističe se svojim vanvremenskim dizajnom. Idealan je za sve prilike, pružajući luksuz, toplinu i eleganciju. Po</image:caption>
+    </image:image>
+  </url>
+  <url>
+    <loc>https://dddesign.rs/product/25</loc>
+    <lastmod>2026-04-24</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.85</priority>
+    <image:image>
+      <image:loc>https://64.media.tumblr.com/34a143f44f91411986da9b91b420cda5/b5045b4aad37f09d-c0/s2048x3072/74ac44d95c320559ad87e105cf1c83e568a9856f.jpg</image:loc>
+      <image:title>Košulja ELISA | DD DESIGN</image:title>
+      <image:caption>Elegantna, svedena i pažljivo oblikovana – košulja Elisa donosi savremenu siluetu sa asimetričnim rukavima i skrivenim kopčanjem, ukrašena diskretnim dekorativn</image:caption>
+    </image:image>
+  </url>
+  <url>
+    <loc>https://dddesign.rs/product/26</loc>
+    <lastmod>2026-04-24</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.85</priority>
+    <image:image>
+      <image:loc>https://64.media.tumblr.com/cafac5a6955f69051696895714cc22c4/5e04f97f56e983a7-dd/s2048x3072/8efbf9fc76a9d050e90451a5f574f3ec819e907c.jpg</image:loc>
+      <image:title>Košulja LETIZIA | DD DESIGN</image:title>
+      <image:caption>Detalji i pažljivo postavljene petlje duž kopčanja čine ovu košulju izuzetno elegantnom. Ovi elementi dodaju notu luksuza i ističu vaš jedinstven stilski izraz.</image:caption>
+    </image:image>
+  </url>
+  <url>
+    <loc>https://dddesign.rs/product/27</loc>
+    <lastmod>2026-04-24</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.85</priority>
+    <image:image>
+      <image:loc>https://64.media.tumblr.com/f8566808acdf713b1c8a40cd68ddbeb1/3f1c4cda4d8d0e35-a4/s2048x3072/9535f4ddd8dca6639a7e6efd6a21477b237832d7.jpg</image:loc>
+      <image:title>Košulja LOUISA | DD DESIGN</image:title>
+      <image:caption>Košulja LOUISA je kreirana sa pažnjom prema detaljima, dostupna je u klasičnoj crnoj i beloj boji. Svaki detalj ove košulje je majstorski izrađen, ističući se v</image:caption>
+    </image:image>
+  </url>
+  <url>
+    <loc>https://dddesign.rs/product/28</loc>
+    <lastmod>2026-04-24</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.85</priority>
+    <image:image>
+      <image:loc>https://64.media.tumblr.com/3995b2f8cde84a133659218dd47115ee/081ea06e879d917b-8d/s2048x3072/7127beec4258c646da92d219ad50d79d16e0b8ee.jpg</image:loc>
+      <image:title>LETIZIA | DD DESIGN</image:title>
+      <image:caption>Letizia haljina u crnom tonu,daje dozu klasične elegancije vašem stilu. Njena lepršavost ne samo da prati vaše pokrete, već i ističe lepotu svake tipologije gra</image:caption>
+    </image:image>
+  </url>
+  <url>
+    <loc>https://dddesign.rs/product/29</loc>
+    <lastmod>2026-04-24</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.85</priority>
+    <image:image>
+      <image:loc>https://64.media.tumblr.com/6949c40046b5628da93c72a69ff35a3e/46993dd138bb5fdc-51/s1280x1920/9966f283f774b520a47e1c2880a443cc1972279c.jpg</image:loc>
+      <image:title>LETIZIA print | DD DESIGN</image:title>
+      <image:caption>Proizvodimo je u limitiranim serijama, u raznovrsnim dezenima koji čine svaku haljinu jedinstvenom. Njena lepršavost prati vaše pokrete, prilagođavajući se savr</image:caption>
+    </image:image>
+  </url>
+  <url>
+    <loc>https://dddesign.rs/product/30</loc>
+    <lastmod>2026-04-24</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.85</priority>
+    <image:image>
+      <image:loc>https://64.media.tumblr.com/e0f237e9571894d87e65e2fcd25aaeec/9bca81b520c58383-10/s1280x1920/71845f37d710e14219cd205b908485e4833e78ab.jpg</image:loc>
+      <image:title>Mantil NANCY | DD DESIGN</image:title>
+      <image:caption>Različiti tonovi utkanih niti daju efekat prelivanja, što šantung svilu čini još svečanijom. Sirovinski sastav 100% SVILA</image:caption>
+    </image:image>
+  </url>
+  <url>
+    <loc>https://dddesign.rs/product/32</loc>
+    <lastmod>2026-04-24</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.85</priority>
+    <image:image>
+      <image:loc>https://64.media.tumblr.com/a3da0ec5a4c3b237019f2415f044ca45/78a9f11f91e32807-54/s2048x3072/5fe0d15eda889626e7fa8c8a3e55a7e8548a585c.jpg</image:loc>
+      <image:title>Marlena | DD DESIGN</image:title>
+      <image:caption>Različiti tonovi utkanih niti daju efekat prelivanja, što šantung svilu čini još svečanijom. Sirovinski sastav 100% SVILA</image:caption>
+    </image:image>
+  </url>
+  <url>
+    <loc>https://dddesign.rs/product/33</loc>
+    <lastmod>2026-04-24</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.85</priority>
+    <image:image>
+      <image:loc>https://64.media.tumblr.com/335bf9b32869832b4a7e5e5b06be73c6/89b13c695baf261f-35/s1280x1920/75474be3b1451a352b3d92f00619e1cefc0ee129.jpg</image:loc>
+      <image:title>Odelo Amelia | DD DESIGN</image:title>
+      <image:caption>Crno satensko odelo neprevaziđena klasika, uvek aktuelno i prilagodljivo u raznim prilikama. Sirovinski satav 60% PAMUK 30%PES 10% ELASTIN Svi naši modeli su de</image:caption>
+    </image:image>
+  </url>
+  <url>
+    <loc>https://dddesign.rs/product/34</loc>
+    <lastmod>2026-04-24</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.85</priority>
+    <image:image>
+      <image:loc>https://64.media.tumblr.com/6d12019b559087745a3d1db1e01ebf6d/96ff0d2545ab50fb-5b/s2048x3072/10de0c48cbf4f18ed46249e525cb0dd9ebab8425.jpg</image:loc>
+      <image:title>ODELO LANNAS / SANNAS | DD DESIGN</image:title>
+      <image:caption>Tkanje riblje kosti daje odelu sivi ton, čineći ga uvek aktuelnim i prilagodljivim raznim prilikama. Odelo SANNAS je sinonim za sofisticiranost i modernu elegan</image:caption>
+    </image:image>
+  </url>
+  <url>
+    <loc>https://dddesign.rs/product/35</loc>
+    <lastmod>2026-04-24</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.85</priority>
+    <image:image>
+      <image:loc>https://64.media.tumblr.com/9be9f3c3c60d9d7bca6f5ef84c80bba3/9f68e90e4641d229-ff/s1280x1920/2417ecb38e02941eebc6be5ba2c04a86bc0439e5.jpg</image:loc>
+      <image:title>Odelo Solea | DD DESIGN</image:title>
+      <image:caption>Odelo Solea namenjeno je ženi koja voli nežne boje, ali ne pristaje na klasične krojeve. Gornji deo karakterišu asimetrični rukavi koji donose dozu sofisticiran</image:caption>
+    </image:image>
+  </url>
+  <url>
+    <loc>https://dddesign.rs/product/36</loc>
+    <lastmod>2026-04-24</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.85</priority>
+    <image:image>
+      <image:loc>https://64.media.tumblr.com/ee1937ce7e4ae9621a48be9439366cb1/429ec116024322a4-a3/s2048x3072/8df8a99d7c91d49367d696bd24cea0df7625e38a.jpg</image:loc>
+      <image:title>ODELO TESSA | DD DESIGN</image:title>
+      <image:caption>Odelo TESSA izrađeno od finog vunenog štofa donosi spoj klasičnog dizajna i modernih detalja. Zvonaste pantalone i gornji deo ravnog kroja sa kaišem u struku st</image:caption>
+    </image:image>
+  </url>
+  <url>
+    <loc>https://dddesign.rs/product/37</loc>
+    <lastmod>2026-04-24</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.85</priority>
+    <image:image>
+      <image:loc>https://64.media.tumblr.com/ea52ccc69387eb2bd7f425aadbeda833/86f7bffc19d517fa-36/s1280x1920/defe0e95ecf45901baf16c52bbcbd476c66a61d7.jpg</image:loc>
+      <image:title>Olena | DD DESIGN</image:title>
+      <image:caption>Predstavljamo vam OLENA komplet izbor za svaku priliku. Dostupan u crnoj i krem boji, komplet čine zvonaste pantalone sa dva šlica i gornji deo koji savršeno pr</image:caption>
+    </image:image>
+  </url>
+  <url>
+    <loc>https://dddesign.rs/product/38</loc>
+    <lastmod>2026-04-24</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.85</priority>
+    <image:image>
+      <image:loc>https://64.media.tumblr.com/10622300f7decf2c3f1ddbd394d78fd3/075af547349a4bf9-c1/s2048x3072/05ac6bfb99d8d0ed619aeeb1fafb923fa72b15f6.jpg</image:loc>
+      <image:title>SUKNJA CRISTAL TIL | DD DESIGN</image:title>
+      <image:caption>Suknja CRISTAL TIL izrađena je od biserno belog kristal tila, donoseći svečanu notu i eleganciju vašem izgledu. Dostupna u crnoj i beloj boji, midi dužina čini </image:caption>
+    </image:image>
+  </url>
+  <url>
+    <loc>https://dddesign.rs/product/39</loc>
+    <lastmod>2026-04-24</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.85</priority>
+    <image:image>
+      <image:loc>https://64.media.tumblr.com/34a143f44f91411986da9b91b420cda5/4ee9c8ef563af89d-c1/s2048x3072/0a4e43f6369478e381717a4bdb666a2080855974.jpg</image:loc>
+      <image:title>Suknja RINA | DD DESIGN</image:title>
+      <image:caption>Dostupne boje: Crna / Bela Elegantna, ženstvena i promišljeno krojena – suknja Rina ističe figuru zahvaljujući visokom pojasu i suptilnim naborima u struku, dok</image:caption>
+    </image:image>
+  </url>
+  <url>
+    <loc>https://dddesign.rs/product/40</loc>
+    <lastmod>2026-04-24</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.85</priority>
+    <image:image>
+      <image:loc>https://64.media.tumblr.com/b8ca15e8fec370bb81861947d4bb64fa/0eb57d28240cc6c5-26/s1280x1920/5e51b935b61ed71bcfd07410fe8185e86e3019f8.jpg</image:loc>
+      <image:title>Suknja TAFTY | DD DESIGN</image:title>
+      <image:caption>Suknja Tafty inspirsana istoimrnom haljinom naglašenog struka visokim pojasem, dok je donji deo suknje bogato nafaltan sa diskretnim džepovima u šavu, pružajući</image:caption>
+    </image:image>
+  </url>
+  <url>
+    <loc>https://dddesign.rs/product/41</loc>
+    <lastmod>2026-04-24</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.85</priority>
+    <image:image>
+      <image:loc>https://64.media.tumblr.com/df671da6577d2f4212a4b0b42f9fda2b/f73e42a25ac436aa-ea/s2048x3072/cd294d4e602afe4da6851974b025027f75a81ec5.jpg</image:loc>
+      <image:title>VIKTORIA | DD DESIGN</image:title>
+      <image:caption>Haljina Viktorija izrađena je od luksuzne taft svile i fine francuske čipke. Gornji deo modela, oblikovan poput korseta, elegantno prati liniju figure, dok su l</image:caption>
+    </image:image>
+  </url>
+  <url>
+    <loc>https://dddesign.rs/product/42</loc>
+    <lastmod>2026-05-07</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.85</priority>
+    <image:image>
+      <image:loc>https://64.media.tumblr.com/74b5bf6e5ed22435116010f6477a3c93/05a320e6a9d559b6-15/s2048x3072/a4eac32afe6d40557279df08fcbea7adf522df45.jpg</image:loc>
+      <image:title>RANIA | DD DESIGN</image:title>
+      <image:caption>Model odela deo je naše premium kolekcije i izrađen je od luksuzne crne taft svile. Pažljivo konstruisan kroj naglašava siluetu i ističe liniju tela, dok preciz</image:caption>
+    </image:image>
+  </url>
+  <url>
+    <loc>https://dddesign.rs/product/43</loc>
+    <lastmod>2026-05-07</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.85</priority>
+    <image:image>
+      <image:loc>https://64.media.tumblr.com/500d325ae46c9bceb97b45cc665943c1/536ff8aaad9585df-26/s2048x3072/5ab429206a1c74fd9a3debc48fd31e0ee6240ca1.jpg</image:loc>
+      <image:title>BRIGITTE | DD DESIGN</image:title>
+      <image:caption>Model haljine deo je naše premium kolekcije izrađen je od luksuzne taft svile. Konstruktivno oblikovan gornji deo u formi korseta naglašava siluetu i ističe žen</image:caption>
+    </image:image>
+  </url>
+  <url>
+    <loc>https://dddesign.rs/product/44</loc>
+    <lastmod>2026-05-07</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.85</priority>
+    <image:image>
+      <image:loc>https://64.media.tumblr.com/a8590c202a840d652b3097b5abfb22e4/81c1c825f64caedb-00/s2048x3072/50ce17c0e1b5632a4ffce3a7f06c80bee6fa4639.jpg</image:loc>
+      <image:title>MICHELLE | DD DESIGN</image:title>
+      <image:caption>Kombinezon u nijansi plavog patlidžana izrađen od taft svile deo je premium kolekcije. Šal kragna elegantno uokviruje vrat i ramena, dok zvonaste nogavice vizue</image:caption>
+    </image:image>
+  </url>
+  <url>
+    <loc>https://dddesign.rs/product/45</loc>
+    <lastmod>2026-05-07</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.85</priority>
+    <image:image>
+      <image:loc>https://64.media.tumblr.com/a28629939a4fc8a7472a36c9ba7b3952/2622d290f9b5c3b2-36/s2048x3072/5b1139b41b22f80e5b6c7ecd39523f3755d9676b.jpg</image:loc>
+      <image:title>JACKIE | DD DESIGN</image:title>
+      <image:caption>Žuta haljina od taft svile sa dubokim V izrezom i naglašenim ramenima odiše samopouzdanjem i elegancijom. Prednji deo raskošno pada, dok je zadnji deo dužine 7/</image:caption>
+    </image:image>
+  </url>
+  <url>
+    <loc>https://dddesign.rs/product/46</loc>
+    <lastmod>2026-05-07</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.85</priority>
+    <image:image>
+      <image:loc>https://64.media.tumblr.com/aea3f79decd8d1703b98349a5a527a07/1b8dc99e973db04b-c3/s2048x3072/f80c82122c1333feee031f1c0331d756aba7b2bc.jpg</image:loc>
+      <image:title>GRACE | DD DESIGN</image:title>
+      <image:caption>Bela haljina od šantung svile sa postavom od finog pamučnog voala odiše sofisticiranom jednostavnošću. Gornji deo u čamac izrez sa otvorenim leđima naglašava el</image:caption>
+    </image:image>
+  </url>
+  <url>
+    <loc>https://dddesign.rs/product/47</loc>
+    <lastmod>2026-05-07</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.85</priority>
+    <image:image>
+      <image:loc>https://64.media.tumblr.com/1a1a535f01b31011a095a5262a5c2c29/f154c6d527090598-45/s2048x3072/b1f73d04d6e6ce4c172008dee7697aeccbb02eb2.jpg</image:loc>
+      <image:title>CARLA | DD DESIGN</image:title>
+      <image:caption>Crna haljina od taft svile i francuske čipke prati liniju tela i ističe siluetu na sofisticiran način. Korset forma oblikuje figuru, dok otvorena leđa i šlic na</image:caption>
+    </image:image>
+  </url>
+  <url>
+    <loc>https://dddesign.rs/product/49</loc>
+    <lastmod>2026-05-09</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.85</priority>
+    <image:image>
+      <image:loc>https://64.media.tumblr.com/ce3a1178d8414afd3baf9a4b97c78e79/813e9c85aa242ca4-af/s2048x3072/269b9338ff79d0f89ae8edf2f1c68231be107ddb.jpg</image:loc>
+      <image:title>Odelo Solea - Kašmir | DD DESIGN</image:title>
+      <image:caption>Odelo Solea namenjeno je ženi koja ne pristaje na klasične krojeve i bira izrazitu eleganciju sa karakterom. Gornji deo odela ističe se asimetričnim rukavima ko</image:caption>
+    </image:image>
+  </url>
+  <url>
+    <loc>https://dddesign.rs/product/50</loc>
+    <lastmod>2026-05-09</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.85</priority>
+    <image:image>
+      <image:loc>https://64.media.tumblr.com/d900aa9fb6ad43a24d4e38adc8857860/2f05c2274dd98ca7-c2/s2048x3072/e73e60fbf4c72c08434e51120d9ab28855724f02.jpg</image:loc>
+      <image:title>Haljina METTE | DD DESIGN</image:title>
+      <image:caption>Haljina Mette izrađena je od fine biserno bele svile i odiše luksuzom i suptilnom raskoši. Gornji sloj haljine pruža dodatnu notu elegancije, dok transparentni </image:caption>
+    </image:image>
+  </url>
+  <url>
+    <loc>https://dddesign.rs/product/51</loc>
+    <lastmod>2026-05-09</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.85</priority>
+    <image:image>
+      <image:loc>https://64.media.tumblr.com/6759a8b9a380e472f12045d84fa0562b/48c4339e185bb078-08/s2048x3072/82cc4ef45d636a5423e50379e60de7c448551b38.jpg</image:loc>
+      <image:title>Pantalone VALERIE | DD DESIGN</image:title>
+      <image:caption>Pantalone Valerie izrađene su od luksuzne taft svile i predstavljaju pravi modni akcenat. Model palazzo kroja ima visoki pojas koji elegantno naglašava figuru, </image:caption>
+    </image:image>
+  </url>
+  <url>
+    <loc>https://dddesign.rs/product/52</loc>
+    <lastmod>2026-05-09</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.85</priority>
+    <image:image>
+      <image:loc>https://64.media.tumblr.com/9fda61fd1116c15b92dcc475e86046f4/5ebab5061e1f89e6-48/s1280x1920/4f1c402416ce87ac3283b395a82a993bf92dab6e.jpg</image:loc>
+      <image:title>Pantalone KAREN — palazzo | DD DESIGN</image:title>
+      <image:caption>Karen palazzo pantalone izrađene su od kvalitetnog sateniziranog pamuka sa dodatkom elastina, pružajući udobnost i savršeno prijanjanje. Deo su naše kolekcije k</image:caption>
+    </image:image>
+  </url>
+  <url>
+    <loc>https://dddesign.rs/product/63</loc>
+    <lastmod>2026-10-28</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.85</priority>
+    <image:image>
+      <image:loc>https://64.media.tumblr.com/11cf247171b5700f888ae4579ca3d719/11dee8dbfa3452a8-a7/s2048x3072/c3a79d9c2eb68262a8f22110cb06f623ad3cfae1.jpg</image:loc>
+      <image:title>MICHELLE KOMBINEZON SUKNJA | DD DESIGN</image:title>
+      <image:caption>Kombinezon u nijansi plavog patlidžana izrađen od taft svile deo je premium kolekcije. Šal kragna elegantno uokviruje vrat i ramena, dok zvonaste nogavice vizue</image:caption>
+    </image:image>
+  </url>
+  <url>
+    <loc>https://dddesign.rs/product/64</loc>
+    <lastmod>2026-10-28</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.85</priority>
+    <image:image>
+      <image:loc>https://64.media.tumblr.com/a08475ec43b184c17649a1c957f2c8bb/36f200e324ab7e48-2d/s2048x3072/366657c1e393f83a91d87e2facb05afaa72f630d.jpg</image:loc>
+      <image:title>AMARA | DD DESIGN</image:title>
+      <image:caption>Sofisticirani model koji spaja raskoš prirodne tkanine i savremenu eleganciju. Amaru karakterišu precizno oblikovan sako sa upečatljivim detaljima u obliku ruže</image:caption>
+    </image:image>
+  </url>
+  <url>
+    <loc>https://dddesign.rs/product/65</loc>
+    <lastmod>2026-10-28</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.85</priority>
+    <image:image>
+      <image:loc>https://64.media.tumblr.com/a08475ec43b184c17649a1c957f2c8bb/36f200e324ab7e48-2d/s2048x3072/366657c1e393f83a91d87e2facb05afaa72f630d.jpg</image:loc>
+      <image:title>AMARA SUKNJA | DD DESIGN</image:title>
+      <image:caption>Duga, elegantna suknja raskošnog pada koja silueti daje posebnu lakoću i ženstvenost. Njena fluidna forma omogućava prirodno kretanje i lako kombinovanje sa raz</image:caption>
+    </image:image>
+  </url>
+  <url>
+    <loc>https://dddesign.rs/product/66</loc>
+    <lastmod>2026-10-28</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.85</priority>
+    <image:image>
+      <image:loc>https://64.media.tumblr.com/cff1ac66a2099dd6ba0c1b509060c131/36f200e324ab7e48-57/s2048x3072/c567b822e5b488ce5483e09fbf830ab2c5df60ed.jpg</image:loc>
+      <image:title>AMARA PANTALONE | DD DESIGN</image:title>
+      <image:caption>Elegantne pantalone širih nogavica kreirane da pruže fluidnu siluetu i sofisticiran izgled. Prepoznatljiv kroj omogućava lako kombinovanje sa Amara sakoom, ali </image:caption>
+    </image:image>
+  </url>
+  <url>
+    <loc>https://dddesign.rs/product/67</loc>
+    <lastmod>2026-10-28</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.85</priority>
+    <image:image>
+      <image:loc>https://64.media.tumblr.com/cff1ac66a2099dd6ba0c1b509060c131/36f200e324ab7e48-57/s2048x3072/c567b822e5b488ce5483e09fbf830ab2c5df60ed.jpg</image:loc>
+      <image:title>AMARA SAKO | DD DESIGN</image:title>
+      <image:caption>Sako izražene, ali sofisticirane siluete, oblikovan tako da naglasi liniju ramena i pruži elegantnu formu. Precizna konstrukcija i raskoš taft svile daju modelu</image:caption>
+    </image:image>
+  </url>
+  <url>
+    <loc>https://dddesign.rs/product/68</loc>
+    <lastmod>2026-10-28</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.85</priority>
+    <image:image>
+      <image:loc>https://64.media.tumblr.com/983cc0b328ba547c7f7344b62ffc92d7/16bad533aa6d8e33-38/s2048x3072/56b380ea6e4dc99ce90c03138acb0ecfdafeeb2a.jpg</image:loc>
+      <image:title>VANILLA | DD DESIGN</image:title>
+      <image:caption>Model nežne i savremene siluete koji spaja jednostavnost kroja sa izražajnošću boje. Pažljivo oblikovane linije stvaraju elegantnu formu, dok prijatan materijal</image:caption>
+    </image:image>
+  </url>
+  <url>
+    <loc>https://dddesign.rs/product/69</loc>
+    <lastmod>2026-10-28</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.85</priority>
+    <image:image>
+      <image:loc>https://64.media.tumblr.com/373046eaca2e9f04153e4dc8b96d788a/b6506c8a0fd3159b-d1/s2048x3072/d92bb3bbbd3db0c88771ef22a52d9e08b812b0a6.jpg</image:loc>
+      <image:title>ALBA | DD DESIGN</image:title>
+      <image:caption>Romantična i bezvremenska, Alba slavi ženstvenost kroz raskoš bele tkanine i svedenu, elegantnu siluetu. Pamučna čipka i pamučni voal daju modelu dozu romantike</image:caption>
+    </image:image>
+  </url>
+  <url>
+    <loc>https://dddesign.rs/product/70</loc>
+    <lastmod>2026-10-28</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.85</priority>
+    <image:image>
+      <image:loc>https://64.media.tumblr.com/cfb33527a1758d1eacab32b816dc8b17/16bad533aa6d8e33-d3/s2048x3072/3402e4bbc1f069ec473dacf101232f9429d9f440.jpg</image:loc>
+      <image:title>ALBA KOŠULJA | DD DESIGN</image:title>
+      <image:caption>Elegantna košulja izrađena od pažljivo odabranog materijala, sa detaljima koji joj daju ženstven i sofisticiran karakter. Svedena forma omogućava lako kombinova</image:caption>
+    </image:image>
+  </url>
+  <url>
+    <loc>https://dddesign.rs/product/71</loc>
+    <lastmod>2026-10-28</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.85</priority>
+    <image:image>
+      <image:loc>https://64.media.tumblr.com/6692f6345413b7128287272644631a3e/87e39e5b2bd7621a-a4/s2048x3072/67c69be9836a2a64609463a330ec6ee18758aa74.jpg</image:loc>
+      <image:title>VELA HALJINA | DD DESIGN</image:title>
+      <image:caption>Elegantna haljina savremene siluete, osmišljena za ženu koja bira sveden dizajn sa upečatljivim detaljima. Pažljivo oblikovan kroj prati liniju tela i pruža sof</image:caption>
+    </image:image>
+  </url>
+  <url>
+    <loc>https://dddesign.rs/product/75</loc>
+    <lastmod>2026-10-28</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.85</priority>
+    <image:image>
+      <image:loc>https://64.media.tumblr.com/24be7709d2a3dd27ad02cca3174d4de9/8636f1d4fd2876aa-0d/s2048x3072/5a471e815ea5187300a28f408eb557eb0d38f060.jpg</image:loc>
+      <image:title>ELARA KORSET | DD DESIGN</image:title>
+      <image:caption>Elara je pažljivo konstruisan korset koji oblikuje siluetu i naglašava ženstvenost kroz precizne linije i sofisticiranu formu. Može se nositi samostalno ili kom</image:caption>
+    </image:image>
+  </url>
+  <url>
+    <loc>https://dddesign.rs/product/77</loc>
+    <lastmod>2026-10-28</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.85</priority>
+    <image:image>
+      <image:loc>https://64.media.tumblr.com/f55ff0a0f8977234da8ef152a0af74d5/0d579694f09a4104-2b/s2048x3072/a3042d523359e61d51ef6a4f7697c4df544acf1e.jpg</image:loc>
+      <image:title>BLANC | DD DESIGN</image:title>
+    </image:image>
   </url>
 </urlset>
