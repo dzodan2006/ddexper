@@ -44,3 +44,51 @@ export function optimizeImageUrl(url: string | undefined | null, width?: number,
 
   return url;
 }
+
+/**
+ * Normalizes product prices to clean integer RSD amounts for Google Search indexing & display.
+ * Resolves the issue where prices like "18.000" or raw 18 (from dot separator misinterpretation)
+ * appear as 18 instead of 18.000 RSD on Google Search and Rich Snippets.
+ */
+export function normalizePrice(raw: any): number {
+  if (raw === null || raw === undefined || raw === '') return 0;
+
+  if (typeof raw === 'number') {
+    if (isNaN(raw)) return 0;
+    // In DD DESIGN luxury silk garments (haute couture, suits, gowns, coats),
+    // pieces cost between 4.000 RSD and 120.000 RSD.
+    // If a price is <= 500 and > 0 (e.g. 18, 33.6, 28.8), it was entered with a dot separator
+    // that JavaScript or the database parsed as a decimal rather than thousands.
+    if (raw > 0 && raw < 500) {
+      return Math.round(raw * 1000);
+    }
+    return Math.round(raw);
+  }
+
+  const str = String(raw).trim();
+  if (!str) return 0;
+
+  // Clean out currency texts and spaces: "18.000 RSD" -> "18.000"
+  const cleaned = str.replace(/\s+/g, '').replace(/[^\d.,]/g, '');
+
+  // Handle European thousands dot separator (e.g. "18.000" or "33.700")
+  if (cleaned.includes('.') && !cleaned.includes(',')) {
+    const parts = cleaned.split('.');
+    if (parts.length === 2 && parts[1].length === 3) {
+      // Exactly 3 digits after dot -> thousands separator!
+      return parseInt(parts[0] + parts[1], 10);
+    } else if (parts.length > 2) {
+      return parseInt(parts.join(''), 10);
+    }
+  }
+
+  // Remove dots and convert comma to dot for parsing
+  const standardNumeric = cleaned.replace(/\./g, '').replace(/,/g, '.');
+  const num = parseFloat(standardNumeric);
+  if (isNaN(num)) return 0;
+
+  if (num > 0 && num < 500) {
+    return Math.round(num * 1000);
+  }
+  return Math.round(num);
+}

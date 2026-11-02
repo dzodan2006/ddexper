@@ -17,6 +17,7 @@ import CookieConsent from './components/CookieConsent';
 import NewsletterPopup from './components/NewsletterPopup';
 import ScrollToTop from './components/ScrollToTop';
 import { sortCategories, sortProductsByCustomOrder } from './lib/categories';
+import { normalizePrice } from './lib/utils';
 
 const Home = lazy(() => import('./pages/Home'));
 const Shop = lazy(() => import('./pages/Shop'));
@@ -545,7 +546,8 @@ function useSEO(products: Product[] = []) {
     setMetaProperty('og:type', currentProduct ? 'product' : (currentRouteData.type === 'Article' ? 'article' : 'website'));
 
     if (currentProduct) {
-      setMetaProperty('product:price:amount', String(currentProduct.discount_price || currentProduct.price));
+      const normPrice = normalizePrice(currentProduct.discount_price || currentProduct.price);
+      setMetaProperty('product:price:amount', String(normPrice));
       setMetaProperty('product:price:currency', 'RSD');
     }
 
@@ -570,33 +572,194 @@ function useSEO(products: Product[] = []) {
         ? currentProduct.all_images
         : [currentProduct.image_url || effectiveImage];
 
+      const normFinalPrice = normalizePrice(currentProduct.discount_price || currentProduct.price);
+
       schemaOrg = {
         "@context": "https://schema.org",
-        "@type": "Product",
-        "name": currentProduct.name,
-        "image": prodImages,
-        "description": currentProduct.description ? currentProduct.description.replace(/\r?\n+/g, ' ').trim() : effectiveDesc,
-        "sku": `DD-${currentProduct.id}`,
-        "mpn": `DD-${currentProduct.id}`,
-        "brand": {
-          "@type": "Brand",
-          "name": "DD DESIGN",
-          "slogan": slogan
-        },
-        "category": currentProduct.category || "Ženska odeća od prirodne svile",
-        "offers": {
-          "@type": "Offer",
-          "url": canonicalUrl,
-          "priceCurrency": "RSD",
-          "price": currentProduct.discount_price || currentProduct.price,
-          "priceValidUntil": "2027-12-31",
-          "availability": currentProduct.stock !== false ? "https://schema.org/InStock" : "https://schema.org/PreOrder",
-          "itemCondition": "https://schema.org/NewCondition",
-          "seller": {
-            "@type": "Organization",
-            "name": "DD DESIGN"
+        "@graph": [
+          {
+            "@type": "Product",
+            "name": currentProduct.name,
+            "image": prodImages,
+            "primaryImageOfPage": {
+              "@type": "ImageObject",
+              "url": prodImages[0],
+              "contentUrl": prodImages[0],
+              "caption": `${currentProduct.name} — Atelje DD DESIGN`,
+              "width": "1200",
+              "height": "1500"
+            },
+            "description": currentProduct.description ? currentProduct.description.replace(/\r?\n+/g, ' ').trim() : effectiveDesc,
+            "sku": `DD-${currentProduct.id}`,
+            "mpn": `DD-${currentProduct.id}`,
+            "brand": {
+              "@type": "Brand",
+              "name": "DD DESIGN",
+              "slogan": slogan
+            },
+            "category": currentProduct.category || "Ženska odeća od prirodne svile",
+            "offers": {
+              "@type": "Offer",
+              "url": canonicalUrl,
+              "priceCurrency": "RSD",
+              "price": normFinalPrice,
+              "priceSpecification": {
+                "@type": "UnitPriceSpecification",
+                "price": normFinalPrice,
+                "priceCurrency": "RSD",
+                "valueAddedTaxIncluded": "true"
+              },
+              "priceValidUntil": "2027-12-31",
+              "availability": currentProduct.stock !== false ? "https://schema.org/InStock" : "https://schema.org/PreOrder",
+              "itemCondition": "https://schema.org/NewCondition",
+              "seller": {
+                "@type": "Organization",
+                "name": "DD DESIGN",
+                "url": "https://dddesign.rs/"
+              }
+            }
+          },
+          {
+            "@type": "BreadcrumbList",
+            "itemListElement": [
+              {
+                "@type": "ListItem",
+                "position": 1,
+                "name": "DD DESIGN",
+                "item": "https://dddesign.rs/"
+              },
+              {
+                "@type": "ListItem",
+                "position": 2,
+                "name": currentProduct.category || "Kolekcija",
+                "item": `https://dddesign.rs/shop?category=${currentProduct.category_id || "3"}`
+              },
+              {
+                "@type": "ListItem",
+                "position": 3,
+                "name": currentProduct.name,
+                "item": canonicalUrl
+              }
+            ]
           }
-        }
+        ]
+      };
+    } else if (location.pathname === '/') {
+      // Enhanced Google Sitelinks graph for Homepage
+      schemaOrg = {
+        "@context": "https://schema.org",
+        "@graph": [
+          {
+            "@type": "WebSite",
+            "name": "DD DESIGN",
+            "alternateName": "Atelje DD DESIGN Danijela Gojković",
+            "url": "https://dddesign.rs/",
+            "potentialAction": {
+              "@type": "SearchAction",
+              "target": {
+                "@type": "EntryPoint",
+                "urlTemplate": "https://dddesign.rs/shop?q={search_term_string}"
+              },
+              "query-input": "required name=search_term_string"
+            },
+            "hasPart": [
+              {
+                "@type": "WebPage",
+                "name": "Svilene Haljine",
+                "url": "https://dddesign.rs/shop?category=3",
+                "description": "Unikatne haljine od najfinije taft i šantung svile, večernje i koktel toalete."
+              },
+              {
+                "@type": "WebPage",
+                "name": "Odela i Kompleti",
+                "url": "https://dddesign.rs/shop?category=2",
+                "description": "Skulpturalna ženska odela i kompleti od prirodne svile."
+              },
+              {
+                "@type": "WebPage",
+                "name": "Nova Kolekcija",
+                "url": "https://dddesign.rs/nova-kolekcija",
+                "description": "Novi ekskluzivni svileni modeli i limitirane serije ateljea."
+              },
+              {
+                "@type": "WebPage",
+                "name": "Vodič o Taft i Šantung Svili",
+                "url": "https://dddesign.rs/o-svili",
+                "description": "Kompletan vodič kroz plemenite materijale: taft, šantung i grež svila."
+              },
+              {
+                "@type": "WebPage",
+                "name": "Izrada po Meri",
+                "url": "https://dddesign.rs/izrada-po-meri",
+                "description": "Bespoke krojenje unikatnih svilenih modela prilagođeno vašim merama."
+              },
+              {
+                "@type": "WebPage",
+                "name": "Press & Mediji",
+                "url": "https://dddesign.rs/saradnje",
+                "description": "Medijska gostovanja, naslovne strane i saradnje sa javnim ličnostima."
+              },
+              {
+                "@type": "WebPage",
+                "name": "Kontakt & Atelje Beograd",
+                "url": "https://dddesign.rs/kontakt",
+                "description": "Zakazivanje termina za probu modela i konsultacije u Beogradu."
+              }
+            ]
+          },
+          {
+            "@type": "ClothingStore",
+            "name": "DD DESIGN",
+            "slogan": slogan,
+            "url": "https://dddesign.rs/",
+            "logo": "https://images.weserv.nl/?url=64.media.tumblr.com/85a2897f98a2b096033b5b7b2baa4305/941158d434c8785d-07/s1280x1920/1770317d73e6ae1e7a6940ed7119efd4f78c57ce.jpg",
+            "image": effectiveImage,
+            "description": effectiveDesc,
+            "telephone": "+381641605032",
+            "email": "office@dddesign.rs",
+            "priceRange": "$$$$",
+            "address": {
+              "@type": "PostalAddress",
+              "addressCountry": "RS",
+              "addressLocality": "Beograd"
+            }
+          },
+          {
+            "@type": "SiteNavigationElement",
+            "name": "Svilene Haljine",
+            "url": "https://dddesign.rs/shop?category=3"
+          },
+          {
+            "@type": "SiteNavigationElement",
+            "name": "Odela i Kompleti",
+            "url": "https://dddesign.rs/shop?category=2"
+          },
+          {
+            "@type": "SiteNavigationElement",
+            "name": "Nova Kolekcija",
+            "url": "https://dddesign.rs/nova-kolekcija"
+          },
+          {
+            "@type": "SiteNavigationElement",
+            "name": "Vodič o Svili",
+            "url": "https://dddesign.rs/o-svili"
+          },
+          {
+            "@type": "SiteNavigationElement",
+            "name": "Izrada po Meri",
+            "url": "https://dddesign.rs/izrada-po-meri"
+          },
+          {
+            "@type": "SiteNavigationElement",
+            "name": "Press & Saradnje",
+            "url": "https://dddesign.rs/saradnje"
+          },
+          {
+            "@type": "SiteNavigationElement",
+            "name": "Kontakt",
+            "url": "https://dddesign.rs/kontakt"
+          }
+        ]
       };
     } else {
       schemaOrg = {
@@ -630,6 +793,7 @@ function useSEO(products: Product[] = []) {
         };
       }
     }
+
 
     schemaScript.innerHTML = JSON.stringify(schemaOrg);
     document.head.appendChild(schemaScript);
@@ -1037,9 +1201,9 @@ function AppContent() {
               id: String(product.id),
               name: product.name,
               description: product.description,
-              price: Number(product.price),
+              price: normalizePrice(product.price),
               discount_price: product.discount_price
-                ? Number(product.discount_price)
+                ? normalizePrice(product.discount_price)
                 : null,
               stock: product.stock,
               is_active: product.is_active,

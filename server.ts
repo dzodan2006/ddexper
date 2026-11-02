@@ -105,6 +105,48 @@ app.get("/sitemap.xml", async (req, res) => {
   }
 });
 
+// Price Normalizer for Google Search and Rich Snippets
+function normalizePrice(raw: any): number {
+  if (raw === null || raw === undefined || raw === "") return 0;
+  if (typeof raw === "number") {
+    if (isNaN(raw)) return 0;
+    // In DD DESIGN's catalog of luxury silk gowns, coats, and bespoke suits,
+    // prices are between 4.000 RSD and 120.000 RSD.
+    // If a price is <= 500 and > 0 (e.g. 18, 33.6, 28.8), it was entered with a dot separator
+    // that JavaScript or the database parsed as a decimal rather than thousands.
+    if (raw > 0 && raw < 500) {
+      return Math.round(raw * 1000);
+    }
+    return Math.round(raw);
+  }
+
+  const str = String(raw).trim();
+  if (!str) return 0;
+
+  // Clean out currency texts and spaces: "18.000 RSD" -> "18.000"
+  const cleaned = str.replace(/\s+/g, "").replace(/[^\d.,]/g, "");
+
+  // Handle European thousands dot separator (e.g. "18.000" or "33.700")
+  if (cleaned.includes(".") && !cleaned.includes(",")) {
+    const parts = cleaned.split(".");
+    if (parts.length === 2 && parts[1].length === 3) {
+      return parseInt(parts[0] + parts[1], 10);
+    } else if (parts.length > 2) {
+      return parseInt(parts.join(""), 10);
+    }
+  }
+
+  // Remove dots and convert comma to dot for parsing
+  const standardNumeric = cleaned.replace(/\./g, "").replace(/,/g, ".");
+  const num = parseFloat(standardNumeric);
+  if (isNaN(num)) return 0;
+
+  if (num > 0 && num < 500) {
+    return Math.round(num * 1000);
+  }
+  return Math.round(num);
+}
+
 // Server-Side Pre-rendering for Product pages (for Googlebot, WhatsApp, Facebook, Bing, etc.)
 app.get(["/product/:id", "/proizvod/:id"], async (req, res, next) => {
   try {
@@ -126,7 +168,7 @@ app.get(["/product/:id", "/proizvod/:id"], async (req, res, next) => {
           is_active,
           category_id,
           categories:category_id (name),
-          product_images (image_url, is_main)
+          product_images (id, image_url, image_url2, image_url3, image_url4, image_url5, is_main)
         `)
         .eq("id", productId)
         .single();
@@ -137,16 +179,33 @@ app.get(["/product/:id", "/proizvod/:id"], async (req, res, next) => {
       return next();
     }
 
+    // Collect all high-res product photos
+    const allImagesList: string[] = [];
+    if (Array.isArray(product.product_images)) {
+      product.product_images.forEach((img: any) => {
+        if (img.image_url) allImagesList.push(img.image_url);
+        if (img.image_url2) allImagesList.push(img.image_url2);
+        if (img.image_url3) allImagesList.push(img.image_url3);
+        if (img.image_url4) allImagesList.push(img.image_url4);
+        if (img.image_url5) allImagesList.push(img.image_url5);
+      });
+    }
+
     const mainImage = product.product_images?.find((i: any) => i.is_main)?.image_url || 
-                      product.product_images?.[0]?.image_url || 
-                      "https://images.weserv.nl/?url=64.media.tumblr.com/85a2897f98a2b096033b5b7b2baa4305/941158d434c8785d-07/s1280x1920/1770317d73e6ae1e7a6940ed7119efd4f78c57ce.jpg";
+                      allImagesList[0] || 
+                      "https://64.media.tumblr.com/b79cac46b039effd9590daf02cce60e9/27922fdf50b9ff60-9f/s2048x3072/ec7ebe158e3ae2b8862c620f2ba8511e203bf476.jpg";
     
+    const uniqueImages = allImagesList.length > 0 ? Array.from(new Set(allImagesList)) : [mainImage];
+
     const cleanDesc = (product.description || "Unikatni model ručne izrade od najplemenitije prirodne svile u ateljeu DD DESIGN Danijele Gojković.")
       .replace(/\r?\n+/g, " ")
       .trim();
     const shortDesc = cleanDesc.slice(0, 160);
     const categoryName = (product.categories as any)?.name || "Haljine i odela";
-    const finalPrice = product.discount_price || product.price;
+
+    // Clean price representation: ensures full integer amount (e.g. 18000 instead of 18)
+    const finalPrice = product.discount_price ? normalizePrice(product.discount_price) : normalizePrice(product.price);
+    const regularPrice = normalizePrice(product.price);
 
     const htmlPath = process.env.NODE_ENV === "production"
       ? path.join(process.cwd(), "dist", "index.html")
@@ -158,12 +217,24 @@ app.get(["/product/:id", "/proizvod/:id"], async (req, res, next) => {
 
     let html = fs.readFileSync(htmlPath, "utf-8");
 
-    // Product Schema JSON-LD
+    const productTitle = `${product.name} | Svileni Model Ručne Izrade | DD DESIGN`;
+    const canonicalUrl = `https://dddesign.rs/product/${product.id}`;
+    const categoryUrl = `https://dddesign.rs/shop?category=${product.category_id || "3"}`;
+
+    // Product Schema JSON-LD with complete pricing, images, and brand details for Google Rich Results
     const productSchema = {
       "@context": "https://schema.org/",
       "@type": "Product",
       "name": product.name,
-      "image": [mainImage],
+      "image": uniqueImages,
+      "primaryImageOfPage": {
+        "@type": "ImageObject",
+        "url": mainImage,
+        "contentUrl": mainImage,
+        "caption": `${product.name} — Atelje DD DESIGN unikatni model od prirodne svile`,
+        "width": "1200",
+        "height": "1500"
+      },
       "description": cleanDesc,
       "sku": `DD-${product.id}`,
       "mpn": `DD-${product.id}`,
@@ -175,55 +246,112 @@ app.get(["/product/:id", "/proizvod/:id"], async (req, res, next) => {
       "category": categoryName,
       "offers": {
         "@type": "Offer",
-        "url": `https://dddesign.rs/product/${product.id}`,
+        "url": canonicalUrl,
         "priceCurrency": "RSD",
         "price": finalPrice,
+        "priceSpecification": {
+          "@type": "UnitPriceSpecification",
+          "price": finalPrice,
+          "priceCurrency": "RSD",
+          "valueAddedTaxIncluded": "true"
+        },
         "priceValidUntil": "2027-12-31",
         "availability": product.stock !== false ? "https://schema.org/InStock" : "https://schema.org/PreOrder",
         "itemCondition": "https://schema.org/NewCondition",
         "seller": {
           "@type": "Organization",
-          "name": "DD DESIGN"
+          "name": "DD DESIGN",
+          "url": "https://dddesign.rs/"
         }
       }
     };
 
-    const productTitle = `${product.name} | Svileni Model Ručne Izrade | DD DESIGN`;
-    const canonicalUrl = `https://dddesign.rs/product/${product.id}`;
+    // BreadcrumbList for rich Google Search hierarchy display
+    const breadcrumbSchema = {
+      "@context": "https://schema.org",
+      "@type": "BreadcrumbList",
+      "itemListElement": [
+        {
+          "@type": "ListItem",
+          "position": 1,
+          "name": "DD DESIGN",
+          "item": "https://dddesign.rs/"
+        },
+        {
+          "@type": "ListItem",
+          "position": 2,
+          "name": categoryName,
+          "item": categoryUrl
+        },
+        {
+          "@type": "ListItem",
+          "position": 3,
+          "name": product.name,
+          "item": canonicalUrl
+        }
+      ]
+    };
 
-    // Replace title
+    // 1. Remove duplicate/conflicting default tags from index.html (crucial so Googlebot doesn't read homepage canonical or logo)
+    html = html.replace(/<link\s+rel=["']canonical["'][^>]*>/gi, "");
+    html = html.replace(/<meta\s+name=["']description["'][^>]*>/gi, "");
+    html = html.replace(/<meta\s+name=["']keywords["'][^>]*>/gi, "");
+    html = html.replace(/<meta\s+property=["']og:[^"']+["'][^>]*>/gi, "");
+    html = html.replace(/<meta\s+name=["']twitter:[^"']+["'][^>]*>/gi, "");
+    html = html.replace(/<script\s+type=["']application\/ld\+json["'][^>]*>[\s\S]*?<\/script>/gi, "");
+
+    // 2. Replace title
     html = html.replace(/<title>.*?<\/title>/i, `<title>${productTitle}</title>`);
 
-    // Inject meta tags
+    // 3. Inject product-specific meta tags, high-res OpenGraph tags, and Schema.org scripts
     const metaTags = `
     <!-- Google & Social SEO for Product -->
+    <link rel="canonical" href="${canonicalUrl}" />
     <meta name="description" content="${shortDesc.replace(/"/g, '&quot;')}" />
     <meta name="keywords" content="${product.name}, ${categoryName}, svila, taft svila, santung svila, dd design, rucna izrada beograd, umetnost utkana u svilu" />
-    <link rel="canonical" href="${canonicalUrl}" />
+    
+    <!-- Open Graph / Social Image & Price -->
+    <meta property="og:type" content="product" />
+    <meta property="og:site_name" content="DD DESIGN" />
     <meta property="og:title" content="${productTitle.replace(/"/g, '&quot;')}" />
     <meta property="og:description" content="${shortDesc.replace(/"/g, '&quot;')}" />
     <meta property="og:image" content="${mainImage}" />
+    <meta property="og:image:secure_url" content="${mainImage}" />
+    <meta property="og:image:type" content="image/jpeg" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="1500" />
+    <meta property="og:image:alt" content="${product.name} — Atelje DD DESIGN model od prirodne svile" />
     <meta property="og:url" content="${canonicalUrl}" />
-    <meta property="og:type" content="product" />
+    <meta property="og:locale" content="sr_RS" />
     <meta property="product:price:amount" content="${finalPrice}" />
     <meta property="product:price:currency" content="RSD" />
+
+    <!-- Google Mobile & Image Search Thumbnails -->
+    <meta name="thumbnail" content="${mainImage}" />
+    <link rel="image_src" href="${mainImage}" />
+
+    <!-- Twitter Card -->
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content="${productTitle.replace(/"/g, '&quot;')}" />
     <meta name="twitter:description" content="${shortDesc.replace(/"/g, '&quot;')}" />
     <meta name="twitter:image" content="${mainImage}" />
+    <meta name="twitter:image:alt" content="${product.name} — DD DESIGN" />
+
+    <!-- Google Structured Data: Product + Breadcrumbs -->
     <script type="application/ld+json">${JSON.stringify(productSchema)}</script>
+    <script type="application/ld+json">${JSON.stringify(breadcrumbSchema)}</script>
     `;
 
     html = html.replace("</head>", `${metaTags}\n</head>`);
 
-    // In addition, inject noscript rich content for crawlers inside body
+    // 4. Inject rich semantic noscript content for search engine indexers
     const noscriptContent = `
     <noscript>
       <article style="max-width: 800px; margin: 40px auto; padding: 20px; font-family: serif;">
         <h1>${product.name} — Atelje DD DESIGN</h1>
-        <p><strong>Kategorija:</strong> ${categoryName}</p>
-        <p><strong>Cena:</strong> ${finalPrice} RSD</p>
-        <p><strong>Opis:</strong> ${cleanDesc}</p>
+        <p><strong>Kolekcija / Kategorija:</strong> ${categoryName}</p>
+        <p><strong>Cena:</strong> ${finalPrice.toLocaleString('sr-RS')} RSD</p>
+        <p><strong>Opis modela:</strong> ${cleanDesc}</p>
         <img src="${mainImage}" alt="${product.name} - luksuzni svileni model DD DESIGN" style="max-width: 100%; height: auto;" />
         <p><em>DD DESIGN • Umetnost utkana u svilu • Beograd</em></p>
       </article>
@@ -239,6 +367,7 @@ app.get(["/product/:id", "/proizvod/:id"], async (req, res, next) => {
     return next();
   }
 });
+
 
 // Owner Authentication Session Helpers
 const OWNER_SESSION_SECRET = process.env.OWNER_SESSION_SECRET || "dddesign_owner_portal_super_secret_auth_key_2026";

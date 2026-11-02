@@ -522,7 +522,182 @@ export default function Home({ products, categories, loading, onAddToCart }: Hom
         </div>
       </section>
 
+      {/* Featured Sitelinks & Direct Navigation Section (Google Sitelinks & Visitors) */}
+      <section 
+        aria-label="Izdvojene sekcije Ateljea DD DESIGN"
+        className={`py-24 transition-colors duration-500 border-t ${
+          theme === 'dark' ? 'bg-[#050505] border-zinc-900' : 'bg-zinc-50/60 border-gray-150'
+        }`}
+      >
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center max-w-2xl mx-auto mb-16 space-y-3">
+            <span className={`text-[10px] font-bold uppercase tracking-[0.3em] block ${
+              theme === 'dark' ? 'text-zinc-500' : 'text-gray-400'
+            }`}>
+              {language === 'sr' ? 'Izdvojeni Delovi Sajta' : language === 'ru' ? 'Избранные Разделы' : 'Featured Sections'}
+            </span>
+            <h2 className={`text-3xl md:text-4xl font-extralight tracking-wide uppercase transition-colors ${
+              theme === 'dark' ? 'text-white' : 'text-black'
+            }`}>
+              {language === 'sr' ? 'Istražite Svet DD DESIGN' : language === 'ru' ? 'Мир DD DESIGN' : 'Explore DD DESIGN World'}
+            </h2>
+            <p className={`text-xs md:text-sm font-light leading-relaxed ${
+              theme === 'dark' ? 'text-zinc-400' : 'text-gray-600'
+            }`}>
+              {language === 'sr' 
+                ? 'Direktne veze ka ključnim kolekcijama, vodičima o prirodnoj svili i uslugama bespoke ateljea.' 
+                : 'Direct links to key collections, pure silk masterclasses and bespoke tailoring services.'}
+            </p>
+          </div>
+
+          <nav 
+            aria-label="Izdvojene Stranice" 
+            className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6"
+            itemScope 
+            itemType="https://schema.org/SiteNavigationElement"
+          >
+            {[
+              {
+                titleSr: "Svilene Haljine",
+                titleEn: "Silk Dresses",
+                titleRu: "Шелковые Платья",
+                descSr: "Unikatne večernje i koktel toalete od taft i šantung svile.",
+                descEn: "Exclusive evening gowns and cocktail dresses in pure silk.",
+                descRu: "Эксклюзивные вечерние и коктейльные платья из шелка.",
+                url: "/shop?category=3",
+                tag: "Kolekcija"
+              },
+              {
+                titleSr: "Odela i Kompleti",
+                titleEn: "Suits & Sets",
+                titleRu: "Костюмы и Комплекты",
+                descSr: "Skulpturalna ženska odela sa prefinjenom siluetom i karakterom.",
+                descEn: "Sculptural tailored suits and elegant matching silk sets.",
+                descRu: "Скульптурные женские костюмы из натурального шелка.",
+                url: "/shop?category=2",
+                tag: "Kolekcija"
+              },
+              {
+                titleSr: "Nova Kolekcija",
+                titleEn: "New Collection",
+                titleRu: "Новая Коллекция",
+                descSr: "Najnoviji autorski modeli i limitirane serije sezone.",
+                descEn: "Latest handcrafted runway capsule and limited pieces.",
+                descRu: "Новейшие дизайнерские модели текущего сезона.",
+                url: "/nova-kolekcija",
+                tag: "Novo"
+              },
+              {
+                titleSr: "Vodič o Taft i Šantung Svili",
+                titleEn: "Silk Fabric Guide",
+                titleRu: "Гид по Шелку",
+                descSr: "Sve o taft, šantung i grež svili: tekstura, zvuk i saveti za negu.",
+                descEn: "Taffeta, shantung and grege silk masterclass and care tips.",
+                descRu: "Все о шелковой тафте, шантунге и уходе за тканями.",
+                url: "/o-svili",
+                tag: "Vodič"
+              },
+              {
+                titleSr: "Izrada po Meri",
+                titleEn: "Bespoke Tailoring",
+                titleRu: "Пошив по Меркам",
+                descSr: "Bespoke krojenje unikatnih modela prema vašim individualnim merama.",
+                descEn: "Personalized custom tailoring sculpted to your silhouette.",
+                descRu: "Индивидуальный пошив эксклюзивных моделей под фигуру.",
+                url: "/izrada-po-meri",
+                tag: "Atelier"
+              },
+              {
+                titleSr: "Digitalni Editorijali",
+                titleEn: "Digital Editorials",
+                titleRu: "Модные Истории",
+                descSr: "Interaktivni modni magazin, stilske priče i vizuelni eseji.",
+                descEn: "Interactive fashion editorials, styling guides and art essays.",
+                descRu: "Интерактивный журнал и визуальные модные эссе.",
+                url: "/editorijali",
+                tag: "Magazin"
+              },
+              {
+                titleSr: "Press & Saradnje",
+                titleEn: "Press & Spotlight",
+                titleRu: "Пресса и Медиа",
+                descSr: "DD DESIGN u medijima: Olja Lević, Anđelka Stević, Fashion Week.",
+                descEn: "Editorial features, magazine covers and celebrity spotlights.",
+                descRu: "Публикации в глянце, обложки и знаменитости.",
+                url: "/saradnje",
+                tag: "Mediji"
+              },
+              {
+                titleSr: "Kontakt & Atelje Beograd",
+                titleEn: "Contact & Atelier",
+                titleRu: "Контакты Ателье",
+                descSr: "Zakazivanje termina za probu modela i konsultacije u Beogradu.",
+                descEn: "Schedule fitting appointments and private consultations.",
+                descRu: "Запись на примерку в ателье и консультации в Белграде.",
+                url: "/kontakt",
+                tag: "Atelje"
+              }
+            ].map((linkItem, idx) => {
+              const itemTitle = language === 'en' ? linkItem.titleEn : language === 'ru' ? linkItem.titleRu : linkItem.titleSr;
+              const itemDesc = language === 'en' ? linkItem.descEn : language === 'ru' ? linkItem.descRu : linkItem.descSr;
+
+              return (
+                <Link
+                  key={idx}
+                  to={linkItem.url}
+                  itemProp="url"
+                  className={`group p-6 rounded-2xl border transition-all duration-300 flex flex-col justify-between hover:-translate-y-1 ${
+                    theme === 'dark'
+                      ? 'bg-zinc-950/70 border-zinc-900 hover:border-zinc-700 hover:bg-zinc-900/40 hover:shadow-lg hover:shadow-black/40'
+                      : 'bg-white border-gray-150 hover:border-gray-400 hover:shadow-md'
+                  }`}
+                >
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <span className={`text-[9px] font-mono tracking-widest uppercase px-2 py-0.5 rounded-full border ${
+                        theme === 'dark' 
+                          ? 'border-zinc-800 text-zinc-400 bg-zinc-900/50' 
+                          : 'border-gray-200 text-gray-500 bg-gray-50'
+                      }`}>
+                        {linkItem.tag}
+                      </span>
+                      <ArrowRight className={`w-3.5 h-3.5 transform group-hover:translate-x-1 transition-transform ${
+                        theme === 'dark' ? 'text-zinc-500 group-hover:text-white' : 'text-gray-400 group-hover:text-black'
+                      }`} />
+                    </div>
+
+                    <h3 
+                      itemProp="name" 
+                      className={`text-base font-medium tracking-tight transition-colors ${
+                        theme === 'dark' ? 'text-white group-hover:text-amber-200/90' : 'text-black group-hover:text-amber-800'
+                      }`}
+                    >
+                      {itemTitle}
+                    </h3>
+
+                    <p className={`text-xs leading-relaxed line-clamp-2 ${
+                      theme === 'dark' ? 'text-zinc-400' : 'text-gray-600'
+                    }`}>
+                      {itemDesc}
+                    </p>
+                  </div>
+
+                  <div className="pt-4 mt-4 border-t border-dashed border-zinc-200 dark:border-zinc-900 flex items-center text-[10px] font-bold uppercase tracking-wider">
+                    <span className={`transition-colors ${
+                      theme === 'dark' ? 'text-zinc-400 group-hover:text-white' : 'text-gray-500 group-hover:text-black'
+                    }`}>
+                      {language === 'sr' ? 'Otvori stranicu' : 'Visit page'}
+                    </span>
+                  </div>
+                </Link>
+              );
+            })}
+          </nav>
+        </div>
+      </section>
+
       {/* Collaborations Section */}
+
       <section className={`py-32 transition-colors duration-500 border-y ${
         theme === 'dark' ? 'bg-zinc-950/40 border-zinc-900/60' : 'bg-zinc-50/40 border-gray-100'
       } overflow-hidden`}>

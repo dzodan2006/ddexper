@@ -17,6 +17,7 @@ import { motion } from 'motion/react';
 import SizeChart from '../components/SizeChart';
 import { useTheme } from '../context/ThemeContext';
 import { useLanguage } from '../context/LanguageContext';
+import { normalizePrice } from '../lib/utils';
 
 interface ProductDetailsProps {
   products: Product[];
@@ -30,6 +31,10 @@ export default function ProductDetails({ products, onAddToCart }: ProductDetails
   const navigate = useNavigate();
   const rawProduct = products.find(p => p.id === id);
   const product = translateProduct(rawProduct);
+
+  const regularPrice = product ? normalizePrice(product.price) : 0;
+  const discountPrice = product?.discount_price ? normalizePrice(product.discount_price) : null;
+  const effectivePrice = discountPrice || regularPrice;
 
   const images = product?.all_images && product.all_images.length > 0 
     ? product.all_images 
@@ -170,20 +175,20 @@ export default function ProductDetails({ products, onAddToCart }: ProductDetails
             </h1>
             <div itemProp="offers" itemScope itemType="https://schema.org/Offer" className="flex items-baseline space-x-4">
               <meta itemProp="priceCurrency" content="RSD" />
-              <meta itemProp="price" content={String(product.discount_price || product.price)} />
+              <meta itemProp="price" content={String(effectivePrice)} />
               <link itemProp="availability" href={product.stock !== false ? "https://schema.org/InStock" : "https://schema.org/PreOrder"} />
               <link itemProp="itemCondition" href="https://schema.org/NewCondition" />
-              {product.discount_price ? (
+              {discountPrice ? (
                 <>
-                  <p className="text-3xl font-light italic text-red-600">{formatCurrency(product.discount_price)}</p>
+                  <p className="text-3xl font-light italic text-red-600">{formatCurrency(discountPrice)}</p>
                   <p className={`text-lg line-through transition-colors ${
                     theme === 'dark' ? 'text-zinc-650' : 'text-gray-400'
-                  }`}>{formatCurrency(product.price)}</p>
+                  }`}>{formatCurrency(regularPrice)}</p>
                 </>
               ) : (
                 <p className={`text-3xl font-light italic transition-colors ${
                   theme === 'dark' ? 'text-white' : 'text-gray-900'
-                }`}>{formatCurrency(product.price)}</p>
+                }`}>{formatCurrency(regularPrice)}</p>
               )}
             </div>
           </div>

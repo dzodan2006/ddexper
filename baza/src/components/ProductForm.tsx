@@ -153,6 +153,31 @@ export default function ProductForm({ product, categories, sizes, colors, onClos
     }
   };
 
+function normalizeInputPrice(raw: any): number {
+  if (raw === null || raw === undefined || raw === '') return 0;
+  if (typeof raw === 'number') {
+    if (isNaN(raw)) return 0;
+    if (raw > 0 && raw < 500) return Math.round(raw * 1000);
+    return Math.round(raw);
+  }
+  const str = String(raw).trim();
+  if (!str) return 0;
+  const cleaned = str.replace(/\s+/g, '').replace(/[^\d.,]/g, '');
+  if (cleaned.includes('.') && !cleaned.includes(',')) {
+    const parts = cleaned.split('.');
+    if (parts.length === 2 && parts[1].length === 3) {
+      return parseInt(parts[0] + parts[1], 10);
+    } else if (parts.length > 2) {
+      return parseInt(parts.join(''), 10);
+    }
+  }
+  const standardNumeric = cleaned.replace(/\./g, '').replace(/,/g, '.');
+  const num = parseFloat(standardNumeric);
+  if (isNaN(num)) return 0;
+  if (num > 0 && num < 500) return Math.round(num * 1000);
+  return Math.round(num);
+}
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!name.trim()) {
@@ -160,8 +185,12 @@ export default function ProductForm({ product, categories, sizes, colors, onClos
       setActiveTab('osnovno');
       return;
     }
-    if (!price || isNaN(Number(price))) {
-      setErrorMsg('Unesite ispravnu cenu.');
+
+    const cleanPrice = normalizeInputPrice(price);
+    const cleanDiscountPrice = discountPrice ? normalizeInputPrice(discountPrice) : null;
+
+    if (!cleanPrice || cleanPrice <= 0) {
+      setErrorMsg('Unesite ispravnu cenu (npr. 18000 ili 18.000).');
       setActiveTab('osnovno');
       return;
     }
@@ -178,8 +207,8 @@ export default function ProductForm({ product, categories, sizes, colors, onClos
       const productPayload = {
         name: name.trim(),
         description: description.trim(),
-        price: Number(price),
-        discount_price: discountPrice ? Number(discountPrice) : null,
+        price: cleanPrice,
+        discount_price: cleanDiscountPrice,
         stock,
         is_active: isActive,
         category_id: Number(categoryId),

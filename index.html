@@ -31,30 +31,131 @@
     <meta name="apple-mobile-web-app-title" content="DD DESIGN" />
     <meta name="theme-color" content="#000000" />
 
-    <!-- Structured Data Schema for Search Engines and Raiffeisen Bank Verification -->
+    <!-- Structured Data Schema for Search Engines (Google Sitelinks, WebSite, ClothingStore) -->
     <script type="application/ld+json">
     {
       "@context": "https://schema.org",
-      "@type": "ClothingStore",
-      "name": "DD DESIGN",
-      "slogan": "Umetnost utkana u svilu",
-      "url": "https://dddesign.rs/",
-      "logo": "https://images.weserv.nl/?url=64.media.tumblr.com/85a2897f98a2b096033b5b7b2baa4305/941158d434c8785d-07/s1280x1920/1770317d73e6ae1e7a6940ed7119efd4f78c57ce.jpg",
-      "image": "https://images.weserv.nl/?url=64.media.tumblr.com/85a2897f98a2b096033b5b7b2baa4305/941158d434c8785d-07/s1280x1920/1770317d73e6ae1e7a6940ed7119efd4f78c57ce.jpg",
-      "description": "Atelje DD DESIGN Danijele Gojković. Umetnost utkana u svilu — unikatne haljine od luksuzne taft, šantung i grež svile, kaputi, ženska odela i kreacije po meri.",
-      "telephone": "+381641605032",
-      "email": "office@dddesign.rs",
-      "brand": {
-        "@type": "Brand",
-        "name": "DD DESIGN",
-        "slogan": "Umetnost utkana u svilu"
-      },
-      "address": {
-        "@type": "PostalAddress",
-        "addressCountry": "RS",
-        "addressLocality": "Beograd"
-      },
-      "priceRange": "$$$$"
+      "@graph": [
+        {
+          "@type": "WebSite",
+          "@id": "https://dddesign.rs/#website",
+          "name": "DD DESIGN",
+          "alternateName": "Atelje DD DESIGN Danijela Gojković",
+          "url": "https://dddesign.rs/",
+          "description": "Atelje DD DESIGN Danijele Gojković. Umetnost utkana u svilu — unikatne haljine od luksuzne taft, šantung i grež svile, kaputi, ženska odela i kreacije po meri.",
+          "inLanguage": "sr-RS",
+          "potentialAction": {
+            "@type": "SearchAction",
+            "target": {
+              "@type": "EntryPoint",
+              "urlTemplate": "https://dddesign.rs/shop?q={search_term_string}"
+            },
+            "query-input": "required name=search_term_string"
+          },
+          "hasPart": [
+            {
+              "@type": "WebPage",
+              "name": "Svilene Haljine",
+              "url": "https://dddesign.rs/shop?category=3",
+              "description": "Unikatne večernje i koktel toalete od luksuzne taft i šantung svile."
+            },
+            {
+              "@type": "WebPage",
+              "name": "Odela i Kompleti",
+              "url": "https://dddesign.rs/shop?category=2",
+              "description": "Skulpturalna ženska odela i prefinjeni kompleti od prirodne svile."
+            },
+            {
+              "@type": "WebPage",
+              "name": "Nova Kolekcija",
+              "url": "https://dddesign.rs/nova-kolekcija",
+              "description": "Limitirane serije i najnoviji dizajnerski komadi ateljea DD DESIGN."
+            },
+            {
+              "@type": "WebPage",
+              "name": "Vodič o Taft i Šantung Svili",
+              "url": "https://dddesign.rs/o-svili",
+              "description": "Karakteristike, plemenito tkanje i saveti za održavanje prirodne svile."
+            },
+            {
+              "@type": "WebPage",
+              "name": "Izrada po Meri",
+              "url": "https://dddesign.rs/izrada-po-meri",
+              "description": "Personalizovano krojenje i šivenje modela prema vašim individualnim merama."
+            },
+            {
+              "@type": "WebPage",
+              "name": "Press & Editorijali",
+              "url": "https://dddesign.rs/editorijali",
+              "description": "Digitalni modni magazin, editorijali i saradnje sa javnim ličnostima."
+            },
+            {
+              "@type": "WebPage",
+              "name": "Kontakt & Atelje Beograd",
+              "url": "https://dddesign.rs/kontakt",
+              "description": "Konsultacije, poručivanje i zakazivanje termina za probu u Beogradu."
+            }
+          ]
+        },
+        {
+          "@type": "ClothingStore",
+          "@id": "https://dddesign.rs/#store",
+          "name": "DD DESIGN",
+          "slogan": "Umetnost utkana u svilu",
+          "url": "https://dddesign.rs/",
+          "logo": "https://images.weserv.nl/?url=64.media.tumblr.com/85a2897f98a2b096033b5b7b2baa4305/941158d434c8785d-07/s1280x1920/1770317d73e6ae1e7a6940ed7119efd4f78c57ce.jpg",
+          "image": "https://images.weserv.nl/?url=64.media.tumblr.com/85a2897f98a2b096033b5b7b2baa4305/941158d434c8785d-07/s1280x1920/1770317d73e6ae1e7a6940ed7119efd4f78c57ce.jpg",
+          "description": "Atelje DD DESIGN Danijele Gojković. Umetnost utkana u svilu — unikatne haljine od luksuzne taft, šantung i grež svile, kaputi, ženska odela i kreacije po meri.",
+          "telephone": "+381641605032",
+          "email": "office@dddesign.rs",
+          "brand": {
+            "@type": "Brand",
+            "name": "DD DESIGN",
+            "slogan": "Umetnost utkana u svilu"
+          },
+          "address": {
+            "@type": "PostalAddress",
+            "addressCountry": "RS",
+            "addressLocality": "Beograd"
+          },
+          "priceRange": "$$$$"
+        },
+        {
+          "@type": "SiteNavigationElement",
+          "name": "Svilene Haljine",
+          "url": "https://dddesign.rs/shop?category=3"
+        },
+        {
+          "@type": "SiteNavigationElement",
+          "name": "Odela i Kompleti",
+          "url": "https://dddesign.rs/shop?category=2"
+        },
+        {
+          "@type": "SiteNavigationElement",
+          "name": "Nova Kolekcija",
+          "url": "https://dddesign.rs/nova-kolekcija"
+        },
+        {
+          "@type": "SiteNavigationElement",
+          "name": "Vodič o Svili",
+          "url": "https://dddesign.rs/o-svili"
+        },
+        {
+          "@type": "SiteNavigationElement",
+          "name": "Izrada po Meri",
+          "url": "https://dddesign.rs/izrada-po-meri"
+        },
+        {
+          "@type": "SiteNavigationElement",
+          "name": "Press & Mediji",
+          "url": "https://dddesign.rs/saradnje"
+        },
+        {
+          "@type": "SiteNavigationElement",
+          "name": "Kontakt",
+          "url": "https://dddesign.rs/kontakt"
+        }
+      ]
     }
     </script>
     <link rel="icon" type="image/svg+xml" href="https://images.weserv.nl/?url=64.media.tumblr.com/85a2897f98a2b096033b5b7b2baa4305/941158d434c8785d-07/s1280x1920/1770317d73e6ae1e7a6940ed7119efd4f78c57ce.jpg" />
