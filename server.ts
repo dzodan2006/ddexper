@@ -1653,17 +1653,137 @@ app.post("/api/newsletter/subscribe", async (req, res) => {
       });
     }
 
+    const normalizedEmail = email.trim().toLowerCase();
+
+    // 1. Provera postojanja emaila u Supabase bazi (sprečavanje duplikata pre slanja bilo čega)
+    if (supabase) {
+      try {
+        // Provera u glavnoj tabeli Newsletter_list
+        const { data: existingRecords, error: checkErr } = await supabase
+          .from("Newsletter_list")
+          .select("Mails")
+          .ilike("Mails", normalizedEmail)
+          .limit(1);
+
+        if (!checkErr && existingRecords && existingRecords.length > 0) {
+          console.log(`[Newsletter] Duplikat sprečen (već u bazi Newsletter_list): ${normalizedEmail}`);
+          return res.status(409).json({
+            success: false,
+            duplicate: true,
+            error: "Ova e-mail adresa je već prijavljena na naš newsletter."
+          });
+        }
+
+        // Dodatna provera u slučaju alternativnih naziva tabela (newsletter_list, newsletter_subscribers)
+        const { data: existingLower } = await supabase
+          .from("newsletter_list")
+          .select("mail, Mails, email")
+          .or(`mail.ilike.${normalizedEmail},Mails.ilike.${normalizedEmail},email.ilike.${normalizedEmail}`)
+          .limit(1);
+
+        if (existingLower && existingLower.length > 0) {
+          console.log(`[Newsletter] Duplikat sprečen (već u bazi newsletter_list): ${normalizedEmail}`);
+          return res.status(409).json({
+            success: false,
+            duplicate: true,
+            error: "Ova e-mail adresa je već prijavljena na naš newsletter."
+          });
+        }
+      } catch (checkErr) {
+        console.warn("[Newsletter] Provera duplikata u Supabase bazi:", checkErr);
+      }
+    }
+
+    // 2. Provera u lokalnom registru (subscribers.json)
+    try {
+      const fs = await import("fs/promises");
+      const subFilePath = path.join(process.cwd(), "subscribers.json");
+      try {
+        const fileContent = await fs.readFile(subFilePath, "utf-8");
+        const localList: string[] = JSON.parse(fileContent);
+        if (Array.isArray(localList) && localList.some(item => item && item.trim().toLowerCase() === normalizedEmail)) {
+          console.log(`[Newsletter] Duplikat sprečen (već u lokalnom fajlu subscribers.json): ${normalizedEmail}`);
+          return res.status(409).json({
+            success: false,
+            duplicate: true,
+            error: "Ova e-mail adresa je već prijavljena na naš newsletter."
+          });
+        }
+      } catch {
+        // Fajl još ne postoji, to je u redu
+      }
+    } catch (fsErr) {
+      console.warn("[Newsletter] Greška pri čitanju lokalnog registra:", fsErr);
+    }
+
+    // 3. Upis u bazu (Supabase Newsletter_list) sa detekcijom UNIQUE ograničenja
+    if (supabase) {
+      try {
+        const { error: insertError } = await supabase
+          .from("Newsletter_list")
+          .insert([{ Mails: normalizedEmail }]);
+
+        if (insertError) {
+          // PostgreSQL kod 23505 označava kršenje UNIQUE ograničenja (unique_violation)
+          const isUniqueConstraintViolation =
+            insertError.code === "23505" ||
+            (insertError.message && insertError.message.toLowerCase().includes("duplicate")) ||
+            (insertError.message && insertError.message.toLowerCase().includes("unique"));
+
+          if (isUniqueConstraintViolation) {
+            console.log(`[Newsletter] Duplikat sprečen preko UNIQUE ograničenja baze: ${normalizedEmail}`);
+            return res.status(409).json({
+              success: false,
+              duplicate: true,
+              error: "Ova e-mail adresa je već prijavljena na naš newsletter."
+            });
+          }
+          console.error("[Newsletter] Greška pri upisu u Supabase Newsletter_list:", insertError);
+        } else {
+          console.log("[Newsletter] Uspešno upisan novi pretplatnik u Supabase:", normalizedEmail);
+        }
+      } catch (dbErr: any) {
+        if (dbErr?.code === "23505" || dbErr?.message?.toLowerCase().includes("duplicate")) {
+          return res.status(409).json({
+            success: false,
+            duplicate: true,
+            error: "Ova e-mail adresa je već prijavljena na naš newsletter."
+          });
+        }
+        console.error("[Newsletter] Izuzetak pri upisu u Supabase:", dbErr);
+      }
+    } else {
+      console.warn("[Newsletter] Supabase nije konfigurisan. Koristi se lokalni registar.");
+    }
+
+    // 4. Ažuriranje lokalnog fajla subscribers.json (obezbeđeno bez duplikata)
+    try {
+      const fs = await import("fs/promises");
+      const subFilePath = path.join(process.cwd(), "subscribers.json");
+      let list: string[] = [];
+      try {
+        const fileContent = await fs.readFile(subFilePath, "utf-8");
+        list = JSON.parse(fileContent);
+      } catch {
+        // Fajl ne postoji
+      }
+      if (!list.map(e => e.trim().toLowerCase()).includes(normalizedEmail)) {
+        list.push(normalizedEmail);
+        await fs.writeFile(subFilePath, JSON.stringify(list, null, 2), "utf-8");
+      }
+    } catch (fsErr) {
+      console.error("[Newsletter] Greška pri čuvanju u subscribers.json:", fsErr);
+    }
+
+    // 5. Slanje emaila dobrodošlice novom pretplatniku (SMTP2GO)
     const apiKey = process.env.SMTP2GO_API_KEY || "api-0D65C8F726A948E7BE68974F2B80F0C6";
     let sender = process.env.SMTP2GO_SENDER || "promocija@dddesign.rs";
     if (!sender || typeof sender !== "string" || !sender.includes("@")) {
-      console.warn(`[Newsletter] Warning: Invalid SMTP2GO_SENDER configured ("${sender}"). Falling back to "promocija@dddesign.rs".`);
       sender = "promocija@dddesign.rs";
     }
-    const adminEmail = process.env.SMTP2GO_ADMIN_EMAIL || "srdjandzodan4@gmail.com, info@dddesign.rs";
 
-    console.log(`[Newsletter] Subscribing email: ${email} using SMTP2GO`);
+    console.log(`[Newsletter] Slanje poruke dobrodošlice novom korisniku: ${normalizedEmail}`);
 
-    // 1. Send Welcome Email to Subscriber
     const welcomeResponse = await fetch("https://api.smtp2go.com/v3/email/send", {
       method: "POST",
       headers: {
@@ -1672,7 +1792,7 @@ app.post("/api/newsletter/subscribe", async (req, res) => {
       body: JSON.stringify({
         api_key: apiKey,
         sender: sender,
-        to: [email],
+        to: [normalizedEmail],
         subject: "Dobrodošli u DD Design zajednicu",
         text_body: "Uspešno ste se pretplatili na DD Design newsletter! Hvala na poverenju.",
         html_body: `
@@ -1713,7 +1833,7 @@ app.post("/api/newsletter/subscribe", async (req, res) => {
                   <p style="font-family: 'Cormorant Garamond', Georgia, serif; font-size: 16px; color: #d4d4d8; line-height: 1.8; margin-bottom: 25px;">
                     Sada ste deo naše odabrane zajednice koja slavi autentičnost i vrhunsku ručnu izradu. Prvi ćete saznati za naše nove sezonske kolekcije, limitirana izdanja modnih komada, ekskluzivne popuste i inspirativne priče koje prate stvaranje svakog našeg modela od najfinije taft svile.
                   </p>
- 
+
                   <!-- Feature Callout box with image style -->
                   <div style="background-color: #111111; border-left: 2px solid #ffffff; padding: 20px; margin-bottom: 35px; border-radius: 0 4px 4px 0;">
                     <p style="font-family: 'Cormorant Garamond', Georgia, serif; font-size: 15px; color: #e4e4e7; line-height: 1.6; margin: 0;">
@@ -1752,106 +1872,8 @@ app.post("/api/newsletter/subscribe", async (req, res) => {
     const welcomeData = await welcomeResponse.json().catch(() => ({}));
     console.log("[Newsletter] SMTP2GO Welcome response status:", welcomeResponse.status);
 
-    // 2. Send Admin Notification Email
-    const adminRecipients = adminEmail.split(",").map(e => e.trim()).filter(Boolean);
-    if (adminRecipients.length > 0) {
-      const adminResponse = await fetch("https://api.smtp2go.com/v3/email/send", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-          api_key: apiKey,
-          sender: sender,
-          to: adminRecipients,
-          subject: "📢 NOVI PRETPLATNIK: DD Design Newsletter",
-          text_body: `Novi pretplatnik na newsletter: ${email}\nDatum: ${new Date().toLocaleString('sr-RS')}`,
-          html_body: `
-            <!DOCTYPE html>
-            <html>
-            <head>
-              <meta charset="utf-8">
-              <meta name="viewport" content="width=device-width, initial-scale=1.0">
-              <style>
-                @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300;1,400&family=Italiana&family=Outfit:wght@300;400;500&display=swap');
-              </style>
-            </head>
-            <body style="font-family: 'Outfit', 'Helvetica Neue', Arial, sans-serif; background-color: #000000; margin: 0; padding: 0;">
-              <div style="background-color: #000000; padding: 40px 10px;">
-                <div style="font-family: 'Outfit', sans-serif; max-width: 600px; margin: 0 auto; background-color: #0a0a0a; border: 1px solid #1c1c1e; border-radius: 4px; overflow: hidden; box-shadow: 0 4px 24px rgba(0, 0, 0, 0.5);">
-                  <!-- Admin Header -->
-                  <div style="background-color: #000000; color: #ffffff; padding: 25px 30px; text-align: center; border-bottom: 1px solid #1c1c1e;">
-                    <h1 style="font-family: 'Italiana', serif; color: #ffffff; font-size: 18px; font-weight: 300; letter-spacing: 0.2em; margin: 0; text-transform: uppercase;">Novi Pretplatnik</h1>
-                    <p style="font-family: 'Outfit', sans-serif; color: #a1a1aa; font-size: 10px; letter-spacing: 0.15em; text-transform: uppercase; margin: 5px 0 0 0;">Sistem obaveštenja — DD Design</p>
-                  </div>
-                  
-                  <div style="padding: 30px 25px;">
-                    <p style="font-size: 14px; color: #ffffff; line-height: 1.6; margin-top: 0; margin-bottom: 20px;">
-                       Novi korisnik se uspešno prijavio na Vaš newsletter na sajtu:
-                    </p>
-                    
-                    <div style="background-color: #111111; border: 1px solid #222222; border-left: 2px solid #ffffff; padding: 20px; border-radius: 0 4px 4px 0; margin: 20px 0;">
-                      <span style="font-size: 16px; font-weight: bold; color: #ffffff; font-family: 'Outfit', sans-serif;">${email}</span>
-                    </div>
-                    
-                    <p style="font-size: 12px; color: #a1a1aa; margin-top: 25px;">
-                      Vreme prijave: ${new Date().toLocaleString('sr-RS', { timeZone: 'Europe/Belgrade' })}<br />
-                      Sistem: DD Design Automated Notifications
-                    </p>
-                  </div>
-                  
-                  <div style="background-color: #050505; padding: 25px; border-top: 1px solid #1c1c1e; text-align: center;">
-                    <p style="margin: 0; font-family: 'Outfit', sans-serif; font-size: 10px; color: #71717a; line-height: 1.5;">
-                      DD Design Automated Notifications System
-                    </p>
-                  </div>
-                </div>
-              </div>
-            </body>
-            </html>
-          `
-        })
-      });
-      const adminData = await adminResponse.json().catch(() => ({}));
-      console.log("[Newsletter] SMTP2GO Admin notification status:", adminResponse.status);
-    }
-
-    // Try to save to Supabase Newsletter_list table
-    if (supabase) {
-      try {
-        const { data, error } = await supabase
-          .from("Newsletter_list")
-          .insert([{ Mails: email }]);
-        if (error) {
-          console.error("[Newsletter] Error saving to Supabase table Newsletter_list:", error);
-        } else {
-          console.log("[Newsletter] Successfully saved to Supabase Newsletter_list:", email);
-        }
-      } catch (dbErr) {
-        console.error("[Newsletter] Supabase exception during save:", dbErr);
-      }
-    } else {
-      console.warn("[Newsletter] Supabase not configured or available. Skipped database registry.");
-    }
-
-    // Try to save to local subscribers.json file as fallback registry
-    try {
-      const fs = await import("fs/promises");
-      const subFilePath = path.join(process.cwd(), "subscribers.json");
-      let list: string[] = [];
-      try {
-        const fileContent = await fs.readFile(subFilePath, "utf-8");
-        list = JSON.parse(fileContent);
-      } catch (e) {
-        // File doesn't exist yet, that's fine
-      }
-      if (!list.includes(email)) {
-        list.push(email);
-        await fs.writeFile(subFilePath, JSON.stringify(list, null, 2), "utf-8");
-      }
-    } catch (fsErr) {
-      console.error("[Newsletter] Failed to save subscriber locally:", fsErr);
-    }
+    // NAPOMENA: Obaveštenje za admina/vlasnika pri prijavi na newsletter je isključeno po zahtevu korisnika.
+    // Email obaveštenja za vlasnika/prodavnicu stižu isključivo kada kupac poruči proizvod (/api/orders/notify).
 
     return res.json({
       success: true,
@@ -1859,7 +1881,7 @@ app.post("/api/newsletter/subscribe", async (req, res) => {
     });
 
   } catch (err: any) {
-    console.error("[Newsletter] Error handling subscription:", err);
+    console.error("[Newsletter] Greška pri obradi prijave:", err);
     return res.status(500).json({
       success: false,
       error: "Došlo je do greške prilikom prijave na newsletter. Molimo pokušajte ponovo."
