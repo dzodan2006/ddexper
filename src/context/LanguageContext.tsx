@@ -82,7 +82,7 @@ const translations: Record<Language, Record<string, string>> = {
     'seo.taftKeywords': 'taft svila, luksuzne taft haljine, DD Design odela, srpska haute couture, visoka moda, luksuzni materijali, unikatne haljine svila',
 
     // Home Page Translations
-    'home.heroTitle': 'Bezvremenski dizajn svedene elegancije',
+    'home.heroTitle': 'Umetnost utkana u svilu, modeli limitiranih serija',
     'home.heroDesc': 'Unikatni odevni komadi koji spajaju vrhunsku estetiku sa savršenom udobnošću. Ručna izrada i posvećenost detaljima kreirani za vaš prepoznatljiv stil.',
     'home.discoverCollection': 'Otkrijte kolekciju',
     'home.ourStory': 'Naša Priča',
@@ -242,7 +242,7 @@ const translations: Record<Language, Record<string, string>> = {
     'seo.taftKeywords': 'taffeta silk dress, luxury taffeta suit, DD Design haute couture, luxury clothing Serbia, silk dresses, premium designer store europe',
 
     // Home Page Translations
-    'home.heroTitle': 'Timeless design of understated elegance',
+    'home.heroTitle': 'Art woven into silk, limited edition models',
     'home.heroDesc': 'Unique tailoring that aligns high luxury aesthetics with perfect comfort. Exquisite handmade garments crafted for your signature look.',
     'home.discoverCollection': 'Discover Collection',
     'home.ourStory': 'Our Story',
@@ -402,7 +402,7 @@ const translations: Record<Language, Record<string, string>> = {
     'seo.taftKeywords': 'шелковая тафта платье, роскошные костюмы тафта, дизайнерская одежда DD Design, высокая мода сербия, шелковые платья купить в европе',
 
     // Home Page Translations
-    'home.heroTitle': 'Внеземной дизайн сдержанной элегантности',
+    'home.heroTitle': 'Искусство, сотканное в шелке — модели лимитированных серий',
     'home.heroDesc': 'Уникальные творения, объединяющие высокую эстетику люкса с абсолютным комфортом. Изысканный ручной пошив для вашего неповторимого стиля.',
     'home.discoverCollection': 'Открыть коллекцию',
     'home.ourStory': 'Наша история',
