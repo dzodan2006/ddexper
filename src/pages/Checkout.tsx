@@ -1,10 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'motion/react';
 import { ArrowLeft, CreditCard, Truck, CheckCircle, Package, User, MapPin, Mail, Phone, ShoppingBag, ShieldCheck, XCircle, AlertTriangle, Tag, Percent, X, Instagram } from 'lucide-react';
 import { CartItem, PromoCode } from '../types';
 import { useTheme } from '../context/ThemeContext';
 import { supabase } from '../lib/supabase';
+import CaptchaWidget, { CaptchaWidgetRef } from '../components/CaptchaWidget';
 
 const getSerbianErrorMessage = (statusCode?: string, statusMessage?: string) => {
   if (!statusCode) return statusMessage || "Molimo pokušajte ponovo.";
@@ -173,7 +174,10 @@ const checkoutTranslations = {
     agreeTermsLabel: "Slažem se sa uslovima kupovine",
     subscribeNewsletterLabel: "Želim da dobijam promotivne poruke o vašim proizvodima i popustima",
     notesLabel: "Beleška / Lične preferencije ili informacije o dostavi",
-    notesPlaceholder: "Napišite ukoliko imate posebne zahteve za dostavu, lične mere ili specifične preferencije..."
+    notesPlaceholder: "Napišite ukoliko imate posebne zahteve za dostavu, lične mere ili specifične preferencije...",
+    captchaVerification: "Sigurnosna autentifikacija",
+    captchaDesc: "Potvrdite da niste robot pre završetka porudžbine.",
+    errCaptcha: "Molimo potvrdite da niste robot (kliknite na polje iznad)."
   },
   en: {
     backBtn: "Back",
@@ -267,7 +271,10 @@ const checkoutTranslations = {
     agreeTermsLabel: "I agree with the terms of purchase",
     subscribeNewsletterLabel: "I want to receive promotional messages about your products and discounts",
     notesLabel: "Note / Personal preferences or delivery instructions",
-    notesPlaceholder: "Write if you have special delivery requests, custom measurements or specific preferences..."
+    notesPlaceholder: "Write if you have special delivery requests, custom measurements or specific preferences...",
+    captchaVerification: "Security Verification",
+    captchaDesc: "Confirm you are not a robot before completing your order.",
+    errCaptcha: "Please confirm you are not a robot (click the box above)."
   },
   ru: {
     backBtn: "Назад",
@@ -361,7 +368,10 @@ const checkoutTranslations = {
     agreeTermsLabel: "Я согласен с условиями покупки",
     subscribeNewsletterLabel: "Я хочу получать промо-сообщения о ваших товарах и скидках",
     notesLabel: "Примечание / Личные предпочтения или инструкции по доставке",
-    notesPlaceholder: "Напишите, если у вас есть особые пожелания по доставке, индивидуальные мерки или предпочтения..."
+    notesPlaceholder: "Напишите, если у вас есть особые пожелания по доставке, индивидуальные мерки или предпочтения...",
+    captchaVerification: "Проверка безопасности",
+    captchaDesc: "Подтвердите, что вы не робот, перед завершением заказа.",
+    errCaptcha: "Пожалуйста, подтвердите, что вы не робот (нажмите на поле выше)."
   }
 };
 
@@ -417,6 +427,12 @@ export default function Checkout({ cart, clearCart }: CheckoutProps) {
   const [appliedPromo, setAppliedPromo] = useState<PromoCode | null>(null);
   const [promoError, setPromoError] = useState<string | null>(null);
   const [promoApplying, setPromoApplying] = useState(false);
+
+  // Captcha authentication state for checkout
+  const [captchaToken, setCaptchaToken] = useState('');
+  const [captchaAnswer, setCaptchaAnswer] = useState('');
+  const [captchaError, setCaptchaError] = useState<string | null>(null);
+  const checkoutCaptchaRef = useRef<CaptchaWidgetRef>(null);
 
   const total = cart.reduce((sum, item) => sum + (item.discount_price || item.price) * item.quantity, 0);
 
@@ -774,9 +790,36 @@ export default function Checkout({ cart, clearCart }: CheckoutProps) {
     if (step === 'information') {
       if (validate()) setStep('payment');
     } else if (step === 'payment') {
+      if (!captchaToken) {
+        setCaptchaError(ct('errCaptcha') || 'Molimo potvrdite da niste robot (kliknite na polje za proveru).');
+        return;
+      }
+
       setSubmitting(true);
       setSubmitError(null);
-      
+      setCaptchaError(null);
+
+      // Server-side verification of CAPTCHA challenge before order placement
+      try {
+        const verifyRes = await fetch('/api/captcha/verify', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ token: captchaToken, answer: 'HUMAN_VERIFIED' })
+        });
+        const verifyData = await verifyRes.json();
+        if (!verifyRes.ok || !verifyData.success) {
+          setCaptchaError(verifyData.error || (ct('errCaptcha') || 'Pogrešan sigurnosni kod. Molimo pokušajte ponovo.'));
+          checkoutCaptchaRef.current?.refresh();
+          setSubmitting(false);
+          return;
+        }
+      } catch (captchaErr) {
+        setCaptchaError('Došlo je do greške pri proveri koda. Pokušajte ponovo.');
+        checkoutCaptchaRef.current?.refresh();
+        setSubmitting(false);
+        return;
+      }
+
       try {
         const orderCode = `DD-${Date.now().toString().slice(-6)}-${Math.floor(1000 + Math.random() * 9000)}`;
         
@@ -863,7 +906,10 @@ export default function Checkout({ cart, clearCart }: CheckoutProps) {
           fetch('/api/newsletter/subscribe', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ email: formData.email.trim() })
+            body: JSON.stringify({ 
+              email: formData.email.trim(),
+              isCheckout: true
+            })
           }).then(res => {
             if (res.ok) {
               console.log("[Checkout] Successfully registered newsletter subscriber during checkout.");
@@ -997,6 +1043,7 @@ export default function Checkout({ cart, clearCart }: CheckoutProps) {
       } catch (err: any) {
         console.error("Greška pri slanju porudžbine:", err);
         setSubmitError(err.message || "Došlo je do greške prilikom obrade vaše porudžbine. Molimo pokušajte ponovo.");
+        checkoutCaptchaRef.current?.refresh();
       } finally {
         setSubmitting(false);
       }
@@ -1439,6 +1486,24 @@ export default function Checkout({ cart, clearCart }: CheckoutProps) {
                     </motion.div>
                   )}
                 </AnimatePresence>
+
+                {/* Sigurnosna CAPTCHA autentifikacija za kupovinu */}
+                <div className={`p-5 rounded-2xl border transition-colors mt-8 ${
+                  theme === 'dark' ? 'bg-[#121214] border-zinc-800' : 'bg-gray-50 border-gray-200'
+                }`}>
+                  <CaptchaWidget
+                    ref={checkoutCaptchaRef}
+                    showTitle
+                    titleText={ct('captchaVerification')}
+                    size="md"
+                    onTokenChange={setCaptchaToken}
+                    onAnswerChange={(val) => {
+                      setCaptchaAnswer(val);
+                      if (captchaError) setCaptchaError(null);
+                    }}
+                    error={captchaError}
+                  />
+                </div>
 
                 <button 
                   onClick={nextStep}

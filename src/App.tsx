@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { useEffect, useState, lazy, Suspense, FormEvent } from 'react';
+import { useEffect, useState, useRef, lazy, Suspense, FormEvent } from 'react';
 import { BrowserRouter, Routes, Route, Link, useLocation } from 'react-router-dom';
 import { Instagram, Facebook, Database } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
@@ -15,6 +15,7 @@ import Navbar from './components/Navbar';
 import CartDrawer from './components/CartDrawer';
 import CookieConsent from './components/CookieConsent';
 import NewsletterPopup from './components/NewsletterPopup';
+import CaptchaModal from './components/CaptchaModal';
 import ScrollToTop from './components/ScrollToTop';
 import { sortCategories, sortProductsByCustomOrder } from './lib/categories';
 import { normalizePrice } from './lib/utils';
@@ -822,8 +823,9 @@ function AppContent() {
   const [newsletterEmail, setNewsletterEmail] = useState('');
   const [newsletterStatus, setNewsletterStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
   const [newsletterMessage, setNewsletterMessage] = useState('');
+  const [showNewsletterCaptcha, setShowNewsletterCaptcha] = useState(false);
 
-  const handleNewsletterSubmit = async (e: FormEvent) => {
+  const handleNewsletterSubmit = (e: FormEvent) => {
     e.preventDefault();
     if (!newsletterEmail || !newsletterEmail.includes('@')) {
       setNewsletterStatus('error');
@@ -831,6 +833,13 @@ function AppContent() {
       return;
     }
 
+    setNewsletterStatus('idle');
+    setNewsletterMessage('');
+    // Open the "Nisam robot" popup ONLY after typing email and clicking OK
+    setShowNewsletterCaptcha(true);
+  };
+
+  const handleCaptchaVerified = async (token: string) => {
     setNewsletterStatus('loading');
     setNewsletterMessage('');
 
@@ -840,7 +849,11 @@ function AppContent() {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ email: newsletterEmail }),
+        body: JSON.stringify({ 
+          email: newsletterEmail,
+          captchaToken: token,
+          captchaAnswer: 'HUMAN_VERIFIED'
+        }),
       });
 
       const data = await response.json();
@@ -1421,11 +1434,11 @@ function AppContent() {
                     } border px-4 py-3 rounded-xl text-sm w-full focus:outline-none transition-colors disabled:opacity-50`}
                   />
                   <button 
-                    type="submit"
+                    type="submit" 
                     disabled={newsletterStatus === 'loading'}
                     className={`${
                       theme === 'dark' ? 'bg-white text-black hover:bg-zinc-200' : 'bg-black text-white hover:bg-gray-800'
-                    } px-6 py-3 rounded-xl transition-all font-bold text-sm min-w-[70px] flex items-center justify-center disabled:opacity-50`}
+                    } px-6 py-3 rounded-xl transition-all font-bold text-sm min-w-[70px] flex items-center justify-center disabled:opacity-50 cursor-pointer`}
                   >
                     {newsletterStatus === 'loading' ? '...' : 'OK'}
                   </button>
@@ -1557,6 +1570,11 @@ function AppContent() {
         />
         <CookieConsent />
         <NewsletterPopup />
+        <CaptchaModal
+          isOpen={showNewsletterCaptcha}
+          onClose={() => setShowNewsletterCaptcha(false)}
+          onVerified={handleCaptchaVerified}
+        />
       </div>
     </>
   );

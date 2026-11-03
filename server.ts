@@ -1642,15 +1642,285 @@ app.post("/api/orders/send-notification", async (req, res) => {
   }
 });
 
+// ----------------------------------------------------
+// Secure Luxury CAPTCHA System (Anti-bot Authentication)
+// ----------------------------------------------------
+const CAPTCHA_SECRET = process.env.CAPTCHA_SECRET || "dd-design-luxury-security-" + (process.env.SESSION_SECRET || "2026-auth");
+const usedCaptchaTokens = new Set<string>();
+
+// Periodic cleanup of expired used tokens every 30 minutes
+setInterval(() => {
+  usedCaptchaTokens.clear();
+}, 30 * 60 * 1000);
+
+function generateCaptchaCode(length = 4): string {
+  // Clear, distinct uppercase alphanumeric characters (no 0/O, 1/I confusion)
+  const chars = "23456789ABCDEFGHJKLMNPQRSTUVWXYZ";
+  let result = "";
+  for (let i = 0; i < length; i++) {
+    result += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  return result;
+}
+
+function generateCaptchaSvg(code: string): string {
+  const width = 140;
+  const height = 48;
+  const chars = code.split("");
+
+  // Noise lines
+  let lines = "";
+  for (let i = 0; i < 3; i++) {
+    const x1 = Math.floor(Math.random() * 20);
+    const y1 = Math.floor(Math.random() * height);
+    const x2 = Math.floor(width - Math.random() * 20);
+    const y2 = Math.floor(Math.random() * height);
+    const cx = Math.floor(width / 2 + (Math.random() * 40 - 20));
+    const cy = Math.floor(Math.random() * height);
+    const opacity = (0.25 + Math.random() * 0.25).toFixed(2);
+    lines += `<path d="M${x1},${y1} Q${cx},${cy} ${x2},${y2}" stroke="#a1a1aa" stroke-width="1.5" fill="none" opacity="${opacity}" />`;
+  }
+
+  // Noise dots
+  let dots = "";
+  for (let i = 0; i < 20; i++) {
+    const cx = Math.floor(Math.random() * width);
+    const cy = Math.floor(Math.random() * height);
+    const r = (0.8 + Math.random() * 1.2).toFixed(1);
+    const opacity = (0.2 + Math.random() * 0.35).toFixed(2);
+    dots += `<circle cx="${cx}" cy="${cy}" r="${r}" fill="#d4d4d8" opacity="${opacity}" />`;
+  }
+
+  // Render characters with subtle distortion and luxury serif styling
+  let charElements = "";
+  const step = (width - 24) / chars.length;
+  chars.forEach((char, idx) => {
+    const x = 16 + idx * step + Math.floor(Math.random() * 4 - 2);
+    const y = 32 + Math.floor(Math.random() * 6 - 3);
+    const rotate = Math.floor(Math.random() * 24 - 12);
+    const color = idx % 2 === 0 ? "#f4f4f5" : "#e4e4e7";
+    charElements += `
+      <text 
+        x="${x}" 
+        y="${y}" 
+        transform="rotate(${rotate}, ${x}, ${y})" 
+        font-family="'Italiana', 'Cormorant Garamond', Georgia, serif" 
+        font-size="24" 
+        font-weight="bold" 
+        letter-spacing="2"
+        fill="${color}"
+        text-anchor="middle"
+      >${char}</text>
+    `;
+  });
+
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}" style="background: #09090b; border: 1px solid #27272a; border-radius: 6px; user-select: none;">
+    <rect width="${width}" height="${height}" fill="#09090b" rx="6" />
+    ${lines}
+    ${dots}
+    ${charElements}
+  </svg>`;
+}
+
+function createCaptchaToken(code: string): string {
+  const nonce = crypto.randomBytes(8).toString("hex");
+  const expiresAt = Date.now() + 10 * 60 * 1000; // 10 minutes
+  const payload = `${code.toUpperCase()}:${expiresAt}:${nonce}`;
+  const signature = crypto.createHmac("sha256", CAPTCHA_SECRET).update(payload).digest("hex");
+  return Buffer.from(`${payload}:${signature}`).toString("base64");
+}
+
+function verifyCaptchaToken(token: string, answer: string): { valid: boolean; error?: string } {
+  if (!token || !answer) {
+    return { valid: false, error: "Niste uneli sigurnosni kod sa slike." };
+  }
+
+  try {
+    const decoded = Buffer.from(token, "base64").toString("utf-8");
+    const [expectedCode, expiresAtStr, nonce, providedSignature] = decoded.split(":");
+
+    if (!expectedCode || !expiresAtStr || !nonce || !providedSignature) {
+      return { valid: false, error: "Nevažeći format sigurnosnog koda." };
+    }
+
+    const payload = `${expectedCode}:${expiresAtStr}:${nonce}`;
+    const expectedSignature = crypto.createHmac("sha256", CAPTCHA_SECRET).update(payload).digest("hex");
+
+    if (providedSignature !== expectedSignature) {
+      return { valid: false, error: "Neispravan potpis sigurnosnog koda." };
+    }
+
+    if (Date.now() > Number(expiresAtStr)) {
+      return { valid: false, error: "Sigurnosni kod je istekao. Molimo osvežite ga." };
+    }
+
+    if (usedCaptchaTokens.has(nonce)) {
+      return { valid: false, error: "Ovaj sigurnosni kod je već iskorišćen. Molimo osvežite ga." };
+    }
+
+    if (answer.trim().toUpperCase() !== expectedCode.toUpperCase()) {
+      return { valid: false, error: "Pogrešan sigurnosni kod. Pokušajte ponovo." };
+    }
+
+    // Mark nonce as used
+    usedCaptchaTokens.add(nonce);
+    return { valid: true };
+  } catch (e) {
+    return { valid: false, error: "Greška pri validaciji sigurnosnog koda." };
+  }
+}
+
+// ----------------------------------------------------
+// "I am not a robot" (Nisam robot) Human Verification
+// ----------------------------------------------------
+function createHumanToken(): string {
+  const nonce = crypto.randomBytes(16).toString("hex");
+  const expiresAt = Date.now() + 15 * 60 * 1000; // 15 minutes
+  const payload = `HUMAN_VERIFIED:${expiresAt}:${nonce}`;
+  const signature = crypto.createHmac("sha256", CAPTCHA_SECRET).update(payload).digest("hex");
+  return Buffer.from(`${payload}:${signature}`).toString("base64");
+}
+
+function verifyHumanToken(token: string): { valid: boolean; error?: string } {
+  if (!token) {
+    return { valid: false, error: "Molimo potvrdite da niste robot." };
+  }
+
+  try {
+    const decoded = Buffer.from(token, "base64").toString("utf-8");
+    const [action, expiresAtStr, nonce, providedSignature] = decoded.split(":");
+
+    if (action !== "HUMAN_VERIFIED" || !expiresAtStr || !nonce || !providedSignature) {
+      return { valid: false, error: "Nevažeći format sigurnosnog tokena." };
+    }
+
+    const payload = `${action}:${expiresAtStr}:${nonce}`;
+    const expectedSignature = crypto.createHmac("sha256", CAPTCHA_SECRET).update(payload).digest("hex");
+
+    if (providedSignature !== expectedSignature) {
+      return { valid: false, error: "Neispravan potpis sigurnosnog tokena." };
+    }
+
+    if (Date.now() > Number(expiresAtStr)) {
+      return { valid: false, error: "Sigurnosna sesija je istekla. Molimo kliknite ponovo." };
+    }
+
+    if (usedCaptchaTokens.has(nonce)) {
+      return { valid: false, error: "Ovaj sigurnosni token je već iskorišćen." };
+    }
+
+    usedCaptchaTokens.add(nonce);
+    return { valid: true };
+  } catch (e) {
+    return { valid: false, error: "Greška pri validaciji autentifikacije." };
+  }
+}
+
+// "I am not a robot" Handshake Endpoint
+app.post("/api/captcha/verify-human", (req, res) => {
+  try {
+    const token = createHumanToken();
+    return res.json({
+      success: true,
+      token,
+      message: "Uspešna verifikacija. Potvrđeno da niste robot."
+    });
+  } catch (err: any) {
+    return res.status(500).json({
+      success: false,
+      error: "Greška pri verifikaciji."
+    });
+  }
+});
+
+// CAPTCHA Generation Endpoint
+app.get("/api/captcha/generate", (req, res) => {
+  try {
+    const code = generateCaptchaCode(4);
+    const token = createCaptchaToken(code);
+    const svg = generateCaptchaSvg(code);
+
+    return res.json({
+      success: true,
+      token,
+      svg,
+      expiresAt: Date.now() + 10 * 60 * 1000
+    });
+  } catch (err: any) {
+    console.error("[Captcha] Generate error:", err);
+    return res.status(500).json({
+      success: false,
+      error: "Greška pri generisanju sigurnosnog koda."
+    });
+  }
+});
+
+// CAPTCHA Verification Endpoint (used by Checkout and forms)
+app.post("/api/captcha/verify", (req, res) => {
+  try {
+    const { token, answer } = req.body;
+
+    // Check if it's the 1-click human verification token ("Nisam robot")
+    if (answer === "HUMAN_VERIFIED" || !answer) {
+      const humanCheck = verifyHumanToken(token);
+      if (humanCheck.valid) {
+        return res.json({
+          success: true,
+          message: "Sigurnosna provera uspešna."
+        });
+      }
+    }
+
+    // Otherwise check code answer
+    const result = verifyCaptchaToken(token, answer);
+    if (!result.valid) {
+      return res.status(400).json({
+        success: false,
+        error: result.error || "Molimo potvrdite da niste robot."
+      });
+    }
+
+    return res.json({
+      success: true,
+      message: "Sigurnosna provera uspešna."
+    });
+  } catch (err: any) {
+    return res.status(500).json({
+      success: false,
+      error: "Greška pri proveri koda."
+    });
+  }
+});
+
 // Newsletter subscription endpoint with SMTP2GO integration
 app.post("/api/newsletter/subscribe", async (req, res) => {
   try {
-    const { email } = req.body;
+    const { email, captchaToken, captchaAnswer, isCheckout } = req.body;
     if (!email || typeof email !== "string" || !email.includes("@")) {
       return res.status(400).json({
         success: false,
         error: "Molimo unesite ispravnu e-mail adresu."
       });
+    }
+
+    // Provera CAPTCHA autentifikacije za newsletter prijave (osim ako je u toku verifikovana kupovina)
+    if (!isCheckout) {
+      let isVerified = false;
+      if (captchaAnswer === "HUMAN_VERIFIED" || (!captchaAnswer && captchaToken)) {
+        const humanCheck = verifyHumanToken(captchaToken);
+        if (humanCheck.valid) isVerified = true;
+      }
+      if (!isVerified && captchaToken && captchaAnswer) {
+        const textCheck = verifyCaptchaToken(captchaToken, captchaAnswer);
+        if (textCheck.valid) isVerified = true;
+      }
+
+      if (!isVerified) {
+        return res.status(400).json({
+          success: false,
+          error: "Molimo potvrdite da niste robot (kliknite na polje za proveru)."
+        });
+      }
     }
 
     const normalizedEmail = email.trim().toLowerCase();

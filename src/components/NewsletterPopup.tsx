@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { X, Check, ArrowRight } from 'lucide-react';
 import { useTheme } from '../context/ThemeContext';
 import { useLanguage } from '../context/LanguageContext';
+import CaptchaModal from './CaptchaModal';
 
 export default function NewsletterPopup() {
   const { theme } = useTheme();
@@ -12,6 +13,7 @@ export default function NewsletterPopup() {
   const [email, setEmail] = useState('');
   const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
   const [errorMessage, setErrorMessage] = useState('');
+  const [showCaptcha, setShowCaptcha] = useState(false);
 
   const STORAGE_KEY = 'dd_newsletter_subscriber_notice_v2';
 
@@ -33,7 +35,7 @@ export default function NewsletterPopup() {
     localStorage.setItem(STORAGE_KEY, 'true');
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!email || !email.includes('@')) {
       setStatus('error');
@@ -47,6 +49,12 @@ export default function NewsletterPopup() {
       return;
     }
 
+    setErrorMessage('');
+    // Open the "Nisam robot" popup ONLY after typing email and submitting
+    setShowCaptcha(true);
+  };
+
+  const handleCaptchaVerified = async (token: string) => {
     setStatus('loading');
     setErrorMessage('');
 
@@ -54,7 +62,11 @@ export default function NewsletterPopup() {
       const res = await fetch('/api/newsletter/subscribe', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email }),
+        body: JSON.stringify({ 
+          email,
+          captchaToken: token,
+          captchaAnswer: 'HUMAN_VERIFIED'
+        }),
       });
 
       const data = await res.json();
@@ -269,6 +281,11 @@ export default function NewsletterPopup() {
           </motion.div>
         </div>
       )}
+      <CaptchaModal
+        isOpen={showCaptcha}
+        onClose={() => setShowCaptcha(false)}
+        onVerified={handleCaptchaVerified}
+      />
     </AnimatePresence>
   );
 }
