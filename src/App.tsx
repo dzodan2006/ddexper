@@ -1345,7 +1345,7 @@ function AppContent() {
               <Route path="/saradnje/tamara-misirlic" element={<TamaraMisirlic />} />
               <Route path="/saradnje/dajana-svraka" element={<DajanaSvraka />} />
               <Route path="/saradnje/danijela-pantic" element={<DanijelaPantic />} />
-              <Route path="/saradnje/belgrade-fashion-week" element={<BelgradeFashionWeek />} />
+              <Route path="/saradnje/belgrade-fashion-week" element={<BelgradeFashionWeek products={products} onAddToCart={addToCart} />} />
               <Route path="/izrada-po-meri" element={<CustomTailoring />} />
               <Route path="/o-svili" element={<SilkGuide />} />
               <Route path="/admin" element={<Admin />} />

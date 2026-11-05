@@ -296,7 +296,7 @@ const mainProjectsRaw = [
     },
     year: "2024",
     link: "/saradnje/belgrade-fashion-week",
-    image: "https://images.unsplash.com/photo-1469334031218-e382a71b716b?auto=format&fit=crop&q=80&w=1200",
+    image: "https://64.media.tumblr.com/0812bcdf2faa71a33f222fe226422c40/0d7527b57eae372d-e3/s1280x1920/111704562e537f25ada5d008c1cba6efa57880ab.jpg",
     descriptions: {
       sr: "„DD DESIGN – Modna arhitektura koja slavi žensku individualnost“ — Izuzetno smo ponosni na osvrt vodeće modne institucije u regionu o našem brendu.",
       en: "“DD DESIGN – Fashion architecture that celebrates female individuality” — We are exceptionally proud of the review by the leading fashion institution in the region about our brand.",
