@@ -99,6 +99,7 @@ export interface PromoCode {
   id?: number;
   promo_code: string;
   amount_of_discount_in_percent: number;
+  free_shipping?: boolean;
   status: boolean;
   Category_id?: number | null;
   category?: Category;

@@ -127,6 +127,7 @@ const checkoutTranslations = {
     promoPlaceholder: "Unesite promo kod...",
     promoApply: "Primeni",
     promoDiscount: "Popust",
+    promoFreeShipping: "Besplatna dostava",
     promoApplied: "Primenjen kod",
     promoRemove: "Ukloni",
     securityGuarantee: "Sigurna kupovina",
@@ -224,6 +225,7 @@ const checkoutTranslations = {
     promoPlaceholder: "Enter promo code...",
     promoApply: "Apply",
     promoDiscount: "Discount",
+    promoFreeShipping: "Free shipping",
     promoApplied: "Applied code",
     promoRemove: "Remove",
     securityGuarantee: "Secure Purchase",
@@ -321,6 +323,7 @@ const checkoutTranslations = {
     promoPlaceholder: "Введите код...",
     promoApply: "Применить",
     promoDiscount: "Скидка",
+    promoFreeShipping: "Бесплатная доставка",
     promoApplied: "Промокод активирован",
     promoRemove: "Удалить",
     securityGuarantee: "Безопасная покупка",
@@ -454,7 +457,8 @@ export default function Checkout({ cart, clearCart }: CheckoutProps) {
   }
 
   const subtotalAfterPromo = Math.max(0, total - promoDiscount);
-  const shippingCost = subtotalAfterPromo >= 10000 ? 0 : 400;
+  const hasPromoFreeShipping = Boolean(appliedPromo?.free_shipping);
+  const shippingCost = (hasPromoFreeShipping || subtotalAfterPromo >= 10000) ? 0 : 400;
   const grandTotal = subtotalAfterPromo + shippingCost;
 
   // Apply promo code handler
@@ -520,7 +524,7 @@ export default function Checkout({ cart, clearCart }: CheckoutProps) {
     setPromoError(null);
   };
 
-  const sendOrderNotificationEmail = async (orderCode: string) => {
+  const sendOrderNotificationEmail = async (orderCode: string, overrideShippingCost?: number) => {
     const sentKey = `order_email_sent_${orderCode}`;
     if (localStorage.getItem(sentKey)) {
       console.log(`[Notification] Email already dispatched for ${orderCode}. Skipping.`);
@@ -558,6 +562,11 @@ export default function Checkout({ cart, clearCart }: CheckoutProps) {
         price: item.price
       })) || [];
 
+      const hasFreeShippingNote = String(dbOrder.notes || '').toLowerCase().includes('besplatna dostava');
+      const finalShippingCost = typeof overrideShippingCost === 'number'
+        ? overrideShippingCost
+        : (hasFreeShippingNote || dbOrder.total_price >= 10000 ? 0 : 400);
+
       console.log(`[Notification] Sending order ${orderCode} email payload to backend...`);
       await fetch("/api/orders/send-notification", {
         method: "POST",
@@ -572,7 +581,7 @@ export default function Checkout({ cart, clearCart }: CheckoutProps) {
           postalCode: dbOrder.postal_code,
           paymentMethod: dbOrder.payment_method || 'card',
           totalPrice: dbOrder.total_price,
-          shippingCost: dbOrder.total_price >= 10000 ? 0 : 400,
+          shippingCost: finalShippingCost,
           items: itemsForEmail
         })
       });
@@ -823,8 +832,17 @@ export default function Checkout({ cart, clearCart }: CheckoutProps) {
       try {
         const orderCode = `DD-${Date.now().toString().slice(-6)}-${Math.floor(1000 + Math.random() * 9000)}`;
         
-        const promoNote = appliedPromo 
-          ? `[Promo kod: ${appliedPromo.promo_code} (-${appliedPromo.amount_of_discount_in_percent}% / -${formatCurrency(promoDiscount)})]`
+        const promoBenefits: string[] = [];
+        if (appliedPromo) {
+          if (Number(appliedPromo.amount_of_discount_in_percent) > 0) {
+            promoBenefits.push(`-${appliedPromo.amount_of_discount_in_percent}% / -${formatCurrency(promoDiscount)}`);
+          }
+          if (appliedPromo.free_shipping) {
+            promoBenefits.push('Besplatna dostava');
+          }
+        }
+        const promoNote = appliedPromo
+          ? `[Promo kod: ${appliedPromo.promo_code}${promoBenefits.length > 0 ? ` (${promoBenefits.join(' + ')})` : ''}]`
           : '';
         const finalNotes = [notes.trim(), promoNote].filter(Boolean).join(' ');
 
@@ -1037,7 +1055,7 @@ export default function Checkout({ cart, clearCart }: CheckoutProps) {
         }
 
         setOrderNumber(orderCode);
-        sendOrderNotificationEmail(orderCode);
+        sendOrderNotificationEmail(orderCode, shippingCost);
         setStep('success');
         clearCart();
       } catch (err: any) {
@@ -1916,12 +1934,19 @@ export default function Checkout({ cart, clearCart }: CheckoutProps) {
                   <div className={`flex items-center justify-between p-2.5 rounded-xl border ${
                     theme === 'dark' ? 'bg-emerald-950/40 border-emerald-900/60 text-emerald-300' : 'bg-emerald-50 border-emerald-200 text-emerald-800'
                   }`}>
-                    <div className="flex items-center gap-2">
+                    <div className="flex flex-wrap items-center gap-2">
                       <span className="font-mono font-bold text-xs px-2 py-0.5 rounded bg-emerald-500/20 border border-emerald-500/30">
                         {appliedPromo.promo_code}
                       </span>
                       <span className="text-xs font-semibold">
-                        -{appliedPromo.amount_of_discount_in_percent}% {ct('promoDiscount')}
+                        {[
+                          Number(appliedPromo.amount_of_discount_in_percent) > 0
+                            ? `-${appliedPromo.amount_of_discount_in_percent}% ${ct('promoDiscount')}`
+                            : null,
+                          appliedPromo.free_shipping ? ct('promoFreeShipping') : null
+                        ]
+                          .filter(Boolean)
+                          .join(' + ')}
                       </span>
                     </div>
                     <button
@@ -1994,7 +2019,10 @@ export default function Checkout({ cart, clearCart }: CheckoutProps) {
                 <div className={`flex justify-between text-sm ${theme === 'dark' ? 'text-zinc-500' : 'text-gray-500'}`}>
                   <span>{ct('shipping')}</span>
                   {shippingCost === 0 ? (
-                    <span className="text-green-600 font-medium">{ct('shippingFree')}</span>
+                    <span className="text-green-600 font-medium">
+                      {ct('shippingFree')}
+                      {hasPromoFreeShipping && subtotalAfterPromo < 10000 && appliedPromo ? ` (${appliedPromo.promo_code})` : ''}
+                    </span>
                   ) : (
                     <span className={`font-medium ${theme === 'dark' ? 'text-zinc-300' : 'text-gray-900'}`}>
                       {formatCurrency(shippingCost)}
